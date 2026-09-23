@@ -12,6 +12,11 @@ tmp/
 out-tsc/
 documentation/
 
+# uploads / db dumps
+uploads/
+*.sql
+*.dump
+
 # IDEs and editors
 .idea/
 .project
