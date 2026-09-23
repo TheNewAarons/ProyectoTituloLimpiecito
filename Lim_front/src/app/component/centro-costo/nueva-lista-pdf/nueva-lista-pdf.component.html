@@ -1,0 +1,83 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <button mat-raised-button title="Volver" class="btn btn-warning btn-sm" (click)="volver()">
+              <span class="btn-label">
+                <i class="material-icons">arrow_back</i>
+              </span>
+            </button>
+            <button mat-raised-button type="button" title="Pdf" style="float: right;" class="btn btn-warning btn-sm" (click)="imprimir()">
+              <i class="material-icons">picture_as_pdf</i>
+            </button>
+          </div>
+          <div class="card-body" id="imprimir">
+            <table>
+              <tr>
+                <td rowspan="2" colspan="2">
+                  <img width="auto" height="50px" src="./assets/img/logotipo-limpiecito.png" />
+                </td>
+                <td></td>
+                <td id="negro">Período</td>
+                <td></td>
+                <td rowspan="2" colspan="2"></td>
+                <td id="negro" rowspan="2" style="text-align: center;"> A</td>
+                <td rowspan="2" colspan="2"></td>
+                <td></td>
+                <td id="negro" rowspan="2" colspan="9"> Lugar de Trabajo: {{centro?.cliente.representante}}</td>
+              </tr>
+              <tr >
+                <td >&nbsp;</td>
+                <td ></td>
+                <td ></td>
+                <td ></td>
+              </tr>
+              <tr>
+                <th><strong>Producto</strong></th>
+                <th><strong>Dosificación</strong></th>
+                <th><strong>Cantidad</strong></th>
+                <th><strong>Fecha</strong></th>
+                <th><strong>Cant</strong></th>
+                <th><strong>Fecha</strong></th>
+                <th><strong>Cant</strong></th>
+                <th><strong>Fecha</strong></th>
+                <th><strong>Cant</strong></th>
+                <th><strong>Fecha</strong></th>
+                <th><strong>Cant</strong></th>
+                <th><strong>Fecha</strong></th>
+                <th><strong>Cant</strong></th>
+                <th><strong>Fecha</strong></th>
+                <th><strong>Cant</strong></th>
+                <th><strong>Fecha</strong></th>
+                <th><strong>Cant</strong></th>
+
+              </tr>
+              <tr class="color" *ngFor="let detaLista of listaInsumo?.linea_insumos">
+                <td>{{ detaLista.producto.nombre }}</td>
+                <td></td>
+                <td>{{ detaLista.cantidad}}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

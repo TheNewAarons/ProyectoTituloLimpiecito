@@ -1,0 +1,545 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Usuarios</h4>
+            <br />
+            <button
+              *ngIf="usuarioLog.role.nombre != 'APOYO_LVL_1'"
+              mat-raised-button
+              title="Crear Usuario"
+              class="btn btn-warning btn-sm"
+              data-toggle="modal"
+              data-target="#createModal"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear
+            </button>
+          </div>
+          <div class="card-body">
+            <!-- BODY -->
+            <!-- TABS PARA ACTIVO E INACTIVO-->
+            <ul
+              class="nav nav-pills nav-pills-info justify-content-center"
+              role="tablist"
+            >
+              <li class="nav-item">
+                <a
+                  class="nav-link active"
+                  data-toggle="tab"
+                  href="#activo"
+                  role="tablist"
+                >
+                  Activo
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link"
+                  data-toggle="tab"
+                  href="#inactivo"
+                  role="tablist"
+                >
+                  Inactivo
+                </a>
+              </li>
+            </ul>
+            <!-- END TABS -->
+            <!-- TAB CONTENT -->
+            <div class="tab-content tab-space">
+              <div class="tab-pane active" id="activo">
+                <!-- ACTIVOS-->
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchActivo"
+                    class="form-control"
+                    [(ngModel)]="searchActivo"
+                    placeholder="Buscar..."
+                    (change)="buscarActivo()"
+                  />
+                </div>
+                <br />
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE -->
+                  <table class="table">
+                    <!-- TABLE -->
+                    <thead>
+                      <tr>
+                        <th>Rut</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Correo</th>
+                        <th>Rol</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        *ngFor="
+                          let usuario of usuarios
+                            | slice
+                              : (page - 1) * pageSize
+                              : (page - 1) * pageSize + pageSize
+                        "
+                      >
+                        <td>{{ usuario.rut | rut }}</td>
+                        <td>{{ usuario.nombre }}</td>
+                        <td>{{ usuario.apellido }}</td>
+                        <td>{{ usuario.correo }}</td>
+                        <td>{{ usuario.role.nombre }}</td>
+                        <td class="td-actions text-right">
+                          <button
+                            *ngIf="usuarioLog.role.id < usuario.role.id"
+                            mat-raised-button
+                            type="button"
+                            class="btn btn-warning btn-round"
+                            data-toggle="modal"
+                            data-target="#myModalEditPassword"
+                            (click)="asignarEditar(usuario)"
+                          >
+                            <i class="material-icons">vpn_key</i>
+                          </button>
+                          <button
+                            *ngIf="usuarioLog.role.id < usuario.role.id"
+                            mat-raised-button
+                            type="button"
+                            title="Editar Usuario"
+                            class="btn btn-success btn-round"
+                            data-toggle="modal"
+                            data-target="#editModal"
+                            (click)="asignarEditar(usuario)"
+                          >
+                            <i class="material-icons">edit</i>
+                          </button>
+                          <button
+                            *ngIf="
+                              usuarioLog.role.id < usuario.role.id &&
+                              usuarioLog.role.nombre != 'APOYO_LVL_1' &&
+                                usuarioLog.role.nombre != 'ADMINISTRADOR_LVL_3'
+                            "
+                            mat-raised-button
+                            type="button"
+                            title="Desactivar Usuario"
+                            class="btn btn-danger btn-round"
+                            (click)="eliminarUsuario(usuario.id)"
+                          >
+                            <i class="material-icons">close</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <!-- END TABLE -->
+                  <ngb-pagination
+                    [(page)]="page"
+                    [pageSize]="pageSize"
+                    [collectionSize]="usuarios?.length"
+                    [maxSize]="5"
+                    [rotate]="true"
+                    [boundaryLinks]="true"
+                  >
+                  </ngb-pagination>
+                </div>
+                <!-- END TABLE RESPONSIVE-->
+              </div>
+              <!-- END ACTIVOS-->
+              <div class="tab-pane" id="inactivo">
+                <!-- INACTIVOS -->
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchInactivo"
+                    class="form-control"
+                    [(ngModel)]="searchInactivo"
+                    placeholder="Buscar..."
+                    (change)="buscarInactivo()"
+                  />
+                </div>
+                <br />
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE -->
+                  <table class="table">
+                    <!-- TABLE -->
+                    <thead>
+                      <tr>
+                        <th>Rut</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Correo</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        *ngFor="
+                          let usuarioInactivo of usuariosInactivos
+                            | slice
+                              : (page1 - 1) * pageSize1
+                              : (page1 - 1) * pageSize1 + pageSize1
+                        "
+                      >
+                        <td>{{ usuarioInactivo.rut }}</td>
+                        <td>{{ usuarioInactivo.nombre }}</td>
+                        <td>{{ usuarioInactivo.apellido }}</td>
+                        <td>{{ usuarioInactivo.correo }}</td>
+                        <td class="td-actions text-right">
+                          <!--<button mat-raised-button type="button" title="hola" class="btn btn-info btn-round">
+                                <i class="material-icons">person</i>
+                            </button>-->
+                          <button
+                            *ngIf="
+                              usuarioLog.role.id < usuarioInactivo.role.id &&
+                              usuarioLog.role.nombre != 'APOYO_LVL_1' &&
+                                usuarioLog.role.nombre != 'ADMINISTRADOR_LVL_3'
+                            "
+                            mat-raised-button
+                            type="button"
+                            title="Activar Usuario"
+                            class="btn btn-primary btn-round"
+                            (click)="activarUsuario(usuarioInactivo.id)"
+                          >
+                            <i class="material-icons">done</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <!-- END TABLE -->
+                  <ngb-pagination
+                    [(page)]="page1"
+                    [pageSize]="pageSize1"
+                    [collectionSize]="usuariosInactivos?.length"
+                    [maxSize]="5"
+                    [rotate]="true"
+                    [boundaryLinks]="true"
+                  >
+                  </ngb-pagination>
+                </div>
+                <!-- END TABLE RESPONSIVE-->
+              </div>
+              <!-- END INACTIVOS-->
+            </div>
+            <!-- END TAB CONTENT-->
+          </div>
+          <!-- END BODY-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE MODAL -->
+<div
+  class="modal fade"
+  id="createModal"
+  tabindex="-1"
+  role="dialog"
+  data-backdrop="static"
+  aria-labelledby="myModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Crear Usuario</h5>
+        <button
+          mat-button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-hidden="true"
+        >
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f1="ngForm" (submit)="crearUsuario(f1.valid)">
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Nombre"
+              name="nombre"
+              #nombre="ngModel"
+              [(ngModel)]="usuario.nombre"
+              required
+              type="text"
+            />
+            <small
+              [hidden]="nombre.valid || (nombre.pristine && !f1.submitted)"
+              class="text-danger"
+            >
+              Nombre es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Apellido"
+              name="apellido"
+              #apellido="ngModel"
+              [(ngModel)]="usuario.apellido"
+              type="text"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="correo"
+              name="correo"
+              #correo="ngModel"
+              [(ngModel)]="usuario.correo"
+              type="email"
+              required
+            />
+            <small
+              [hidden]="correo.valid || (correo.pristine && !f1.submitted)"
+              class="text-danger"
+            >
+              Correo es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Rut"
+              name="rut"
+              #rut="ngModel"
+              [(ngModel)]="usuario.rut"
+              validateRut
+              maxlength="9"
+              formatRut
+              type="text"
+              required
+            />
+            <small
+              [hidden]="rut.valid || (rut.pristine && !f1.submitted)"
+              class="text-danger"
+            >
+              Rut Inválido.
+            </small>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-select
+              placeholder="Rol.."
+              name="roleId"
+              #roleId="ngModel"
+              [(ngModel)]="usuario.roleId"
+              required
+            >
+              <mat-option *ngFor="let rol of roles" [value]="rol.id">
+                {{ rol.nombre }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Contraseña"
+              name="password"
+              #password="ngModel"
+              [(ngModel)]="usuario.password"
+              type="password"
+              required
+            />
+            <small
+              [hidden]="password.valid || !f1.submitted"
+              class="text-danger"
+            >
+              Contraseña es requerido.
+            </small>
+          </mat-form-field>
+          <div class="modal-footer justify-content-center">
+            <button
+              mat-raised-button
+              type="submit"
+              class="btn btn-info btn-round"
+            >
+              Crear
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END CREATE MODEL -->
+
+<!-- EDIT MODAL -->
+<div
+  class="modal fade"
+  id="editModal"
+  tabindex="-1"
+  role="dialog"
+  data-backdrop="static"
+  aria-labelledby="myModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Editar Usuario</h5>
+        <button
+          mat-button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-hidden="true"
+        >
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f2="ngForm" (submit)="editarUsuario(f2.valid)">
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Nombre"
+              name="nombre1"
+              #nombre1="ngModel"
+              [(ngModel)]="usuarioEdit.nombre"
+              required
+              type="text"
+            />
+            <small
+              [hidden]="nombre1.valid || (nombre1.pristine && !f2.submitted)"
+              class="text-danger"
+            >
+              Nombre es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Apellido"
+              name="apellido1"
+              #apellido1="ngModel"
+              [(ngModel)]="usuarioEdit.apellido"
+              type="text"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="correo"
+              name="correo1"
+              #correo1="ngModel"
+              [(ngModel)]="usuarioEdit.correo"
+              type="email"
+              required
+            />
+            <small
+              [hidden]="correo1.valid || (correo1.pristine && !f1.submitted)"
+              class="text-danger"
+            >
+              Correo es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Rut"
+              name="rut1"
+              #rut1="ngModel"
+              [(ngModel)]="usuarioEdit.rut"
+              validateRut
+              maxlength="9"
+              formatRut
+              type="text"
+              required
+            />
+            <small
+              [hidden]="rut1.valid || (rut1.pristine && !f1.submitted)"
+              class="text-danger"
+            >
+              Rut es Inválido.
+            </small>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-select
+              placeholder="Rol.."
+              name="roleId1"
+              #roleId1="ngModel"
+              [(ngModel)]="usuarioEdit.roleId"
+              required
+            >
+              <mat-option *ngFor="let rol of roles" [value]="rol.id">
+                {{ rol.nombre }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <div class="modal-footer justify-content-center">
+            <button
+              mat-raised-button
+              type="submit"
+              class="btn btn-info btn-round"
+            >
+              Editar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END EDIT MODEL -->
+<!--  MODAL PARA EDITAR PASSWORD USUARIO -->
+<div
+  class="modal fade"
+  id="myModalEditPassword"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="myModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-hidden="true"
+        >
+          <i class="nc-icon nc-simple-remove"></i>
+        </button>
+        <h5 class="modal-title" id="myModalLabel">Editar Contraseña</h5>
+      </div>
+      <div class="modal-body">
+        <form #f3="ngForm" (submit)="editarPasswordUsuario(f3.valid)">
+          <label>Contraseña:</label>
+          <div class="form-group">
+            <input
+              type="text"
+              class="form-control"
+              name="password"
+              #password
+              placeholder="Ingresar Contraseña"
+              [(ngModel)]="passNew"
+              required
+            />
+            <small
+              [hidden]="password.valid || !f3.submitted"
+              class="text-danger"
+            >
+              Contraseña es requerido.
+            </small>
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button type="submit" class="btn btn-info btn-round">
+              Editar Contraseña
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- FIN modal EDITAR PASSWORD-->

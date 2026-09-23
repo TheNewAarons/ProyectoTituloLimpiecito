@@ -1,0 +1,45 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Reservas</h4>
+          </div>
+          <!-- <app-loading *ngIf="loading" style="text-align: center"></app-loading> -->
+          <div class="card-body">
+            <div class="row">
+              <div class="col-lg-4 col-md-6 col-sm-6" *ngFor="let cate of categorias">
+                <div class="card card-stats">
+                  <div class="card-header card-header-warning card-header-icon">
+                    <div class="card-icon">
+                      <i class="material-icons">list_alt</i>
+                    </div>
+                    <p class="card-category">Reservas</p>
+                    <h3 class="card-title">{{ cate.nombre }}</h3>
+                  </div>
+                  <div class="card-footer">
+                    <div class="stats">
+                      <i class="material-icons text-danger">list_alt</i>
+                    </div>
+                    <a [routerLink]="['/adm_servicio/reserva-proceso/', cate.id, cate.nombre]">Entrar </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- <div class="col-md-12">
+              <div class="card card-calendar">
+                <div class="card-body">
+                  <div id="fullCalendar"></div>
+                </div>
+              </div>
+            </div> -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

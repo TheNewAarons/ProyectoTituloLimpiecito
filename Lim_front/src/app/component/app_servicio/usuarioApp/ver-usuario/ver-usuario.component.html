@@ -1,0 +1,88 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Reservas de {{ nombre }}</h4> 
+            <br />
+            <button mat-raised-button matTooltip="Volver Usuarios App" class="btn btn-warning btn-sm" routerLink="/adm_servicio/usuario-activos">Volver</button>
+
+          </div>
+          <app-loading *ngIf="loading" style="text-align: center"></app-loading>
+          <div class="card-body" *ngIf="!loading">
+            <!-- BUSCADOR -->
+            <!-- <div class="input-group no-border">
+              <input type="text" name="search" class="form-control" [(ngModel)]="search" placeholder="Buscar..." (change)="buscar()" />
+            </div> -->
+            <ng-select
+              style="padding: 7px 0px;"
+              class="col-lg-3 col-md-3 col-sm-12"
+              [items]="estados"
+              bindLabel="nombre" 
+              bindValue="valor" 
+              [(ngModel)]="estado"
+              [clearable]="false"
+              (change)="buscar()"
+            >
+            </ng-select>
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Orden</th>
+                    <th>Fecha Petición</th>
+                    <th>Fecha Reserva</th>
+                    <th>Bloque</th>
+                    <th>Valor</th>
+                    <th>Servicio</th>
+                    <th>Estado</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let reserva of reservas | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                    <td class="text-center">-</td>
+                    <td>{{reserva.orden}}</td>
+                    <td>{{ reserva.fecha_creacion | date: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ reserva.fecha_reserva | date: 'dd/MM/yyyy' }}</td>
+                    <td>{{ reserva.hora_inicio }} - {{ reserva.hora_fin }}</td>
+                    <td>{{ reserva.precio | currency: 'USD':'symbol':'1.0' }}</td>
+                    <td>{{ reserva.servicio ? reserva.servicio.nombre : reserva.categoria_servicio.nombre}}</td>
+                    <th>{{ reserva.estado | estado }}</th>
+                    <td class="td-actions text-right">
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Ver Reserva"
+                        class="btn btn-info btn-round"
+                        [routerLink]="['/adm_servicio/ver-reserva/', reserva.id]"
+                      >
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <ngb-pagination
+                [(page)]="page"
+                [pageSize]="pageSize"
+                [collectionSize]="reservas?.length"
+                [maxSize]="5"
+                [rotate]="true"
+                [boundaryLinks]="true"
+              >
+              </ngb-pagination>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

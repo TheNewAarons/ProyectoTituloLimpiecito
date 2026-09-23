@@ -1,0 +1,324 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Productos EPP</h4>
+            <br />
+            <button mat-raised-button matTooltip="Crear Producto" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#createModal">
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear
+            </button>
+          </div>
+          <app-loading *ngIf="loading" style="text-align: center;"></app-loading>
+          <div *ngIf="!loading" class="card-body">
+            <!-- TABS PARA ACTIVO E INACTIVO-->
+            <ul class="nav nav-pills nav-pills-info justify-content-center" role="tablist">
+              <li class="nav-item">
+                <a class="nav-link active" data-toggle="tab" href="#activo" role="tablist">
+                  Activo
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#inactivo" role="tablist">
+                  Inactivo
+                </a>
+              </li>
+            </ul>
+            <!-- END TABS -->
+            <!-- TAB CONTENT -->
+            <div class="tab-content tab-space">
+              <div class="tab-pane active" id="activo">
+                <!-- ACTIVOS-->
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchActivo"
+                    class="form-control"
+                    [(ngModel)]="searchActivo"
+                    placeholder="Buscar..."
+                    (change)="buscarActivo()"
+                  />
+                </div>
+                <br />
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE -->
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio Costo</th>
+                        <th>Cantidad</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let producto of productos | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                        <td>{{ producto.nombre }}</td>
+                        <td>{{ producto.descripcion }}</td>
+                        <td>
+                          {{ producto.precio | currency: 'USD':'symbol':'1.0' }}
+                        </td>
+                        <td>{{ producto.stock | number: '1.0' }}</td>
+                        <td class="td-actions text-right">
+                          <button
+                            *ngIf="usuario.role.nombre != 'APOYO_LVL_1'"
+                            mat-raised-button
+                            type="button"
+                            title="Editar Producto"
+                            class="btn btn-success btn-round"
+                            data-toggle="modal"
+                            data-target="#editModal"
+                            (click)="asignarEditar(producto)"
+                          >
+                            <i class="material-icons">edit</i>
+                          </button>
+                          <button
+                            *ngIf="usuario.role.nombre != 'APOYO_LVL_1'"
+                            mat-raised-button
+                            type="button"
+                            title="Desactivar Producto"
+                            class="btn btn-danger btn-round"
+                            (click)="eliminarProducto(producto.id)"
+                          >
+                            <i class="material-icons">close</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <ngb-pagination
+                    [(page)]="page"
+                    [pageSize]="pageSize"
+                    [collectionSize]="productos?.length"
+                    [maxSize]="5"
+                    [rotate]="true"
+                    [boundaryLinks]="true"
+                  >
+                  </ngb-pagination>
+                </div>
+                <!-- END TABLE RESPONSIVE-->
+              </div>
+              <!-- END ACTIVOS-->
+              <div class="tab-pane" id="inactivo">
+                <!-- INACTIVOS -->
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchInactivo"
+                    class="form-control"
+                    [(ngModel)]="searchInactivo"
+                    placeholder="Buscar..."
+                    (change)="buscarInactivo()"
+                  />
+                </div>
+                <br />
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE-->
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio Costo</th>
+                        <th>Cantidad</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let productoInactivo of productosInactivos | slice: (page1 - 1) * pageSize1:(page1 - 1) * pageSize1 + pageSize1">
+                        <td>{{ productoInactivo.nombre }}</td>
+                        <td>{{ productoInactivo.descripcion }}</td>
+                        <td>
+                          {{ productoInactivo.precio | currency: 'USD':'symbol':'1.0' }}
+                        </td>
+                        <td>{{ productoInactivo.stock | number: '1.0' }}</td>
+                        <td class="td-actions text-right">
+                          <!--<button mat-raised-button type="button" class="btn btn-info btn-round">
+                              <i class="material-icons">person</i>
+                          </button>-->
+                          <button
+                            *ngIf="usuario.role.nombre != 'APOYO_LVL_1'"
+                            mat-raised-button
+                            type="button"
+                            title="Activar Producto"
+                            class="btn btn-primary btn-round"
+                            (click)="activarProducto(productoInactivo.id)"
+                          >
+                            <i class="material-icons">done</i>
+                          </button>
+                          <button
+                            *ngIf="usuario.role.nombre != 'APOYO_LVL_1'"
+                            mat-raised-button
+                            type="button"
+                            title="Borrar Producto"
+                            class="btn btn-danger btn-round"
+                            (click)="borrarProducto(productoInactivo.id)"
+                          >
+                            <i class="material-icons">delete</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <ngb-pagination
+                    [(page)]="page1"
+                    [pageSize]="pageSize1"
+                    [collectionSize]="productosInactivos?.length"
+                    [maxSize]="5"
+                    [rotate]="true"
+                    [boundaryLinks]="true"
+                  >
+                  </ngb-pagination>
+                </div>
+                <!-- END TABLE RESPONSIVE-->
+              </div>
+              <!-- END INACTIVOS-->
+            </div>
+            <!-- END TAB CONTENT-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE MODAL -->
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Crear Producto</h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f1="ngForm" (submit)="crearProducto(f1.valid)">
+          <mat-form-field class="example-full-width">
+            <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]="producto.nombre" required type="text" />
+            <small [hidden]="nombre.valid || (nombre.pristine && !f1.submitted)" class="text-danger">
+              Nombre es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input matInput placeholder="Descripción" name="descripcion" #descripcion="ngModel" [(ngModel)]="producto.descripcion" type="text" />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Stock"
+              [cleave]="cleaveOptions"
+              name="stock"
+              #stock="ngModel"
+              [(ngModel)]="producto.stock"
+              type="string"
+              required
+            />
+            <small [hidden]="stock.valid || (stock.pristine && !f1.submitted)" class="text-danger">
+              Stock es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="precio"
+              [cleave]="cleaveOptions"
+              name="precio"
+              #precio="ngModel"
+              [(ngModel)]="producto.precio"
+              type="string"
+              required
+            />
+            <small [hidden]="precio.valid || (precio.pristine && !f1.submitted)" class="text-danger">
+              Precio es requerido.
+            </small>
+          </mat-form-field>
+          <div class="modal-footer justify-content-center">
+            <button mat-raised-button type="submit" class="btn btn-info btn-round">
+              Crear
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- end CREATE MODAL-->
+
+<!-- EDIT MODAL -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Editar Producto</h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f2="ngForm" (submit)="editarProducto(f2.valid)">
+          <mat-form-field class="example-full-width">
+            <input matInput placeholder="Nombre" name="nombre1" #nombre1="ngModel" [(ngModel)]="productoEdit.nombre" required type="text" />
+            <small [hidden]="nombre1.valid || (nombre1.pristine && !f2.submitted)" class="text-danger">
+              Nombre es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Descripción"
+              name="descripcion1"
+              #descripcion1="ngModel"
+              [(ngModel)]="productoEdit.descripcion"
+              type="text"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Stock"
+              [cleave]="cleaveOptions"
+              name="stock1"
+              #stock1="ngModel"
+              [(ngModel)]="productoEdit.stock"
+              type="string"
+              required
+            />
+            <small [hidden]="stock1.valid || (stock1.pristine && !f2.submitted)" class="text-danger">
+              Stock es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Precio"
+              [cleave]="cleaveOptions"
+              name="precio1"
+              #precio1="ngModel"
+              [(ngModel)]="productoEdit.precio"
+              type="string"
+              required
+            />
+            <small [hidden]="precio1.valid || (precio1.pristine && !f2.submitted)" class="text-danger">
+              Precio es requerido.
+            </small>
+          </mat-form-field>
+          <div class="modal-footer justify-content-center">
+            <button mat-raised-button type="submit" class="btn btn-info btn-round">
+              Editar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- end EDIT MODAL-->

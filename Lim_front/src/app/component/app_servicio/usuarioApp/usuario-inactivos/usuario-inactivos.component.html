@@ -1,0 +1,93 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Usuarios Inactivos</h4>
+            <br />
+            <!-- <button mat-raised-button matTooltip="Crear Categoria Servicio" class="btn btn-warning btn-sm" routerLink="/adm_servicio/reservas">
+              Volver
+            </button> -->
+            <button
+              mat-raised-button
+              style="float: right"
+              matTooltip="Ver Activos"
+              class="btn btn-warning btn-sm"
+              routerLink="/adm_servicio/usuario-activos"
+            >
+              Activos
+            </button>
+          </div>
+          <app-loading *ngIf="loading" style="text-align: center"></app-loading>
+          <div class="card-body" *ngIf="!loading">
+            <!-- BUSCADOR -->
+            <div class="input-group no-border">
+              <input type="text" name="search" class="form-control" [(ngModel)]="search" placeholder="Buscar..." (change)="buscar()" />
+            </div>
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Dirección</th>
+                    <th>Dirección 2</th>
+                    <th>Celular</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let usuario of usuarios | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                    <td>{{ usuario.nombre }}</td>
+                    <td>{{ usuario.correo }}</td>
+                    <td>{{ usuario.direccion }}</td>
+                    <td>{{ usuario.direccion_op }}</td>
+                    <td>{{ usuario.celular }}</td>
+                    <td class="td-actions text-right">
+                      <!-- <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Editar Categoria Servicio"
+                        class="btn btn-success btn-round"
+                        [routerLink]="['/adm_servicio/editar-cate_servicio/', cate.id]"
+                      >
+                        <i class="material-icons">edit</i>
+                      </button> -->
+                      <button mat-raised-button type="button" matTooltip="Ver Usuario" class="btn btn-info btn-round" [routerLink]='["/adm_servicio/ver-usuario",usuario.id]'>
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Activar Usuario"
+                        class="btn btn-warning btn-round"
+                        (click)="activarUsuario(usuario.id)"
+                      >
+                        <i class="material-icons">done</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <ngb-pagination
+                [(page)]="page"
+                [pageSize]="pageSize"
+                [collectionSize]="usuarios?.length"
+                [maxSize]="5"
+                [rotate]="true"
+                [boundaryLinks]="true"
+              >
+              </ngb-pagination>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

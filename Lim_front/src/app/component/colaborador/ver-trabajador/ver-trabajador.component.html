@@ -1,0 +1,243 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">contacts</i>
+            </div>
+            <h4 class="card-title">
+              Datos de: N° {{ trabajador?.n_empleado }} - <b>{{ trabajador?.nombre }} {{ trabajador?.apellido }}</b>
+            </h4>
+          </div>
+          <div class="card-body">
+            <form class="form-horizontal">
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Rut</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="text" value="{{ trabajador?.rut | rut }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Teléfono</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="text" value="{{ trabajador?.telefono }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Teléfono Emergencia</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="text" value="{{ trabajador?.telefono_emergencia }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Email</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="email" value="{{ trabajador?.correo }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Dirección</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="text" value="{{ trabajador?.direccion }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Fecha Nacimiento</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="text" value="{{ trabajador?.fecha_nacimiento | date: 'dd/MM/yyyy' }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Sexo</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="text" value="{{ trabajador?.sexo == 1 ? 'Masculino' : 'Femenino' }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Inicio Contrato</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="text" value="{{ trabajador?.fecha_inicio_contrato | date: 'dd/MM/yyyy' }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Término Contrato</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="text" value="{{ trabajador?.fecha_termino_contrato | date: 'dd/MM/yyyy' }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Enfermedad Crónica</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="text" value="{{ trabajador?.enfermedad_cronica }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Acceso Sistema Archivo (INT)</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="text" value="{{ trabajador?.acceso_trabajadore ? 'Acceso Creado' : 'Acceso No Creado ' }}" disabled />
+                  </mat-form-field>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">engineering</i>
+            </div>
+            <h4 class="card-title">Acciones</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-12">
+                <button
+                  style="float: left"
+                  mat-raised-button
+                  matTooltip="Volver"
+                  class="btn btn-warning btn-sm"
+                  [routerLink]="['/colaborador/trabajador']"
+                >
+                  Volver
+                </button>
+              </div>
+              <div class="col-md-12">
+                <button
+                  style="width: 100%"
+                  *ngIf="trabajador?.acceso_trabajadore == null && usuario.role.nombre != 'APOYO_LVL_1'"
+                  mat-raised-button
+                  matTooltip="Crear Acceso"
+                  class="btn btn-info btn-sm"
+                  [routerLink]="['/trabajador/acceso/', trabajador?.id]"
+                >
+                  Crear Acceso
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">engineering</i>
+            </div>
+            <h4 class="card-title">Acceso Laboral</h4>
+          </div>
+          <div class="card-body">
+            <form class="form-horizontal">
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Email</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input
+                      matInput
+                      type="email"
+                      name="correo_credenciales"
+                      [(ngModel)]="credenciales.correo"
+                      required
+                    />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row" *ngIf="!acceso_laboral?.estado">
+                <label class="col-md-3 col-2 col-form-label">Contraseña</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input
+                      matInput
+                      type="password"
+                      name="password_credenciales"
+                      [(ngModel)]="credenciales.password"
+                      required
+                    />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="row">
+                <label class="col-md-3 col-2 col-form-label">Tipo Trabajador</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field>
+                    <mat-select name="tipo" [(ngModel)]="credenciales.tipo" required>
+                      <mat-option *ngFor="let tipo of tipos" [value]="tipo.value">
+                        {{ tipo.nombre }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-error *ngIf="credenciales?.tipo == null">Estado es Requerido</mat-error>
+                </div>
+              </div>
+              <div>
+                <mat-checkbox class="example-margin" [checked]="cambiarPassword" (change)="cambiarValorVariablePassword()">Cambiar Contraseña</mat-checkbox>
+              </div>
+              <div class="row" *ngIf="cambiarPassword">
+                <label class="col-md-3 col-2 col-form-label">Nueva Contraseña</label>
+                <div class="col-md-9 col-9">
+                  <mat-form-field class="example-full-width">
+                    <input
+                      matInput
+                      type="password"
+                      name="nueva_password_credenciales"
+                      [(ngModel)]="nueva_password"
+                    />
+                  </mat-form-field>
+                </div>
+              </div>
+
+            </form>
+            <div class="row">
+              <div class="col-md-12">
+                <button
+                  *ngIf="usuario.role.nombre != 'APOYO_LVL_1' && !acceso_laboral?.estado"
+                  mat-raised-button
+                  matTooltip="Crear Acceso"
+                  class="btn btn-info btn-sm"
+                  (click)="crearAccesoLaboral()"
+                  [disabled]="credenciales.correo == null || credenciales.password == null"
+                >
+                  Crear Acceso
+                </button>
+                <button
+                  *ngIf="usuario.role.nombre != 'APOYO_LVL_1' && acceso_laboral?.estado"
+                  mat-raised-button
+                  matTooltip="Editar Acceso"
+                  class="btn btn-info btn-sm"
+                  (click)="actualizarAccesoLaboral(acceso_laboral.acceso_laboral.id)"
+                  [disabled]="credenciales.correo == null || credenciales.password == null"
+                >
+                  Editar Accesos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

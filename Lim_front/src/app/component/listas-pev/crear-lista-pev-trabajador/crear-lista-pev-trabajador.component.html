@@ -1,0 +1,75 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Tareas Cronograma</h4>
+          </div>
+          <div class="card-body">
+            <button mat-raised-button class="btn btn-warning btn-sm" (click)="volverAtras()"><i class="material-icons">arrow_back</i></button>
+            <div class="row">
+              <mat-form-field class="col-md-4">
+                <mat-select  placeholder="Selecciona Sector" [(ngModel)]="sector_seleccionado" required>
+                  <mat-option *ngFor="let sector of sectores" [value]="sector.id">
+                    {{ sector.nombre }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field class="col-md-4">
+                <input matInput placeholder="Fecha del Día" name="fecha_seleccionada" [(ngModel)]="fecha_seleccionada" type="date" />
+              </mat-form-field>
+              <div class="col-md-4">
+                <button mat-raised-button class="btn btn-success btn-sm" (click)="generarNuevaVersion()"><i class="material-icons">search</i></button>
+              </div>
+            </div>
+
+            <div *ngIf="sector_seleccionado && fecha_seleccionada" class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Sector</th>
+                    <th>Areas</th>
+                    <th>Tareas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let lista of cronograma_vista; let indexOfelement = index">
+                    <td class="col-md-3" *ngIf="lista.s_rows > 1" [attr.rowspan]="lista.s_rows">{{ lista.n_sector }}</td>
+                    <td class="col-md-3" *ngIf="lista.s_rows == 1">{{ lista.n_sector }}</td>
+                    <td class="col-md-3" *ngIf="lista.a_rows > 1" [attr.rowspan]="lista.a_rows">{{ lista.n_area }}</td>
+                    <td class="col-md-3" *ngIf="lista.a_rows == 1">{{ lista.n_area }}</td>
+                    <td class="col-md-6">
+                      <div [ngSwitch]="lista.check">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox checked="true" (change)="vincularTareas(indexOfelement)"></mat-checkbox>
+                          {{ lista.n_tarea }}
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox (change)="vincularTareas(indexOfelement)"></mat-checkbox>
+                          {{ lista.n_tarea }}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button
+              *ngIf="sector_seleccionado"
+              [disabled]="tareas.length == 0"
+              mat-raised-button
+              class="btn btn-round btn-rose btn-md"
+              (click)="generarListaPev()"
+            >
+              <i class="material-icons">save</i> Generar Lista
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

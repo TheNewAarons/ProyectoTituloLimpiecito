@@ -1,0 +1,147 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Cliente: {{nombre_cliente}} -- Carpeta: {{nombre_carpeta}}</h4>
+            <br />
+            <button
+              *ngIf="comprobarVuelta()"
+              mat-raised-button
+              matTooltip="Volver"
+              class="btn btn-warning btn-sm"
+              [routerLink]="['/carpeta/carpeta_padre/',id_cliente,id_carpeta_padre,nombre_cliente]"
+            >
+              volver
+            </button>
+            <button
+              *ngIf="!comprobarVuelta()"
+              mat-raised-button
+              matTooltip="Volver"
+              class="btn btn-warning btn-sm"
+              (click)="volver()"
+            >
+              <span class="material-icons">
+                arrow_back
+              </span>
+            </button>
+            <button
+              *ngIf="documentos_existe.length === 0"
+              style="float: right"
+              mat-raised-button
+              matTooltip="Crear Carpeta"
+              class="btn btn-success btn-sm"
+              [routerLink]="['/carpeta/crear-sub-carpeta',id_cliente,id_carpeta_padre,id_padre_hijo,id_hijo,nombre_cliente,nombre_carpeta,ruta_string]"
+            >
+              <span class="material-icons">
+                create_new_folder
+              </span>
+            </button>
+            <button
+              *ngIf="carpetas_existe.length === 0"
+              style="float: right"
+              mat-raised-button
+              matTooltip="Agregar Documento"
+              class="btn btn-info btn-sm"
+              [routerLink]="['/carpeta/crear-documento',id_cliente,id_carpeta_padre,id_padre_hijo,id_hijo,nombre_cliente,nombre_carpeta,ruta_string]"
+            >
+              <span class="material-icons">
+                note_add
+              </span>
+            </button>
+          </div>
+          <div class="card-body">
+            <!-- VISTA DE CARPETAS-->
+            <div class="row" *ngIf="carpetas_existe.length > 0">
+              <div class="card col-md-3" id="card_carpeta" *ngFor="let carpeta of carpetas" >
+                <div class="card-header" id="card_cabecera">
+                  <button mat-button type="button" class="close btn-sm" aria-hidden="true" (click)="eliminarCarpeta(carpeta.id)">
+                    <i id="icono_cerrar" class="material-icons">close</i>
+                  </button>
+                </div>
+                <div class="card-body" id="card_cuerpo" (click)="cambiarCarpeta(carpeta.id,carpeta.nombre)">
+                  <span id="icono" class="material-icons">
+                    folder
+                  </span>
+                  <h4 class="card-title">{{carpeta.nombre}}</h4>
+                </div>
+              </div>
+            </div>
+            <!-- VISTA DE MENSAJE CUANDO NO EXISTE NADA-->
+            <div *ngIf="carpetas_existe.length === 0 && documentos_existe.length === 0" style="text-align: center;">
+              <h3>No Hay carpetas ni documentos por el momento</h3>
+            </div>
+            <!-- VISTA DE DOCUMENTOS-->
+            <div *ngIf="documentos_existe.length > 0">
+              <div class="input-group no-border">
+                <input
+                  type="text"
+                  name="busca"
+                  class="form-control"
+                  [(ngModel)]="busca"
+                  placeholder="Buscar..."
+                  (change)="buscarDocumentos()"
+                />
+              </div>
+              <br />
+              <div class="table-responsive">
+                <!-- TABLE RESPONSIVE -->
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Nombre Documento</th>
+                      <th>Fecha</th>
+                      <th class="text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let documento of documentos | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                      <td>{{ documento.nombre }}</td>
+                      <td>{{ documento.fecha | date:"dd-MM-yyyy"}}</td>
+                      <td class="td-actions text-right">
+                        <button
+                          mat-raised-button
+                          type="button"
+                          title="Descargar Archivo"
+                          class="btn btn-warning btn-round"
+                          (click)="descargarArchivo(documento.url,documento.nombre)"
+                        >
+                          <i class="material-icons">picture_as_pdf</i>
+                        </button>
+                        <button
+                          mat-raised-button
+                          type="button"
+                          title="Eliminar Archivo"
+                          class="btn btn-danger  btn-round"
+                          (click)="eliminarDocumento(documento.id,documento.url)"
+                        >
+                          <i class="material-icons">delete</i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <!-- END TABLE RESPONSIVE-->
+                <ngb-pagination
+                  [(page)]="page"
+                  [pageSize]="pageSize"
+                  [collectionSize]="documentos?.length"
+                  [maxSize]="5"
+                  [rotate]="true"
+                  [boundaryLinks]="true"
+                >
+                </ngb-pagination>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

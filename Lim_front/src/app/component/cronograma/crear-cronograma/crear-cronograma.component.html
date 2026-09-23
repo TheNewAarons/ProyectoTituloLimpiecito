@@ -1,0 +1,124 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Generar Cronograma</h4>
+            <br />
+            <button mat-raised-button (click)="volver()" class="btn btn-warning btn-sm">Volver</button>
+          </div>
+          <div class="card-body">
+            <div *ngIf="turnos.length > 0" class="row">
+              <mat-form-field class="col-md-6">
+                <mat-select placeholder="Seleccionar Mes" (selectionChange)="obtenerDatosMes()" [(ngModel)]="id_mes" required>
+                  <mat-option *ngFor="let mes of meses" [value]="mes.valor">
+                    {{ mes.nombre }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field class="col-md-6">
+                <mat-select placeholder="Seleccionar Turno" (selectionChange)="obtenerTareasTurnos()" [(ngModel)]="id_turno" required>
+                  <mat-option *ngFor="let turno of turnos_disponibles" [value]="turno.id">
+                    {{ turno.nombre }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div *ngIf="turnos.length === 0">
+              <h3 class="centrado">Cree turnos para poder generar cronogramas</h3>
+            </div>
+            <div *ngIf="id_turno != null && id_mes != null" class="row">
+              <mat-form-field class="col-md-6">
+                <input matInput placeholder="Fecha Inicio" name="fecha_inicio" [(ngModel)]="fecha_inicio" type="date" />
+              </mat-form-field>
+              <mat-form-field class="col-md-6">
+                <input matInput placeholder="Fecha Termino" name="fecha_termino" [(ngModel)]="fecha_termino" type="date" />
+              </mat-form-field>
+            </div>
+            <div *ngIf="id_turno != null && id_mes != null">
+              <button (click)="crearCronograma()" [disabled]="fecha_inicio == null || fecha_termino == null" class="btn btn-success btn-sm"> Crear </button>
+            </div>
+            <br />
+            <div class="col-md-12">
+              <h4 *ngIf="cronograma.length > 0">Cronograma Generado <span *ngIf="modo_editar" style="color: red;">(Modo edición)</span></h4>
+              <div>
+                <button *ngIf="cronograma.length > 0  && !modo_editar" class="btn btn-info btn-sm" (click)="pasarAEditar()" > Modo Edición</button>
+                <button *ngIf="cronograma.length > 0  && modo_editar" class="btn btn-info btn-sm" (click)="pasarAEditar()" > Modo Normal</button>
+              </div>
+              <div *ngIf="cronograma.length > 0  && !modo_editar">
+                <div>
+                  <div class="row" *ngFor="let sector of cronograma">
+                    <div class="border col-md-4">
+                      {{ sector.nombre }}
+                    </div>
+                    <div class="col-md-8">
+                      <div class="row" *ngFor="let area of sector.areas">
+                        <div class="border col-md-5">
+                          {{ area.nombre }}
+                        </div>
+                        <div class="border col-md-7">
+                          <div class="row border" *ngFor="let tarea of area.tareas">
+                            <div class="col-md-12">{{ tarea.nombre }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div *ngIf="cronograma.length > 0 && modo_editar">
+                <div>
+                  <div class="row" *ngFor="let sector of cronograma">
+                    <div class="border col-md-4">
+                      {{ sector.nombre }}
+                    </div>
+                    <div class="col-md-8">
+                      <div class="row" *ngFor="let area of sector.areas">
+                        <div class="border col-md-5">
+                          {{ area.nombre }}
+                        </div>
+                        <div class="border col-md-7">
+                          <div class="row border" *ngFor="let tarea of area.tareas">
+                            <div [ngClass]="{'desactivado':tarea.estado == 0}" class="col-md-9">{{ tarea.nombre }}</div>
+                            <div *ngIf="tarea.estado" class="col-md-3">
+                              <button
+                                style="padding: 5px; margin: 0px;"
+                                mat-raised-button
+                                type="button"
+                                class="btn btn-danger btn-sm btn-round"
+                                matTooltip="Quitar Tarea"
+                                (click)="desactivarTarea(tarea.id_tarea,area.id_area,sector.id_sector)"
+                              >
+                                <i class="material-icons">close</i>
+                              </button>
+                            </div>
+                            <div *ngIf="!tarea.estado" class="col-md-3">
+                              <button
+                                style="padding: 5px; margin: 0px;"
+                                mat-raised-button
+                                type="button"
+                                class="btn btn-success btn-sm btn-round"
+                                matTooltip="Enlazar Tarea"
+                                (click)="activarTarea(tarea.id_tarea,area.id_area,sector.id_sector)"
+                              >
+                                <i class="material-icons">done</i>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

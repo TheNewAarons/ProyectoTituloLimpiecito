@@ -1,0 +1,26 @@
+<h2 style="text-align: center;">Opciones para Día {{check?.fecha | date:'dd/MM/yyyy'}}</h2>
+<div mat-dialog-content>
+    <!-- <mat-spinner *ngIf="loader" style="margin:0 auto;"></mat-spinner> -->
+    <div *ngIf="!loader">
+        <div>
+          <div class="togglebutton">
+            <label >Día a Trabajar
+                <input (change)="cambiarEstado()" type="checkbox" [checked]="check.check">
+                <span class="toggle"></span>
+            </label>
+        </div>
+        </div>
+        <div>
+            <h3>Comentarios</h3>
+            <textarea name="comentario" rows="2" cols="50" placeholder="Escriba Comentario"
+                [(ngModel)]="check.comentario"></textarea>
+        </div>
+    </div>
+    <br>
+</div>
+<div mat-dialog-actions>
+    <div *ngIf="!loader" style="text-align: center; width: 100%;">
+        <button mat-raised-button class="btn btn-warning btn-sm"
+            [mat-dialog-close]="datos" >Actualizar</button>
+    </div>
+</div>

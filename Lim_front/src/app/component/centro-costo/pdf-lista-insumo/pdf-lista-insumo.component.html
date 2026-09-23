@@ -1,0 +1,63 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <button mat-raised-button title="Volver" class="btn btn-warning btn-sm" (click)="volver()">
+              <span class="btn-label">
+                <i class="material-icons">arrow_back</i>
+              </span>
+            </button>
+            <button mat-raised-button type="button" title="Pdf" style="float: right;" class="btn btn-warning btn-sm" (click)="imprimir()">
+              <i class="material-icons">picture_as_pdf</i>
+            </button>
+          </div>
+          <div class="card-body" id="imprimir">
+            <div class="row" style="display: flex; align-items: center;">
+              <div class="box col-md-4">
+                <img src="./assets/img/logotipo-limpiecito.png" />
+              </div>
+              <div class="col-md-8" style="margin: 0 auto; padding-left: 0px;">
+                <h3 class="card-title"><strong>LISTA DE INSUMOS</strong></h3>
+                <br />
+              </div>
+            </div>
+            <div id="indicadores" class="row">
+              <label class="col-md-4"><strong>CLIENTE:</strong>{{ centro?.cliente.representante }}</label>
+              <label class="col-md-4"><strong>CONTACTO:</strong>{{ centro?.cliente.numero_contacto }}</label>
+              <label class="col-md-4"><strong>FECHA:</strong>{{ listaInsumo?.fecha | date: 'dd/MM/yyyy ' }}</label>
+              <label class="col-md-4"><strong>CREA:</strong>{{ listaInsumo?.crea ? listaInsumo.crea.nombre + listaInsumo.crea.apellido : '' }}</label>
+              <label class="col-md-4"><strong>APRUEBA:</strong>{{ listaInsumo?.aprueba ? listaInsumo.aprueba.nombre + listaInsumo.aprueba.apellido : '' }}</label>
+            </div>
+            <!-- TABLA DE LISTAS DE INSUMO -->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th><strong>Producto</strong></th>
+                    <th><strong>Precio</strong></th>
+                    <th><strong>Cantidad</strong></th>
+                    <th><strong>SubTotal</strong></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let detaLista of listaInsumo?.linea_insumos">
+                    <td class="text-center">-</td>
+                    <td>{{ detaLista.producto.nombre }}</td>
+                    <td>{{ detaLista.precio | currency: 'USD':'symbol':'1.0' }}</td>
+                    <td>{{ detaLista.cantidad }}</td>
+                    <td>{{ detaLista.total_linea | currency: 'USD':'symbol':'1.0' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

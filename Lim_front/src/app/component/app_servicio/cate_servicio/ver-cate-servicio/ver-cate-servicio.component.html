@@ -1,0 +1,140 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card" *ngIf="cateServicio">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Categoria Servicio</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" routerLink="/adm_servicio/cate_servicios">
+              <span class="btn-label"></span>
+              Volver
+            </button>
+            <button
+              *ngIf="!cateServicio?.horario"
+              mat-raised-button
+              style="float: right"
+              matTooltip="Crear Horario"
+              class="btn btn-info btn-sm"
+              [routerLink]="['/adm_servicio/crear-horario/', cateServicio?.id]"
+            >
+              Crear Horario
+            </button>
+            <button
+              *ngIf="!cateServicio?.img_extra"
+              mat-raised-button
+              style="float: right"
+              matTooltip="Crear Imagen"
+              class="btn btn-info btn-sm"
+              [routerLink]="['/adm_servicio/crear-img-extra/', cateServicio?.id]"
+            >
+              Crear Imagen extra
+            </button>
+          </div>
+          <div class="card-body">
+            <div >
+              <h3 id="titulo1">
+                <strong>Datos </strong>
+              </h3>
+              <div class="row col-md-4 offset-md-4">
+                <div class="col-md-12 col-sm-12">
+                  <div class="fileinput fileinput-new text-center" data-provides="fileinput">
+                    <div class="fileinput-new thumbnail">
+                      <img [src]="url_short + cateServicio?.imagen" alt="..." />
+                    </div>
+                    <div class="fileinput-preview fileinput-exists thumbnail"></div>
+                  </div>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">Nombre</label>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                  <label>{{ cateServicio.nombre }}</label>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">Estado</label>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                  <label>
+                    {{ cateServicio.estado == 1 ? 'Activo' : 'Inactivo' }}
+                  </label>
+                </div>
+              </div>
+            </div>
+            <br>
+            <div *ngIf="cateServicio.horario">
+              <h4 style="text-align: center;"> <strong>Horario </strong></h4>
+              <div class="table-responsive">
+                <!-- TABLE RESPONSIVE -->
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th class="text-center">#</th>
+                      <th>Día</th>
+                      <th>Estado</th>
+                      <th>Bloques</th>
+                      <th class="text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let dia of cateServicio.horario.dias">
+                      <td class="text-center">-</td>
+                      <td>{{ dia.nombre }}</td>
+                      <td>{{ dia.estado == 1 ? 'Activo' : 'Inactivo' }}</td>
+                      <td *ngIf="dia.bloques.length <= 0">Sin bloques asignados</td>
+                      <td class="row" *ngIf="dia.bloques.length > 0">
+                        <tr class="col-md-6" *ngFor="let bloque of dia.bloques">{{bloque.hora_inicio}} - {{bloque.hora_fin}}</tr>
+                      </td>
+                      <td class="td-actions text-right">
+                        <button
+                          mat-raised-button
+                          type="button"
+                          matTooltip="Ver Día"
+                          class="btn btn-info btn-round"
+                          [routerLink]="['/adm_servicio/generar-bloque/',dia.id,cateServicio.id]"
+                        >
+                          <i class="material-icons">remove_red_eye</i>
+                        </button>
+                        <button
+                          *ngIf="dia.estado == 0"
+                          mat-raised-button
+                          type="button"
+                          matTooltip="Activar Día"
+                          class="btn btn-success btn-round"
+                          (click)="activarDia(dia.id)"
+                        >
+                          <i class="material-icons">cached</i>
+                        </button>
+                        <button
+                          *ngIf="dia.estado == 1"
+                          mat-raised-button
+                          type="button"
+                          matTooltip="Desactivar Día"
+                          class="btn btn-danger btn-round"
+                          (click)="desactivarDia(dia.id)"
+                        >
+                          <i class="material-icons">close</i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <br />
+            <div *ngIf="cateServicio?.img_extra" class="col-md-12 col-sm-12">
+              <div class="fileinput fileinput-new text-center" data-provides="fileinput">
+                <div class="fileinput-new thumbnail" style="max-width: 30%;">
+                  <img style="background-color: black;" [src]="url_short + cateServicio.img_extra.url" alt="..." />
+                </div>
+              </div>
+            </div> 
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

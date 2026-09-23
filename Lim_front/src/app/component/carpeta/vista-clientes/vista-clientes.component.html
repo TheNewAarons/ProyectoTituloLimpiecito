@@ -1,0 +1,82 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Clientes</h4>
+            <br />
+          </div>
+          <div class="card-body">
+            <div class="input-group no-border">
+              <input
+                type="text"
+                name="busca"
+                class="form-control"
+                [(ngModel)]="busca"
+                placeholder="Buscar..."
+                (change)="buscarCliente()"
+              />
+            </div>
+            <br />
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Encargado</th>
+                    <th>Contacto</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let cliente of clientes | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                    <td>{{ cliente.representante }}</td>
+                    <td>{{ cliente.encargado_contrato }}</td>
+                    <td>{{ cliente.numero_contacto }}</td>
+                    <td class="td-actions text-right">
+                      <button
+                      *ngIf="!cliente.carpeta_padre"
+                        mat-raised-button
+                        type="button"
+                        title="Crear Carpeta Documentos"
+                        class="btn btn-success btn-round"
+                        (click)="crearCarpetaPadre(cliente.id)"
+                      >
+                        <i class="material-icons">add</i>
+                      </button>
+                      <button
+                        *ngIf="cliente.carpeta_padre"
+                        mat-raised-button
+                        type="button"
+                        title="Ver Carpeta Documentos"
+                        class="btn btn-warning btn-round"
+                        [routerLink]="['/carpeta/carpeta_padre',cliente.id,cliente.carpeta_padre.id,cliente.representante]"
+                      >
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <!-- END TABLE RESPONSIVE-->
+              <ngb-pagination
+                [(page)]="page"
+                [pageSize]="pageSize"
+                [collectionSize]="clientes?.length"
+                [maxSize]="5"
+                [rotate]="true"
+                [boundaryLinks]="true"
+              >
+              </ngb-pagination>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

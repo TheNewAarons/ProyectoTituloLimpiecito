@@ -1,0 +1,24 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Áreas</h4>
+          </div>
+          <div class="card-body">
+            <div>
+              <button  mat-raised-button class="btn btn-primary btn-sm" [routerLink]="['/gestion/cliente-pev',id_cliente]">Volver</button>
+              <button style="float:right" mat-raised-button class="btn btn-warning btn-sm"
+                  [routerLink]="['/gestion/crear-area-pev',id_cliente]">Registrar</button>
+            </div>
+            <app-tabla-area-pev [id_cliente]="id_cliente" [areas]="areas" (cargarAreas)="cargarAreas($event)" ></app-tabla-area-pev>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

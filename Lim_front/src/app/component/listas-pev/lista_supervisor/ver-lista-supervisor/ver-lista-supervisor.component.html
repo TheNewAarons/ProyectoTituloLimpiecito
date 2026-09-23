@@ -1,0 +1,287 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title"> Listado Supervisor; Cliente: {{nombre_cliente}}</h4>
+          </div>
+          <div class="card-body">
+            <button mat-raised-button class="btn btn-warning btn-sm" (click)="volverAtras()"><i class="material-icons">arrow_back</i></button>
+            <button mat-raised-button class="btn btn-sm lado-derecho" (click)="abrirVistaImpresion()"><i class="material-icons">print</i></button>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Datos Listado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="col-md-6"><b>Nombre Supervisor:</b> {{ supervisor?.nombre }} {{ supervisor?.apellido }}</td>
+                  </tr>
+                  <tr>
+                    <td class="col-md-6"><b>Fecha Creado:</b> {{ listasSupervisorConLineas?.fecha_creacion | date: 'dd/MM/yyyy' }}</td>
+                  </tr>
+                  <tr *ngIf="listasSupervisorConLineas?.fecha_firma">
+                    <td class="col-md-6"><b>Fecha Firma:</b> {{ listasSupervisorConLineas?.fecha_firma | date: 'dd/MM/yyyy' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="col-md-6"><b>Estado:</b> {{ listasSupervisorConLineas?.estado | estadoListaPevSup }}</td>
+                  </tr>
+                  <tr>
+                    <td class="col-md-6"><b>Turno:</b> {{ turno }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <button *ngIf="estado_cronograma === 1" mat-raised-button class="btn btn-rose btn-sm" [disabled]="listasSupervisorConLineas?.estado != 1" (click)="cambiarEstadoListaSupervisor()">
+                Finalizar y Firmar<i class="material-icons">playlist_add_check_circle</i>
+              </button>
+            </div>
+            <div class="table-responsive" >
+              <table class="table table-striped" [ngClass]="estado_cronograma === 2 ? 'disabled' : '' ">
+                <thead>
+                  <tr>
+                    <th>Sector</th>
+                    <th>Areas</th>
+                    <th>Tareas</th>
+                    <th>Hora 1</th>
+                    <th>Despolvado</th>
+                    <th>Apl. Prod.</th>
+                    <th>Abrillantado</th>
+                    <th>Hora 2</th>
+                    <th>Despolvado</th>
+                    <th>Apl. Prod.</th>
+                    <th>Abrillantado</th>
+                    <th>Hora 3</th>
+                    <th>Despolvado</th>
+                    <th>Apl. Prod.</th>
+                    <th>Abrillantado</th>
+                    <th>Observaciones</th>
+                    <th>Guardar Obser.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let lista of listaSupervisor_vista; let indexOfelement = index">
+                    <td class="col-md-3" *ngIf="lista.s_rows > 1" [attr.rowspan]="lista.s_rows">{{ lista.n_sector }}</td>
+                    <td class="col-md-3" *ngIf="lista.s_rows == 1">{{ lista.n_sector }}</td>
+                    <td class="col-md-3" *ngIf="lista.a_rows > 1" [attr.rowspan]="lista.a_rows">{{ lista.n_area }}</td>
+                    <td class="col-md-3" *ngIf="lista.a_rows == 1">{{ lista.n_area }}</td>
+                    <td class="col-md-6">
+                      {{ lista.n_tarea }}
+                    </td>
+                    <!-- Hora 1 -->
+                    <td class="centrado">
+                      <button
+                        *ngIf="!lista.hora_1"
+                        mat-raised-button
+                        type="submit"
+                        [disabled]="listasSupervisorConLineas?.estado != 1"
+                        class="btn btn-link btn-sm"
+                        (click)="generarHora1(indexOfelement)"
+                      >
+                        <i class="material-icons">more_time</i>
+                      </button>
+                      <h6 *ngIf="lista.hora_1">{{lista.hora_1}}</h6>
+                    </td>
+                    <!-- despolvado 1 -->
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.despolvado_1">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasSupervisorConLineas?.estado != 1"
+                            checked="true"
+                            (change)="marcarDespolvado1(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasSupervisorConLineas?.estado != 1" (change)="marcarDespolvado1(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- aplicacion producto 1 -->
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.aplicacion_producto_1">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasSupervisorConLineas?.estado != 1"
+                            checked="true"
+                            (change)="marcarAplProducto1(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasSupervisorConLineas?.estado != 1" (change)="marcarAplProducto1(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- abrillantado 1 -->
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.abrillantado_1">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasSupervisorConLineas?.estado != 1"
+                            checked="true"
+                            (change)="marcarAbrillantado1(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasSupervisorConLineas?.estado != 1" (change)="marcarAbrillantado1(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Hora 2 -->
+                    <td class="centrado">
+                      <button
+                        *ngIf="!lista.hora_2"
+                        mat-raised-button
+                        type="submit"
+                        [disabled]="listasSupervisorConLineas?.estado != 1"
+                        class="btn btn-link btn-sm"
+                        (click)="generarHora2(indexOfelement)"
+                      >
+                        <i class="material-icons">more_time</i>
+                      </button>
+                      <h6 *ngIf="lista.hora_2">{{lista.hora_2}}</h6>
+                    </td>
+                    <!-- despolvado 2 -->
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.despolvado_2">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasSupervisorConLineas?.estado != 1"
+                            checked="true"
+                            (change)="marcarDespolvado2(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasSupervisorConLineas?.estado != 1" (change)="marcarDespolvado2(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- aplicacion producto 2 -->
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.aplicacion_producto_2">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasSupervisorConLineas?.estado != 1"
+                            checked="true"
+                            (change)="marcarAplProducto2(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasSupervisorConLineas?.estado != 1" (change)="marcarAplProducto2(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- abrillantado 2 -->
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.abrillantado_2">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasSupervisorConLineas?.estado != 1"
+                            checked="true"
+                            (change)="marcarAbrillantado2(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasSupervisorConLineas?.estado != 1" (change)="marcarAbrillantado2(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- Hora 3 -->
+                    <td class="centrado">
+                      <button
+                        *ngIf="!lista.hora_3"
+                        mat-raised-button
+                        type="submit"
+                        [disabled]="listasSupervisorConLineas?.estado != 1"
+                        class="btn btn-link btn-sm"
+                        (click)="generarHora3(indexOfelement)"
+                      >
+                        <i class="material-icons">more_time</i>
+                      </button>
+                      <h6 *ngIf="lista.hora_3">{{lista.hora_3}}</h6>
+                    </td>
+                    <!-- despolvado 3 -->
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.despolvado_3">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasSupervisorConLineas?.estado != 1"
+                            checked="true"
+                            (change)="marcarDespolvado3(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasSupervisorConLineas?.estado != 1" (change)="marcarDespolvado3(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- aplicacion producto 3 -->
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.aplicacion_producto_3">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasSupervisorConLineas?.estado != 1"
+                            checked="true"
+                            (change)="marcarAplProducto3(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasSupervisorConLineas?.estado != 1" (change)="marcarAplProducto3(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- abrillantado 3 -->
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.abrillantado_3">
+                        <div [ngSwitch]="lista.abrillantado_2">
+                          <div *ngSwitchCase="true">
+                            <mat-checkbox
+                              [disabled]="listasSupervisorConLineas?.estado != 1"
+                              checked="true"
+                              (change)="marcarAbrillantado3(indexOfelement)"
+                            ></mat-checkbox>
+                          </div>
+                          <div *ngSwitchDefault>
+                            <mat-checkbox [disabled]="listasSupervisorConLineas?.estado != 1" (change)="marcarAbrillantado3(indexOfelement)"></mat-checkbox>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="col-md-6 centrado">
+                      <textarea
+                        [disabled]="listasSupervisorConLineas?.estado != 1"
+                        placeholder="Escriba texto"
+                        rows="2"
+                        [(ngModel)]="lista.observaciones"
+                      >
+                      </textarea>
+                    </td>
+                    <td class="col-md-6 centrado">
+                      <button
+                        mat-raised-button
+                        type="submit"
+                        [disabled]="listasSupervisorConLineas?.estado != 1"
+                        class="btn btn-link btn-sm"
+                        (click)="actualizarObservaciones(indexOfelement)"
+                      >
+                        <i class="material-icons">save</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

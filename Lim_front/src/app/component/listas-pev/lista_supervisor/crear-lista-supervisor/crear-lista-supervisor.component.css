@@ -1,0 +1,7 @@
+table,td {
+	border: 1px solid rgba(30, 30, 30, 0.316);
+}
+table thead {
+	color: #fff;
+	background-color: rgba(61, 61, 61, 0.524);
+}

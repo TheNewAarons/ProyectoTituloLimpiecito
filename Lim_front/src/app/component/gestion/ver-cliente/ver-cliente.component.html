@@ -1,0 +1,180 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Cliente</h4>
+            <br />
+            <button style="float: left;" mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" [routerLink]="['/gestion/clientes']">
+              Volver
+            </button>
+            <button
+              *ngIf="usuario.role.nombre != 'APOYO_LVL_1'"
+              style="float: right;"
+              mat-raised-button
+              matTooltip="Crear Acceso"
+              class="btn btn-warning btn-sm"
+              [routerLink]="['/gestion/clientes/crear-acceso/', cliente?.id]"
+            >
+              Crear Acceso
+            </button>
+          </div>
+          <div class="card-body">
+            <div *ngIf="!loading">
+              <h3 id="titulo1">
+                <strong>Datos Cliente de {{ cliente.representante }} </strong>
+              </h3>
+              <div class="row col-md-4 offset-md-4">
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">Encargado</label>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                  <label>{{ cliente.encargado_contrato }}</label>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">Facturación</label>
+                </div>
+                <div class="col-sm-12 col-md-6">
+                  <label>{{ cliente.fecha_facturacion | date: 'dd/MM/yyyy' }}</label>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">Inicio Contrato</label>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">
+                    {{ cliente.fecha_inicio_contrato | date: 'dd/MM/yyyy' }}
+                  </label>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">Término Contrato</label>
+                </div>
+                <div class="col-xd-12 col-md-6">
+                  <label>{{ cliente.fecha_termino_contrato | date: 'dd/MM/yyyy' }}</label>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">Correo Encargado</label>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                  <label>{{ cliente.correo_encargado }}</label>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">Nº Contacto</label>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">
+                    {{ cliente.numero_contacto }}
+                  </label>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">Valor Factura</label>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                  <label>
+                    {{ cliente.valor_factura | currency: 'USD':'symbol':'1.0' }}
+                  </label>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                  <label id="label1">Información</label>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                  <label>{{ cliente.otra_informacion }}</label>
+                </div>
+              </div>
+            </div>
+            <!-- CUENTAS DE ACCESO -->
+            <h3 *ngIf="cliente?.acceso_clientes.length > 0 && !loading && usuario.role.nombre != 'APOYO_LVL_1'" id="titulo2">Cuenta de Acceso</h3>
+            <div
+              *ngIf="cliente?.acceso_clientes.length > 0 && !loading && usuario.role.nombre != 'APOYO_LVL_1'"
+              class="table-responsive offset-md-2 col-md-8 col-sm-12"
+            >
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Correo</th>
+                    <th>Persona Asociada</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let acceso of cliente.acceso_clientes">
+                    <td class="text-center">-</td>
+                    <td>{{ acceso.correo }}</td>
+                    <td>{{ acceso.nombre }}</td>
+                    <td class="td-actions text-right">
+                      <button
+                        *ngIf="usuario.role.nombre != 'LVL_ARCHIVO'"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Cambiar Contraseña"
+                        class="btn btn-round"
+                        data-toggle="modal"
+                        data-target="#changePasswordModal"
+                        (click)="datosCambiarPass(acceso.id)"
+                      >
+                        <i class="material-icons">lock</i>
+                      </button>
+                      <button
+                        *ngIf="!acceso.estado && usuario.role.nombre != 'LVL_ARCHIVO'"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Eliminar Acceso"
+                        class="btn btn-danger btn-round"
+                        (click)="eliminarAcceso(acceso.id)"
+                      >
+                        <i class="material-icons">delete</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <br />
+          </div>
+          <!-- TERMINA BODY-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CAMBIAR PASSWORD MODAL -->
+<!-- <div class="modal fade" id="changePasswordModal" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Cambiar Contraseña</h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f1="ngForm" (submit)="cambiarPassword(f1.valid)">
+          <mat-form-field class="example-full-width">
+            <input matInput placeholder="Contraseña" name="password" #password="ngModel" [(ngModel)]="newPassword" required type="password" />
+            <small [hidden]="password.valid || (password.pristine && !f1.submitted)" class="text-danger">
+              Contraseña es requerido.
+            </small>
+          </mat-form-field>
+          <div class="modal-footer justify-content-center" style="padding: 5px;">
+            <button mat-raised-button type="submit" class="btn btn-info btn-round">
+              Crear
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div> -->
+<!-- END CAMBIAR PASSWORD MODAL-->

@@ -1,0 +1,36 @@
+p {
+  margin-top: 16px !important;
+  margin-bottom: 0px !important;
+}
+label {
+  color: black !important;
+}
+#label1 {
+  font-weight: bold !important;
+}
+#titulo1 {
+  text-align: center;
+  margin-top: 5px;
+  font-weight: bold;
+}
+#titulo2 {
+  text-align: center;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+h5 {
+  font-weight: bold;
+  text-align: center;
+}
+li {
+  text-align: center;
+}
+
+.fileinput .thumbnail {
+  max-width: 60%;
+}
+
+.fileinput {
+  display: block !important;
+}

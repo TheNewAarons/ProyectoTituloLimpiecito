@@ -1,0 +1,34 @@
+<form [formGroup]="sectorForm">   
+  <div class="row">
+      <div class="col-md-8">
+          <mat-form-field class="example-full-width">
+              <input
+              type="text"
+              matInput
+              placeholder="Nombre del Sector"
+              formControlName="nombre"
+              required>
+          </mat-form-field>
+          <mat-error *ngIf="form.nombre?.errors?.required && form.nombre.touched">Nombre es Requerido</mat-error>
+      </div>
+      <div class="col-md-3">
+        <mat-form-field>
+        <mat-select placeholder="Estado Inicial" name="estado" formControlName="estado" required>
+            <mat-option *ngFor="let estado of estados"  [value]="estado.value">
+            {{ estado.nombre }}
+            </mat-option>
+        </mat-select>
+        </mat-form-field>
+        <mat-error *ngIf="form.estado?.errors?.required && form.estado.touched">estadso es Requerido</mat-error>
+    </div>
+  </div>
+
+  <!-- APARTADO DE BOTONES -->
+  <div class="card-footer text-right">
+    <div class="form-group">
+      <button *ngIf="!flag_editar" [disabled]="!sectorForm.valid" mat-raised-button type="submit" class="btn btn-rose btn-sm btn-fill btn-wd" (click)="registrar()">Registrar</button>
+      <button *ngIf="flag_editar" [disabled]="!sectorForm.valid" mat-raised-button type="submit" class="btn btn-warning btn-sm btn-fill btn-wd" (click)="registrar()">Editar</button>
+    </div>
+
+  </div>
+</form>

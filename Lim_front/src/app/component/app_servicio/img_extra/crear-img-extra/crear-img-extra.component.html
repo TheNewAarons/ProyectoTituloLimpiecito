@@ -1,0 +1,46 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Crear Img Extra</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" [routerLink]="['/adm_servicio/ver-cate_servicio/',idCateServicio]">
+              <span class="btn-label"></span>
+              Volver
+            </button>
+          </div>
+          <!-- <app-loading *ngIf="loading" style="text-align: center"></app-loading> -->
+          <div class="card-body" >
+            <form #f1="ngForm" (keydown.enter)="$event.preventDefault()" (submit)="crearImg(f1.valid)">
+              <div class="fileinput fileinput-new text-center" data-provides="fileinput">
+                <div class="fileinput-new thumbnail">
+                    <img src="./assets/img/image_placeholder.jpg" alt="...">
+                </div>
+                <div class="fileinput-preview fileinput-exists thumbnail" style="background-color: black;"></div>
+                <div>
+                    <span class="btn btn-rose btn-round btn-file">
+                        <span class="fileinput-new">Seleccionar</span>
+                        <span class="fileinput-exists">Cambiar</span>
+                        <input type="file" #fo name="fo" (change)="imagenSelecionado($event)" required/>
+                    </span>
+                    <a  class="btn btn-danger btn-round fileinput-exists" data-dismiss="fileinput"><i class="fa fa-times"></i> Quitar</a>
+                </div>
+            </div>
+              <!-- Botón De Crear  -->
+              <div class="modal-footer justify-content-center">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round">Crear</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

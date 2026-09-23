@@ -1,0 +1,249 @@
+
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">EDITAR TRABAJADOR</h4><br>
+            <button mat-raised-button title="Volver" class="btn btn-warning btn-sm" (click)="volver()">
+              <span class="btn-label">
+                <i class="material-icons">arrow_back</i>
+              </span>
+            </button>
+          </div>
+          <div class="card-body">
+            <form #f1="ngForm" *ngIf="listo" (submit)="editarTrabajador(f1.valid)">
+              <!--  -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>NOMBRE</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]= "trabajador.nombre" 
+                    required type="text">
+                    <small [hidden]="nombre.valid || (nombre.pristine && !f1.submitted)" class="text-danger">
+                      Nombre es requerido.
+                    </small>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>APELLIDO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Apellido" name="apellido" #apellido="ngModel" [(ngModel)]="trabajador.apellido" 
+                    type="text">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>RUT</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Rut" name="rut" #rut="ngModel" [(ngModel)]="trabajador.rut" validateRut maxlength="9" formatRut type="text" required>
+                    <small [hidden]="rut.valid || (rut.pristine && !f1.submitted)" class="text-danger">
+                      Rut es Inválido.
+                    </small>
+                  </mat-form-field>
+                </div>
+              </div>
+              
+              <!--  -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>TELÉFONO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Telefono" name="telefono" #telefono="ngModel" pattern="\d*" maxlength="11" [(ngModel)]="trabajador.telefono" type="text">
+                    <small [hidden]="telefono.valid || (telefono.pristine && !f1.submitted)" class="text-danger">
+                      Teléfono es inválido.
+                    </small>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>TELÉFONO EMERG.</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Telefono Emergencia" name="telefono_emergencia" #telefono_emergencia="ngModel" pattern="\d*" maxlength="11" [(ngModel)]="trabajador.telefono_emergencia" type="text">
+                    <small [hidden]="telefono_emergencia.valid || (telefono_emergencia.pristine && !f1.submitted)" class="text-danger">
+                      Teléfono es inválido.
+                    </small>
+                  </mat-form-field>
+
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>CORREO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Correo" name="correo" #correo="ngModel" [(ngModel)]="trabajador.correo" type="email">
+                  </mat-form-field>
+                </div>
+
+                <!--  -->
+                
+              </div>
+              <!--  -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>DIRECCIÓN</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Dirección" name="direccion" #direccion="ngModel" [(ngModel)]="trabajador.direccion" type="text">
+                  </mat-form-field>
+                  
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>FECHA NACIMIENTO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Fecha Nacimiento" name="fecha_nacimiento" #fecha_nacimiento="ngModel" [(ngModel)]="trabajador.fecha_nacimiento" type="date" >
+                  </mat-form-field>
+                  
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>SEXO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important" >
+                    <mat-select placeholder="Sexo" name="sexo" #sexo="ngModel" [(ngModel)]="trabajador.sexo" required>
+                      <mat-option [value]=1 > Masculino</mat-option >
+                      <mat-option [value]=0> Femenino</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </div> 
+              <!--  -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>INICIO CONTRATO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Inicio Contrato" name="fecha_inicio_contrato" #fecha_inicio_contrato="ngModel" [(ngModel)]="trabajador.fecha_inicio_contrato" type="date">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>TERMINO CONTRATO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Cierre Contrato" name="fecha_termino_contrato" #fecha_termino_contrato="ngModel" [(ngModel)]="trabajador.fecha_termino_contrato" type="date">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>ENFERMEDAD CRONICA</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Enfermedad Cronica" name="enfermedad_cronica" #enfermedad_cronica="ngModel" [(ngModel)]="trabajador.enfermedad_cronica" type="text">
+                  </mat-form-field>
+                </div>
+              </div>  
+              <!--  -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>AFP</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <mat-select placeholder="Afp.." name="institutoPrevisioneId" #institutoPrevisioneId="ngModel" [(ngModel)]="trabajador.institutoPrevisioneId" required>
+                      <mat-option *ngFor="let afp of afps" [value]="afp.id">
+                        {{ afp.nombre }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field> 
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>SALUD</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <mat-select placeholder="Salud.." name="saludeId" #saludeId="ngModel" [(ngModel)]="trabajador.saludeId" required>
+                      <mat-option *ngFor="let salud of saludes" [value]="salud.id">
+                        {{ salud.nombre }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>SEGURO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <mat-select placeholder="Seguro.." name="seguroId" #seguroId="ngModel" [(ngModel)]="trabajador.seguroId" required>
+                      <mat-option *ngFor="let seguro of seguros" [value]="seguro.id">
+                        {{ seguro.nombre }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                
+                </div>
+              </div>  
+              <!-- -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>SUELDO BASE</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Sueldo Base" name="sueldo_base" #sueldo_base="ngModel" [cleave]="cleaveOptions" [(ngModel)]="trabajador.dato_liquidacione.sueldo_base" 
+                    type="text" required>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>GRATIFICACIÓN</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Gratificación" name="gratificación" #gratificación="ngModel" [(ngModel)]="trabajador.dato_liquidacione.gratificacion" 
+                    type="number" required>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>RESPONSABILIDAD</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Responsabilidad" name="responsabilidad" #responsabilidad="ngModel" [cleave]="cleaveOptions" [(ngModel)]="trabajador.dato_liquidacione.responsabilidad" 
+                    type="text">
+                  </mat-form-field>
+                </div>
+              </div> 
+              <!-- -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>COLACIÓN</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Colación" name="colacion" #colacion="ngModel" [cleave]="cleaveOptions" [(ngModel)]="trabajador.dato_liquidacione.colacion" 
+                    type="text">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>MOVILIZACIÓN</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Movilización" name="movilizacion" #movilizacion="ngModel" [cleave]="cleaveOptions" [(ngModel)]="trabajador.dato_liquidacione.movilizacion" 
+                    type="text">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>ALIMENTACIÓN</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Alimentación" name="alimentacion" #alimentacion="ngModel" [cleave]="cleaveOptions" [(ngModel)]="trabajador.dato_liquidacione.alimentacion" 
+                    type="text">
+                  </mat-form-field>
+                </div>
+              </div> 
+              <!-- -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>CARGA FAMILIAR</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Carga Familiar" name="cant_familia" #cant_familia="ngModel" [cleave]="cleaveOptions" [(ngModel)]="trabajador.dato_liquidacione.cant_familia" 
+                    type="text">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>VALOR CARGA FAMILIAR</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Valor Carga Familiar" name="valor_carga_familia" #valor_carga_familia="ngModel" [cleave]="cleaveOptions" [(ngModel)]="trabajador.dato_liquidacione.valor_carga_familia" 
+                    type="text">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <!-- <label class="col-md-12" style="text-align:center;"><b>ALIMENTACIÓN</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Alimentación" name="alimentacion" #alimentacion="ngModel" [cleave]="cleaveOptions" [(ngModel)]="dato_liquidacione.alimentacion" 
+                    type="text">
+                  </mat-form-field> -->
+                </div>
+              </div> 
+              <!-- -->
+             
+              <div class="modal-footer justify-content-center">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round" >GUARDAR</button>
+              </div>
+            </form>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

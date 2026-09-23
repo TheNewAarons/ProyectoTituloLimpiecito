@@ -1,0 +1,158 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Crear Listado Supervisor</h4>
+          </div>
+          <div class="card-body">
+            <button mat-raised-button class="btn btn-warning btn-sm" (click)="volverAtras()"><i class="material-icons">arrow_back</i></button>
+            <div class="row">
+              <mat-form-field class="col-md-6">
+                <mat-select  placeholder="Selecciona Supervisor" [(ngModel)]="trabajador_seleccionado" required>
+                  <mat-option *ngFor="let trabajador of trabajadores_supervisor" [value]="trabajador.n_empleado">
+                    {{ trabajador.nombre }} {{trabajador.apellido}}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <div>
+                <button mat-raised-button class="btn btn-rose btn-sm" [disabled]="!trabajador_seleccionado" (click)="crearListaSupevisor()">
+                  Crear
+                  </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Sector</th>
+                    <th>Areas</th>
+                    <th>Tareas</th>
+                    <th>Hora 1</th>
+                    <th>Despolvado</th>
+                    <th>Apl. Prod.</th>
+                    <th>Abrillantado</th>
+                    <th>Hora 2</th>
+                    <th>Despolvado</th>
+                    <th>Apl. Prod.</th>
+                    <th>Abrillantado</th>
+                    <th>Hora 3</th>
+                    <th>Despolvado</th>
+                    <th>Apl. Prod.</th>
+                    <th>Abrillantado</th>
+                    <th>Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let lista of listaSupervisor_vista; let indexOfelement = index">
+                    <td class="col-md-3" *ngIf="lista.s_rows > 1" [attr.rowspan]="lista.s_rows">{{ lista.n_sector }}</td>
+                    <td class="col-md-3" *ngIf="lista.s_rows == 1">{{ lista.n_sector }}</td>
+                    <td class="col-md-3" *ngIf="lista.a_rows > 1" [attr.rowspan]="lista.a_rows">{{ lista.n_area }}</td>
+                    <td class="col-md-3" *ngIf="lista.a_rows == 1">{{ lista.n_area }}</td>
+                    <td class="col-md-6">
+                      {{ lista.n_tarea }}
+                    </td>
+                    <!-- Hora 1 -->
+                    <td></td>
+                    <!-- despolvado 1 -->
+                    <td class="col-md-6">
+                      <div [ngSwitch]="lista.despolvado_1">
+                        <div *ngSwitchDefault>
+                          <mat-checkbox disabled></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- aplicacion producto 1 -->
+                    <td class="col-md-6">
+                      <div [ngSwitch]="lista.aplicacion_producto_1">
+                        <div *ngSwitchDefault>
+                          <mat-checkbox disabled></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- abrillantado 1 -->
+                    <td class="col-md-6">
+                      <div [ngSwitch]="lista.abrillantado_1">
+                        <div *ngSwitchDefault>
+                          <mat-checkbox disabled></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Hora 2 -->
+                    <td></td>
+                    <!-- despolvado 2 -->
+                    <td class="col-md-6">
+                      <div [ngSwitch]="lista.despolvado_2">
+                        <div *ngSwitchDefault>
+                          <mat-checkbox disabled></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- aplicacion producto 2 -->
+                    <td class="col-md-6">
+                      <div [ngSwitch]="lista.aplicacion_producto_2">
+                        <div *ngSwitchDefault>
+                          <mat-checkbox disabled></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- abrillantado 2 -->
+                    <td class="col-md-6">
+                      <div [ngSwitch]="lista.abrillantado_2">
+                        <div *ngSwitchDefault>
+                          <mat-checkbox disabled></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    
+                    <!-- Hora 3 -->
+                    <td></td>
+                    <!-- despolvado 3 -->
+                    <td class="col-md-6">
+                      <div [ngSwitch]="lista.despolvado_3">
+                        <div *ngSwitchDefault>
+                          <mat-checkbox disabled></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- aplicacion producto 3 -->
+                    <td class="col-md-6">
+                      <div [ngSwitch]="lista.aplicacion_producto_3">
+                        <div *ngSwitchDefault>
+                          <mat-checkbox disabled></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <!-- abrillantado 3 -->
+                    <td class="col-md-6">
+                      <div [ngSwitch]="lista.abrillantado_3">
+                        <div *ngSwitchDefault>
+                          <mat-checkbox disabled></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    
+                    <td class="col-md-6">
+                      <textarea
+                        disabled
+                        placeholder="Escriba texto"
+                        rows="2"
+                      >
+                      </textarea>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,75 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Clientes</h4>
+            <br />
+            <button style="float:right" *ngIf="!activo" (click)="cambiar()" mat-raised-button matTooltip="Activos" title="Cambiar" class="btn btn-warning btn-sm">
+              Activos
+            </button>
+            <button style="float:right" *ngIf="activo" (click)="cambiar()" mat-raised-button matTooltip="Inactivos" title="Cambiar" class="btn btn-warning btn-sm">
+              Inactivos
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="input-group no-border">
+              <input type="text" name="search" class="form-control" [(ngModel)]="search" placeholder="Buscar..." (change)="buscarClientes()" />
+            </div>
+            <br />
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Encargado</th>
+                    <th>Contacto</th>
+                    <th>Fecha Facturación</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let cliente of clientes | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                    <td>{{ cliente.representante }}</td>
+                    <td>{{ cliente.encargado_contrato }}</td>
+                    <td>{{ cliente.numero_contacto }}</td>
+                    <td>
+                      {{ cliente.fecha_facturacion | date: 'dd/MM/yyyy ' }}
+                    </td>
+                    <td class="td-actions text-right">
+                      <button
+                        mat-raised-button
+                        type="button"
+                        class="btn btn-info btn-round"
+                        [routerLink]="['/cronograma/ver-cronogramas',cliente.id,cliente.representante]"
+                      >
+                        <i class="material-icons">library_books</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <!-- END TABLE RESPONSIVE-->
+              <ngb-pagination
+                [(page)]="page"
+                [pageSize]="pageSize"
+                [collectionSize]="clientes?.length"
+                [maxSize]="5"
+                [rotate]="true"
+                [boundaryLinks]="true"
+              >
+              </ngb-pagination>
+            </div>
+
+            <!-- END TAB CONTENT-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

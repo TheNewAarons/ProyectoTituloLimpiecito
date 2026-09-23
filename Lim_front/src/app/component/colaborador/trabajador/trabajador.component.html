@@ -1,0 +1,205 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Trabajadores</h4>
+            <br />
+            <button
+              *ngIf="usuario.role.nombre != 'APOYO_LVL_1' && usuario.role.nombre != 'LVL_ARCHIVO'"
+              mat-raised-button
+              title="Crear Trabajador"
+              class="btn btn-warning btn-sm"
+              [routerLink]="['/trabajador/crear']"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear
+            </button>
+          </div>
+          <div class="card-body">
+            <!-- TABS PARA ACTIVO E INACTIVO-->
+            <ul class="nav nav-pills nav-pills-info justify-content-center" role="tablist">
+              <li class="nav-item">
+                <a class="nav-link active" data-toggle="tab" href="#activo" role="tablist">
+                  Activo
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#inactivo" role="tablist">
+                  Inactivo
+                </a>
+              </li>
+            </ul>
+            <!-- END TABS -->
+            <!-- TAB CONTENT -->
+            <div class="tab-content tab-space">
+              <div class="tab-pane active" id="activo">
+                <!-- ACTIVOS-->
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchActivo"
+                    class="form-control"
+                    [(ngModel)]="searchActivo"
+                    placeholder="Buscar..."
+                    (change)="buscarActivo()"
+                  />
+                </div>
+                <br />
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE -->
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Trabajador</th>
+                        <th>Contacto</th>
+                        <th>Inicio Contrato</th>
+                        <th>Término Contrato</th>
+                        <th>Rut</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let trabajador of trabajadores | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                        <td>{{ trabajador.nombre }}</td>
+                        <td>{{ trabajador.telefono }}</td>
+                        <td>
+                          {{ trabajador.fecha_inicio_contrato | date: 'dd/MM/yyyy' }}
+                        </td>
+                        <td>
+                          {{ trabajador.fecha_termino_contrato | date: 'dd/MM/yyyy' }}
+                        </td>
+                        <td>{{ trabajador.rut | rut }}</td>
+                        <td class="td-actions text-right">
+                          <button
+                            mat-raised-button
+                            title="Ver Información"
+                            type="button"
+                            class="btn btn-info btn-round"
+                            [routerLink]="['/trabajador/ver/', trabajador.id]"
+                          >
+                            <i class="material-icons">person</i>
+                          </button>
+                          <button
+                            *ngIf="usuario.role.nombre != 'APOYO_LVL_1' && usuario.role.nombre != 'LVL_ARCHIVO'"
+                            mat-raised-button
+                            type="button"
+                            title="Editar Trabajador"
+                            class="btn btn-success btn-round"
+                            [routerLink]="['/trabajador/editar/', trabajador.id]"
+                          >
+                            <i class="material-icons">edit</i>
+                          </button>
+                          <button
+                            *ngIf="usuario.role.nombre != 'APOYO_LVL_1' && usuario.role.nombre != 'LVL_ARCHIVO'"
+                            mat-raised-button
+                            type="button"
+                            title="Desactivar Trabajador"
+                            class="btn btn-danger btn-round"
+                            (click)="eliminarTrabajador(trabajador.id)"
+                          >
+                            <i class="material-icons">close</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <ngb-pagination
+                    [(page)]="page"
+                    [pageSize]="pageSize"
+                    [collectionSize]="trabajadores?.length"
+                    [maxSize]="5"
+                    [rotate]="true"
+                    [boundaryLinks]="true"
+                  >
+                  </ngb-pagination>
+                </div>
+                <!-- END TABLE RESPONSIVE-->
+              </div>
+              <!-- END ACTIVOS-->
+              <div class="tab-pane" id="inactivo">
+                <!-- INACTIVOS -->
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchInactivo"
+                    class="form-control"
+                    [(ngModel)]="searchInactivo"
+                    placeholder="Buscar..."
+                    (change)="buscarInactivo()"
+                  />
+                </div>
+                <br />
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE-->
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Trabajador</th>
+                        <th>Contacto</th>
+                        <th>Término Contrato</th>
+                        <th>Rut</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        *ngFor="let trabajadorInactivo of trabajadoresInactivos | slice: (page1 - 1) * pageSize1:(page1 - 1) * pageSize1 + pageSize1"
+                      >
+                        <td>{{ trabajadorInactivo.nombre }}</td>
+                        <td>{{ trabajadorInactivo.telefono }}</td>
+                        <td>
+                          {{ trabajadorInactivo.fecha_termino_contrato | date: 'dd/MM/yyyy' }}
+                        </td>
+                        <td>{{ trabajadorInactivo.rut }}</td>
+                        <td class="td-actions text-right">
+                          <button
+                            mat-raised-button
+                            title="Ver Información"
+                            type="button"
+                            class="btn btn-info btn-round"
+                            [routerLink]="['/trabajador/ver/', trabajadorInactivo.id]"
+                          >
+                            <i class="material-icons">person</i>
+                          </button>
+                          <button
+                            *ngIf="usuario.role.nombre != 'APOYO_LVL_1' && usuario.role.nombre != 'LVL_ARCHIVO'"
+                            mat-raised-button
+                            type="button"
+                            title="Activar Trabajador"
+                            class="btn btn-primary btn-round"
+                            (click)="activarTrabajador(trabajadorInactivo.id)"
+                          >
+                            <i class="material-icons">done</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <ngb-pagination
+                    [(page)]="page1"
+                    [pageSize]="pageSize1"
+                    [collectionSize]="trabajadoresInactivos?.length"
+                    [maxSize]="5"
+                    [rotate]="true"
+                    [boundaryLinks]="true"
+                  >
+                  </ngb-pagination>
+                </div>
+                <!-- END TABLE RESPONSIVE-->
+              </div>
+              <!-- END INACTIVOS-->
+            </div>
+            <!-- END TAB CONTENT-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

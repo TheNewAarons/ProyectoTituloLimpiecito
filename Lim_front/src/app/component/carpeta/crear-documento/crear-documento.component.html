@@ -1,0 +1,63 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Crear Documentos</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" (click)="volver()">
+              <span class="material-icons">
+                arrow_back
+              </span>
+            </button>
+            <button *ngIf="documentos.length < 10" mat-raised-button matTooltip="Añadir Campo Documento" style="float: right" class="btn btn-success btn-sm" (click)="agregarDocumento()">
+              <span class="material-icons"> add</span>
+            </button>
+          </div>
+          <div class="card-body">
+            <form (submit)="crearDocumentos()" [formGroup]="documentoForm">
+              <div formArrayName="documentos" *ngFor="let documento of documentos.controls;let i = index">
+                <div [formGroupName]="i">
+                  <div class="form-group">
+                    <mat-form-field class="example-full-width">
+                      <input matInput placeholder="Nombre Archivo" [attr.id]="'documento_' + i" name="nombre"  formControlName="nombre" type="text" />
+                    </mat-form-field>
+                    <span class="text-danger"
+                      *ngIf="(documentos.controls[i].controls.nombre.touched || submitted) && documentos.controls[i].controls.nombre.errors?.required">
+                      Nombre es requerido
+                    </span>
+                  </div>
+                  <div>
+                    <input type="file" formControlName="file" [attr.id]="'documento_file_' + i"  (change)="pdfSelecionado($event,i)"
+                    />
+                    <span class="text-danger"
+                      *ngIf="!archivos_cargados[i]">
+                      Subir un archivo es requerido
+                    </span>
+                  </div>
+                  <div style="text-align: center;" >
+                    <button mat-raised-button (click)="removerDocumento(i)" class="btn btn-danger btn-sm">
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer justify-content-rigth" *ngIf="documentos.length > 0">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round" [disabled]="!documentoForm.valid">
+                  Crear Documentos
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+

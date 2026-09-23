@@ -1,0 +1,53 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Asociar Trabajadores a Cronograma</h4>
+          </div>
+          <div class="card-body">
+            <button mat-raised-button class="btn btn-warning btn-sm" (click)="volverAtras()"><i class="material-icons">arrow_back</i></button>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th class="negrito">Check</th>
+                    <th class="negrito">Nombre</th>
+                    <th class="negrito">Apellido</th>
+                    <th class="negrito">Rut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let trabajador of trabajadores; let indexOfelement = index">
+                    <td>
+                      <div [ngSwitch]="trabajador.check">
+                        <div *ngSwitchDefault>
+                          <mat-checkbox (change)="marcarAsociarTrabajadorCronograma(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <td>{{ trabajador.nombre }}</td>
+                    <td>{{ trabajador.apellido }}</td>
+                    <td>{{ trabajador.rut }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button
+              [disabled]="trabajador_asociado.length == 0"
+              mat-raised-button
+              class="btn btn-round btn-rose btn-md"
+              (click)="asociarTrabajadoresCronograma()"
+            >
+              <i class="material-icons">save</i> Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

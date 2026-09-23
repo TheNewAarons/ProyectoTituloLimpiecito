@@ -1,0 +1,76 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Editar Servicio</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" routerLink="/adm_servicio/servicios">
+              <span class="btn-label"></span>
+              Volver
+            </button>
+          </div>
+          <app-loading *ngIf="loading" style="text-align: center;"></app-loading>
+          <div class="card-body" *ngIf="!loading">
+            <form #f1="ngForm" (submit)="editarServicio(f1.valid)">
+              <mat-form-field class="example-full-width">
+                <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]="servicio.nombre" required type="text" />
+                <small [hidden]="nombre.valid || (nombre.pristine && !f1.submitted)" class="text-danger">
+                  Nombre es requerido.
+                </small>
+              </mat-form-field>
+              <mat-form-field class="example-full-width">
+                <input
+                  matInput
+                  placeholder="Descripción"
+                  name="descripcion"
+                  #descripcion="ngModel"
+                  [(ngModel)]="servicio.descripcion"
+                  required
+                  type="text"
+                />
+                <small [hidden]="descripcion.valid || (descripcion.pristine && !f1.submitted)" class="text-danger">
+                  Descripción es requerido.
+                </small>
+              </mat-form-field>
+              <mat-form-field class="example-full-width">
+                <input matInput placeholder="Precio" name="precio" #precio="ngModel" [(ngModel)]="servicio.precio" required type="number" />
+                <small [hidden]="precio.valid || (precio.pristine && !f1.submitted)" class="text-danger">
+                  Precio es requerido.
+                </small>
+              </mat-form-field>
+              <input type="file" #fo name="fo" (change)="imagenSelecionado($event)" />
+              <!-- <small [hidden]="file" class="text-danger">
+                Archivo es requerido.
+              </small> -->
+              <ng-select
+                style="padding: 0px 0px 20px !important;"
+                class="col-lg-12 col-md-12"
+                required
+                name="categoriaServicioId"
+                #categoriaDocumentoId="ngModel"
+                [items]="categorias"
+                bindLabel="nombre"
+                bindValue="id"
+                [(ngModel)]="servicio.categoriaServicioId"
+                placeholder="Categoria.."
+                [loading]="cateServicioListo"
+                [clearable]="false"
+              >
+              </ng-select>
+              <div class="modal-footer justify-content-center">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round">
+                  Editar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

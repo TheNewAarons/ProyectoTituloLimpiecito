@@ -1,0 +1,39 @@
+<div class="row">
+    <div *ngFor="let sector of sectores" class="col-lg-6 col-md-12">
+        <div class="card">
+          <div class="card-header card-header-text card-header-info">
+            <div class="card-text">
+              <h4 class="card-title">Sector: {{sector.nombre}}
+                <!-- <button mat-raised-button class="btn btn-warning btn-fab btn-fab-mini btn-round">
+                    <i class="material-icons">backspace</i>
+                  </button> -->
+              </h4>
+              <hr>
+                <div class="togglebutton">
+                  <a (click)="editarNombre(sector)" matTooltip="Editar Nombre" class="btn btn-link btn-round"><i class="material-icons">edit</i></a>
+                  <label> <b>Off/On:</b>
+                    <input (change)="cambiarEstadoSector(sector.id, sector.estado)" type="checkbox" [checked]="sector.estado">
+                    <span class="toggle"></span>
+                  </label>
+                  <a (click)="eliminarSector(sector.id)" matTooltip="Eliminar" class="btn btn-link btn-round btn-danger"><i class="material-icons">delete</i></a>
+                </div>
+            </div>
+          </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover">
+                        <thead class="text-info">
+                            <th>Nombre </th>
+                            <th>Estado</th>
+                        </thead>
+                      <tbody>
+                        <tr *ngFor="let area of sector?.areas">
+                            <td>{{area.nombre}}</td>
+                            <td>{{area.estado}}</td>
+                        </tr>
+                      </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+

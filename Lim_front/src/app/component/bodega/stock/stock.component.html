@@ -1,0 +1,72 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Agregar Stock</h4>
+            <br />
+            <button matTooltip="Crear Stock" mat-raised-button class="btn btn-warning btn-sm" routerLink="/bodega/crear-stock">
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear Stock
+            </button>
+          </div>
+          <app-loading *ngIf="loading" style="text-align: center;"></app-loading>
+          <div *ngIf="!loading" class="card-body">
+            <div class="table-responsive">
+              <!-- TABLA RESPONSIVE-->
+              <table class="table">
+                <!-- TABLA -->
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Descripcion</th>
+                    <th>Fecha</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let stock of stocks | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                    <td>{{ stock.producto.nombre }}</td>
+                    <td>{{ stock.cantidad }}</td>
+                    <td>{{ stock.comentario }}</td>
+                    <td>{{ stock.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td class="td-actions text-right">
+                      <button
+                        *ngIf="usuario.role.nombre != 'APOYO_LVL_1'"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Eliminar Stock"
+                        class="btn btn-danger btn-round"
+                        (click)="eliminarStock(stock.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <!-- END TABLE -->
+              <ngb-pagination
+                [(page)]="page"
+                [pageSize]="pageSize"
+                [collectionSize]="stocks?.length"
+                [maxSize]="15"
+                [rotate]="true"
+                [boundaryLinks]="true"
+              >
+              </ngb-pagination>
+            </div>
+            <!-- END TABLA RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

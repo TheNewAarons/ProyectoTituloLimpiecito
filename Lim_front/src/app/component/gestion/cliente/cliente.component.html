@@ -1,0 +1,448 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Clientes</h4>
+            <br />
+            <button
+              *ngIf="usuario.role.nombre != 'LVL_ARCHIVO'"
+              mat-raised-button
+              title="Crear Cliente"
+              class="btn btn-warning btn-sm"
+              data-toggle="modal"
+              data-target="#createModal"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear
+            </button>
+          </div>
+          <div class="card-body">
+            <!-- TABS PARA ACTIVO E INACTIVO-->
+            <ul class="nav nav-pills nav-pills-info justify-content-center" role="tablist">
+              <li class="nav-item">
+                <a class="nav-link active" data-toggle="tab" href="#activo" role="tablist">
+                  Activo
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#inactivo" role="tablist">
+                  Inactivo
+                </a>
+              </li>
+            </ul>
+            <!-- END TABS -->
+            <!-- TAB CONTENT -->
+            <div class="tab-content tab-space">
+              <div class="tab-pane active" id="activo">
+                <!-- ACTIVOS-->
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchActivo"
+                    class="form-control"
+                    [(ngModel)]="searchActivo"
+                    placeholder="Buscar..."
+                    (change)="buscarActivo()"
+                  />
+                </div>
+                <br />
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE -->
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Encargado</th>
+                        <th>Contacto</th>
+                        <th>Fecha Facturación</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let clienteActivo of clientesActivos | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                        <td>{{ clienteActivo.representante }}</td>
+                        <td>{{ clienteActivo.encargado_contrato }}</td>
+                        <td>{{ clienteActivo.numero_contacto }}</td>
+                        <td>
+                          {{ clienteActivo.fecha_facturacion | date: 'dd/MM/yyyy ' }}
+                        </td>
+                        <td class="td-actions text-right">
+                          <button mat-raised-button type="button" matTooltip="Gestion PEV" class="btn btn-info btn-round"
+                            [routerLink]="['/gestion/cliente-pev',clienteActivo?.id]">
+                                <i class="material-icons">library_books</i>
+                            </button>
+                          <button
+                            mat-raised-button
+                            type="button"
+                            title="Ver Cliente"
+                            class="btn btn-info btn-round"
+                            [routerLink]="['/gestion/clientes/ver-cliente/', clienteActivo.id]"
+                          >
+                            <i class="material-icons">person</i>
+                          </button>
+                          <button
+                            *ngIf="usuario.role.nombre != 'APOYO_LVL_1' && usuario.role.nombre != 'LVL_ARCHIVO'"
+                            mat-raised-button
+                            type="button"
+                            title="Editar Cliente"
+                            class="btn btn-success btn-round"
+                            data-toggle="modal"
+                            data-target="#editModal"
+                            (click)="asignarEditar(clienteActivo)"
+                          >
+                            <i class="material-icons">edit</i>
+                          </button>
+                          <button
+                            *ngIf="usuario.role.nombre != 'APOYO_LVL_1' && usuario.role.nombre != 'LVL_ARCHIVO'"
+                            mat-raised-button
+                            type="button"
+                            title="Desactivar Cliente"
+                            class="btn btn-danger btn-round"
+                            (click)="eliminarCliente(clienteActivo.id)"
+                          >
+                            <i class="material-icons">close</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <!-- END TABLE RESPONSIVE-->
+                  <ngb-pagination
+                    [(page)]="page"
+                    [pageSize]="pageSize"
+                    [collectionSize]="clientesActivos?.length"
+                    [maxSize]="5"
+                    [rotate]="true"
+                    [boundaryLinks]="true"
+                  >
+                  </ngb-pagination>
+                </div>
+              </div>
+              <!-- END ACTIVOS-->
+              <div class="tab-pane" id="inactivo">
+                <!-- INACTIVOS -->
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchInactivo"
+                    class="form-control"
+                    [(ngModel)]="searchInactivo"
+                    placeholder="Buscar..."
+                    (change)="buscarInactivo()"
+                  />
+                </div>
+                <br />
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE -->
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Encargado</th>
+                        <th>Contacto</th>
+                        <th>Fecha Facturación</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let clienteInactivo of clientesInactivos | slice: (page1 - 1) * pageSize1:(page1 - 1) * pageSize1 + pageSize1">
+                        <td>{{ clienteInactivo.representante }}</td>
+                        <td>{{ clienteInactivo.encargado_contrato }}</td>
+                        <td>{{ clienteInactivo.numero_contacto }}</td>
+                        <td>
+                          {{ clienteInactivo.fecha_facturacion | date: 'dd/MM/yyyy ' }}
+                        </td>
+                        <td class="td-actions text-right">
+                          <button
+                            mat-raised-button
+                            type="button"
+                            title="Ver Cliente"
+                            class="btn btn-info btn-round"
+                            [routerLink]="['/gestion/clientes/ver-cliente/', clienteInactivo.id]"
+                          >
+                            <i class="material-icons">person</i>
+                          </button>
+                          <button
+                            *ngIf="usuario.role.nombre != 'APOYO_LVL_1' && usuario.role.nombre != 'LVL_ARCHIVO'"
+                            mat-raised-button
+                            type="button"
+                            title="Activar Cliente"
+                            class="btn btn-primary btn-round"
+                            (click)="activarCliente(clienteInactivo.id)"
+                          >
+                            <i class="material-icons">done</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <!-- END TABLE RESPONSIVE -->
+                  <ngb-pagination
+                    [(page)]="page1"
+                    [pageSize]="pageSize1"
+                    [collectionSize]="clientesInactivos?.length"
+                    [maxSize]="5"
+                    [rotate]="true"
+                    [boundaryLinks]="true"
+                  >
+                  </ngb-pagination>
+                </div>
+              </div>
+              <!-- END INACTIVOS-->
+            </div>
+            <!-- END TAB CONTENT-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE MODAL -->
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Crear Cliente</h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f1="ngForm" (submit)="crearCliente(f1.valid)" (keydown.enter)="$event.preventDefault()">
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Representante"
+              name="representante"
+              #representante="ngModel"
+              [(ngModel)]="cliente.representante"
+              required
+              type="text"
+            />
+            <small [hidden]="representante.valid || (representante.pristine && !f1.submitted)" class="text-danger">
+              Representante es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Encargado"
+              name="encargado_contrato"
+              #encargado_contrato="ngModel"
+              [(ngModel)]="cliente.encargado_contrato"
+              type="text"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Fecha facturacion"
+              name="fecha_facturacion"
+              #fecha_facturacion="ngModel"
+              [(ngModel)]="cliente.fecha_facturacion"
+              type="date"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Fecha inicio contrato"
+              name="fecha_inicio_contrato"
+              #fecha_inicio_contrato="ngModel"
+              [(ngModel)]="cliente.fecha_inicio_contrato"
+              type="date"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Fecha término contrato"
+              name="fecha_termino_contrato"
+              #fecha_termino_contrato="ngModel"
+              [(ngModel)]="cliente.fecha_termino_contrato"
+              type="date"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Correo encargado"
+              name="correo_encargado"
+              #correo_encargado="ngModel"
+              [(ngModel)]="cliente.correo_encargado"
+              type="email"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Número contacto"
+              name="numero_contacto"
+              #numero_contato="ngModel"
+              pattern="\d*"
+              maxlength="11"
+              [(ngModel)]="cliente.numero_contacto"
+              type="text"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Valor factura"
+              [cleave]="cleaveOptions"
+              name="valor_factura"
+              #valor_factura="ngModel"
+              [(ngModel)]="cliente.valor_factura"
+              type="string"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Otra Información"
+              name="otra_informacion"
+              #otra_informacion="ngModel"
+              [(ngModel)]="cliente.otra_informacion"
+              type="text"
+            />
+          </mat-form-field>
+          <div class="modal-footer justify-content-center">
+            <button mat-raised-button type="submit" class="btn btn-info btn-round">
+              Crear
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END CREATE MODAL -->
+
+<!-- EDIT MODAL -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Editar Cliente</h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f2="ngForm" (submit)="editarCliente(f2.valid)">
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Representante"
+              name="representante1"
+              #representante1="ngModel"
+              [(ngModel)]="clienteEdit.representante"
+              required
+              type="text"
+            />
+            <small [hidden]="representante1.valid || (representante1.pristine && !f2.submitted)" class="text-danger">
+              Representante es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Encargado"
+              name="encargado_contrato1"
+              #encargado_contrato1="ngModel"
+              [(ngModel)]="clienteEdit.encargado_contrato"
+              type="text"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Fecha facturacion"
+              name="fecha_facturacion1"
+              #fecha_facturacion1="ngModel"
+              [(ngModel)]="clienteEdit.fecha_facturacion"
+              type="date"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Fecha inicio contrato"
+              name="fecha_inicio_contrato1"
+              #fecha_inicio_contrato1="ngModel"
+              [(ngModel)]="clienteEdit.fecha_inicio_contrato"
+              type="date"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Fecha término contrato"
+              name="fecha_termino_contrato1"
+              #fecha_termino_contrato1="ngModel"
+              [(ngModel)]="clienteEdit.fecha_termino_contrato"
+              type="date"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Correo encargado"
+              name="correo_encargado1"
+              #correo_encargado1="ngModel"
+              [(ngModel)]="clienteEdit.correo_encargado"
+              type="email"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Número contacto"
+              name="numero_contacto1"
+              #numero_contato1="ngModel"
+              pattern="\d*"
+              maxlength="11"
+              [(ngModel)]="clienteEdit.numero_contacto"
+              type="text"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Valor factura"
+              [cleave]="cleaveOptions"
+              name="valor_factura1"
+              #valor_factura1="ngModel"
+              [(ngModel)]="clienteEdit.valor_factura"
+              type="string"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Otra Información"
+              name="otra_informacion1"
+              #otra_informacion1="ngModel"
+              [(ngModel)]="clienteEdit.otra_informacion"
+              type="text"
+            />
+          </mat-form-field>
+          <div class="modal-footer justify-content-center">
+            <button mat-raised-button type="submit" class="btn btn-info btn-round">
+              Editar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END EDIT MODAL -->

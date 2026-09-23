@@ -1,0 +1,41 @@
+<h2 style="text-align: center">Tareas Para Agregar</h2>
+<div mat-dialog-content>
+  <mat-spinner *ngIf="loader" style="margin: 0 auto"></mat-spinner>
+  <div *ngIf="!loader">
+    <div>
+      <div class="row" *ngFor="let sector of base_cronograma">
+        <div class="border col-md-4">
+          {{ sector.nombre }}
+        </div>
+        <div class="col-md-8">
+          <div class="row" *ngFor="let area of sector.areas">
+            <div class="border col-md-5">
+              {{ area.nombre }}
+            </div>
+            <div class="border col-md-7">
+              <div class="row border" *ngFor="let tarea of area.tareas">
+                <div class="col-md-9">{{ tarea.nombre }}</div>
+                <div class="col-md-3">
+                  <button
+                    style="padding: 5px; margin: 0px"
+                    mat-raised-button
+                    type="button"
+                    class="btn btn-link btn-sm btn-round"
+                    (click)="agregarTarea(tarea,sector.id_sector)"
+                  >
+                    <i class="material-icons verde">add</i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div mat-dialog-actions>
+  <div *ngIf="!loader" style="text-align: center; width: 100%">
+    <button mat-raised-button class="btn btn-warning btn-sm" (click)="cerrarModal(false)">Cerrar</button>
+  </div>
+</div>

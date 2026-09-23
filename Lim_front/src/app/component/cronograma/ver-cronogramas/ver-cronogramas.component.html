@@ -1,0 +1,139 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Cronogramas Cliente: {{nombre_cliente}}</h4>
+            <br />
+            <button mat-raised-button [routerLink]="['/cronograma/vista_clientes']" class="btn btn-warning btn-sm">Volver</button>
+            <button mat-raised-button [routerLink]="['/cronograma/crear-cronograma', id_cliente]" class="btn btn-success btn-sm">Crear</button>
+          </div>
+          <div class="card-body">
+            <div>
+              <!-- Buscador por mes y año -->
+              <div class="row">
+                <mat-form-field class="col-md-4">
+                  <mat-select  placeholder="Selecciona Mes" [(ngModel)]="mes_busqueda">
+                    <mat-option *ngFor="let mes of meses" [value]="mes.valor">
+                      {{ mes.nombre }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field class="col-md-4">
+                  <mat-select  placeholder="Selecciona Año" [(ngModel)]="anio_busqueda">
+                    <mat-option *ngFor="let anio of anios" [value]="anio">
+                      {{ anio }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <div class="col-md-4">
+                  <button mat-raised-button class="btn btn-success btn-sm" (click)="buscarCronogramas()"><i class="material-icons">search</i></button>
+                </div>
+              </div>
+              <h4 class="centrado negrita">Cronogramas Activos</h4>
+              <div *ngIf="cronogramas_activos.length == 0">
+                <h5 class="centrado">No hay Cronogramas Activos</h5>
+              </div>
+              <div class="row">
+                <div *ngFor="let activo of cronogramas_activos" class="col-md-4 cards">
+                  <div class="card card-pricing card-raised">
+                    <div class="card-body">
+                      <h6 class="card-category"><b>Fecha:</b> {{ activo.fecha | date: 'dd/MM/yyyy' }}</h6>
+                      <div class="card-icon icon-warning">
+                        <i class="material-icons">view_timeline</i>
+                      </div>
+                      <h4 class="card-title"><b>Mes:</b>{{ activo.mes | mes }}</h4>
+                      <h4 class="card-title"><b>Año:</b>{{ activo.anio }}</h4>
+                      <h4 class="card-title"><b>Turno:</b>{{ activo.turno.nombre }}</h4>
+                      <div>
+                        <button
+                          style="padding: 5px; margin: 0px"
+                          mat-raised-button
+                          type="button"
+                          class="btn btn-info btn-sm btn-round"
+                          matTooltip="Ver Cronograma"
+                          [routerLink]="['/cronograma/ver-cronograma', id_cliente, activo.id, activo.turno.nombre]"
+                        >
+                          <i class="material-icons">visibility</i>
+                        </button>
+                        <button
+                          style="padding: 5px; margin: 0px"
+                          mat-raised-button
+                          type="button"
+                          class="btn btn-primary btn-sm btn-round"
+                          matTooltip="Listas PEV"
+                          [routerLink]="['/listas-pev/ver-listas-pev',activo.id,id_cliente,nombre_cliente,activo.turno.nombre]"
+                        >
+                          <i class="material-icons">fact_check</i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h4 class="centrado negrita">Cronogramas Inactivos</h4>
+              <div>
+                <div *ngIf="cronogramas_inactivos.length == 0">
+                  <h5 class="centrado">No hay Cronogramas Inactivos</h5>
+                </div>
+                <div class="row">
+                  <div *ngFor="let inactivo of cronogramas_inactivos" class="col-md-4 cards">
+                    <div class="card card-pricing card-raised">
+                      <div class="card-body">
+                        <h6 class="card-category"><b>Fecha:</b> {{ inactivo.fecha | date: 'dd/MM/yyyy' }}</h6>
+                        <div class="card-icon icon-rose">
+                          <i class="material-icons">view_timeline</i>
+                        </div>
+                        <h4 class="card-title"><b>Mes:</b>{{ inactivo.mes | mes }}</h4>
+                        <h4 class="card-title"><b>Año:</b>{{ inactivo.anio }}</h4>
+                        <h4 class="card-title"><b>Turno:</b>{{ inactivo.turno.nombre }}</h4>
+                        <div>
+                          <button
+                            style="padding: 5px; margin: 0px"
+                            mat-raised-button
+                            type="button"
+                            class="btn btn-info btn-sm btn-round"
+                            matTooltip="Ver Cronograma"
+                            [routerLink]="['/cronograma/ver-cronograma', id_cliente, inactivo.id, inactivo.turno.nombre]"
+                          >
+                            <i class="material-icons">visibility</i>
+                          </button>
+                          <button
+                            style="padding: 5px; margin: 0px"
+                            mat-raised-button
+                            type="button"
+                            class="btn btn-primary btn-sm btn-round"
+                            matTooltip="Listas PEV"
+                            [routerLink]="['/listas-pev/ver-listas-pev',inactivo.id,id_cliente,nombre_cliente,inactivo.turno.nombre]"
+                          >
+                            <i class="material-icons">fact_check</i>
+                          </button>
+                          <button
+                            style="padding: 5px; margin: 0px"
+                            mat-raised-button
+                            type="button"
+                            class="btn btn-danger btn-sm btn-round"
+                            matTooltip="Eliminar Cronograma"
+                            (click)="eliminarCronograma(inactivo.id)"
+                          >
+                            <i class="material-icons">delete</i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

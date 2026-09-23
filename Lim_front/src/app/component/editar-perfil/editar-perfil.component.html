@@ -1,0 +1,91 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">EDITAR PERFIL</h4><br>
+            <button *ngIf="usuario != null" mat-raised-button title="Editar Password" class="btn btn-warning btn-sm"
+            data-toggle="modal" data-target="#myModalEditPassword">
+             Editar Contraseña
+            </button>
+          </div>
+            <div class="card-body" *ngIf="usuario != null"> <!-- BODY -->
+              <form #f1="ngForm" (submit)="editar(f1.valid)">
+                <mat-form-field class="example-full-width">
+                  <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]= "usuario.nombre" 
+                  required type="text">
+                  <small [hidden]="nombre.valid || (nombre.pristine && !f1.submitted)" class="text-danger">
+                    Nombre es requerido.
+                  </small>
+                </mat-form-field>
+                <mat-form-field class="example-full-width">
+                  <input matInput placeholder="Apellido" name="apellido" #apellido="ngModel" [(ngModel)]="usuario.apellido" 
+                  type="text">
+                </mat-form-field>
+                <mat-form-field class="example-full-width">
+                  <input matInput placeholder="correo" name="correo" #correo="ngModel" [(ngModel)]="usuario.correo" type="email" required>
+                  <small [hidden]="correo.valid || (correo.pristine && !f1.submitted)" class="text-danger">
+                    Correo es requerido.
+                  </small>
+                </mat-form-field>
+                <mat-form-field class="example-full-width">
+                  <input matInput placeholder="Rut" name="rut" #rut="ngModel" [(ngModel)]="usuario.rut" type="text">
+                </mat-form-field> 
+                <!-- <mat-form-field class="example-full-width">
+                  <input matInput placeholder="Contraseña" name="password" #password="ngModel" [(ngModel)]="usuario.password" type="password">
+                </mat-form-field> -->
+                <div class="justify-content-center">
+                  <button mat-raised-button type="submit" class="btn btn-info btn-round" >EDITAR</button>
+                </div>
+              </form> 
+          </div><!-- END BODY-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--  MODAL PARA EDITAR PASSWORD USUARIO -->
+<div class="modal fade" id="myModalEditPassword" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="nc-icon nc-simple-remove"></i>
+        </button>
+        <h5 class="modal-title" id="myModalLabel">Editar Contraseña</h5>
+      </div>
+      <div class="modal-body">
+        <form #f3="ngForm" (submit)="editarPasswordUsuario(f3.valid)">
+           
+          <label>Contraseña:</label>
+          <div class="form-group">
+            <input type="text" class="form-control" name="password" #password placeholder="Ingresar Contraseña" [(ngModel)]= "passNew" required>
+            <small [hidden]="password.valid  || !f3.submitted" class="text-danger">
+                Contraseña es requerido.
+            </small>
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button type="submit" class="btn btn-info btn-round" >Editar Contraseña</button>
+          </div>
+        </form>
+      </div>
+      
+    </div>
+  </div>
+</div>
+<!-- FIN modal EDITAR PASSWORD-->
+  
+
+
+
+
+
+
+
+
+

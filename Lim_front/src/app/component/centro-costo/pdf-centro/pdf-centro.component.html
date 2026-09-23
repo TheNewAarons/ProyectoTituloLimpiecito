@@ -1,0 +1,233 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <button
+              mat-raised-button
+              title="Volver"
+              class="btn btn-warning btn-sm"
+              (click)="volver()"
+            >
+              <span class="btn-label">
+                <i class="material-icons">arrow_back</i>
+              </span>
+            </button>
+            <button
+              mat-raised-button
+              type="button"
+              title="Pdf"
+              style="float: right;"
+              class="btn btn-warning btn-sm"
+              (click)="imprimir()"
+            >
+              <i class="material-icons">picture_as_pdf</i>
+            </button>
+          </div>
+          <div class="card-body" id="imprimir">
+            <!-- <h3 class="card-title" style="text-align: center;"><strong>CENTRO DE COSTO</strong></h3><br> -->
+            <div class="row" style="display: flex; align-items: center;">
+              <div class="box col-md-4">
+                <img src="./assets/img/logotipo-limpiecito.png" />
+              </div>
+              <div class="col-md-8" style="margin: 0 auto; padding-left: 0px;">
+                <h3 class="card-title"><strong>CENTRO DE COSTO</strong></h3>
+                <br />
+              </div>
+            </div>
+            <div id="indicadores" class="row">
+              <label class="col-md-4"
+                ><strong>Cliente:</strong
+                >{{ centro?.cliente.representante }}</label
+              >
+              <label class="col-md-4"
+                ><strong>Fecha:</strong
+                >{{ centro?.fecha_inicio | date: "dd/MM/yyyy " }}</label
+              >
+              <label class="col-md-4"
+                ><strong>Número:</strong>{{ centro?.numero_cc }}</label
+              >
+            </div>
+            <div id="indicadores" class="row">
+              <label class="col-md-4"
+                ><strong>Valor Servicio:</strong
+                >{{
+                  centro?.precio_servicio | currency: "USD":"symbol":"1.0"
+                }}</label
+              >
+              <!-- SI CENTRO COSTO ESTA CERRADO SE MUESTRA SUS VALORES CORRESPONDIENTES, SI NO SE MUESTRA LOS FICTIOSOS-->
+              <label *ngIf="centro?.estado == 0" class="col-md-4"
+                ><strong>Utilidad:</strong
+                >{{ centro?.utilidad | currency: "USD":"symbol":"1.0" }}</label
+              >
+              <label *ngIf="centro?.estado == 0" class="col-md-4"
+                ><strong>Total Costos:</strong
+                >{{
+                  centro?.total_costos | currency: "USD":"symbol":"1.0"
+                }}</label
+              >
+              <label *ngIf="centro?.estado == 1" class="col-md-4"
+                ><strong>Utilidad:</strong
+                >{{ utilidadMoment | currency: "USD":"symbol":"1.0" }}</label
+              >
+              <label *ngIf="centro?.estado == 1" class="col-md-4"
+                ><strong>Total Costos:</strong
+                >{{
+                  total_costosMoment | currency: "USD":"symbol":"1.0"
+                }}</label
+              >
+            </div>
+            <div id="indicadores" class="row">
+              <label class="col-md-4"
+                ><strong>Insumos:</strong
+                >{{ totalLista | currency: "USD":"symbol":"1.0" }}</label
+              >
+              <label class="col-md-4"
+                ><strong>Egresos:</strong
+                >{{ totalEgresos | currency: "USD":"symbol":"1.0" }}</label
+              >
+              <label class="col-md-4"
+                ><strong>Liquidaciones:</strong
+                >{{ totalLiquidacion | currency: "USD":"symbol":"1.0" }}</label
+              >
+            </div>
+            <!-- TABLA DE TRABAJADORES -->
+            <br />
+            <h4><strong>LISTA DE TRABAJADORES</strong></h4>
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Telefono</th>
+                    <th>Telefono Emergencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let trabajador of trabajadores">
+                    <td class="text-center">-</td>
+                    <td>{{ trabajador.trabajadore.nombre }}</td>
+                    <td>{{ trabajador.trabajadore.apellido }}</td>
+                    <td>{{ trabajador.trabajadore.telefono }}</td>
+                    <td>{{ trabajador.trabajadore.telefono_emergencia }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+
+            <!-- TABLA DE LISTAS DE INSUMO -->
+            <h4><strong>LISTA DE INSUMOS</strong></h4>
+            <br />
+            <div *ngFor="let listaInsumo of listaInsumos">
+              <div class="row">
+                <label class="col-md-4"
+                  ><strong>Fecha:</strong
+                  >{{ listaInsumo.fecha | date: "dd/MM/yyyy HH:mm:ss" }}</label
+                >
+                <label class="col-md-4"
+                  ><strong>Total:</strong
+                  >{{
+                    listaInsumo.total | currency: "USD":"symbol":"1.0"
+                  }}</label
+                >
+                <label class="col-md-4"
+                  ><strong>Estado:</strong
+                  >{{ listaInsumo.estado == 1 ? "Aprobado" : "Espera" }}</label
+                >
+              </div>
+              <div class="table-responsive">
+                <!-- TABLE RESPONSIVE -->
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th class="text-center">#</th>
+                      <th>Producto</th>
+                      <th>Precio</th>
+                      <th>Cantidad</th>
+                      <th>SubTotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let lineaInsumo of listaInsumo.linea_insumos">
+                      <td class="text-center">-</td>
+                      <td>{{ lineaInsumo.producto.nombre }}</td>
+                      <td>
+                        {{
+                          lineaInsumo.precio | currency: "USD":"symbol":"1.0"
+                        }}
+                      </td>
+                      <td>{{ lineaInsumo.cantidad }}</td>
+                      <td>
+                        {{
+                          lineaInsumo.total_linea
+                            | currency: "USD":"symbol":"1.0"
+                        }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <!-- END TABLE RESPONSIVE-->
+              <br />
+            </div>
+            <h4><strong>LISTA DE EGRESOS</strong></h4>
+            <!-- TABLA DE EGRESOS -->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Comentario</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let egreso of egresos">
+                    <td class="text-center">-</td>
+                    <td>{{ egreso.fecha | date: "dd/MM/yyyy HH:mm:ss" }}</td>
+                    <td>{{ egreso.monto | currency: "USD":"symbol":"1.0" }}</td>
+                    <td>{{ egreso.comentario }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+            <h4><strong>LISTA DE INGRESOS</strong></h4>
+            <!-- TABLA DE INGRESOS -->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Comentario</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let ingreso of ingresos">
+                    <td class="text-center">-</td>
+                    <td>{{ ingreso.fecha | date: "dd/MM/yyyy HH:mm:ss" }}</td>
+                    <td>
+                      {{ ingreso.monto | currency: "USD":"symbol":"1.0" }}
+                    </td>
+                    <td>{{ ingreso.comentario }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

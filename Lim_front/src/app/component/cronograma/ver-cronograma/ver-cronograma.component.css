@@ -1,0 +1,28 @@
+.centrado{
+    text-align: center;
+}
+
+.puntero{
+    cursor: pointer;
+}
+
+.margen{
+    margin-bottom: 1rem;
+}
+
+th{
+    padding: 8px 4px;
+}
+
+td{
+    padding: 8px 4px;
+}
+
+.no-left-top{
+    border-left-style: hidden;
+    border-top-style: hidden;
+}
+
+.lado-derecho{
+    float: right;
+}

@@ -1,0 +1,189 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Crear Categoria Servicio</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" routerLink="/adm_servicio/cate_servicios">
+              <span class="btn-label"></span>
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <form #f1="ngForm" (keydown.enter)="$event.preventDefault()" (submit)="crearCateServicio(f1.valid)">
+              <mat-form-field class="example-full-width">
+                <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]="cateServicio.nombre" required type="text" />
+                <small [hidden]="nombre.valid || (nombre.pristine && !f1.submitted)" class="text-danger"> Nombre es requerido. </small>
+              </mat-form-field>
+              <mat-form-field class="example-full-width">
+                <mat-select
+                  placeholder="Reserva por Cantidad..."
+                  name="activar_cantidad"
+                  #activar_cantidad="ngModel"
+                  [(ngModel)]="cateServicio.activar_cantidad"
+                >
+                  <mat-option *ngFor="let activar_cantidad of activar_cantidades" [value]="activar_cantidad.valor">
+                    {{ activar_cantidad.nombre }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <!-- <mat-form-field class="example-full-width">
+                <input matInput placeholder="Activar Cantidad" name="activar_cantidad" #precio="ngModel" [(ngModel)]="cateServicio.activar_cantidad" required type="text" />
+                <small [hidden]="precio.valid || (precio.pristine && !f1.submitted)" class="text-danger"> Precio es requerido. </small>
+              </mat-form-field> -->
+              <input type="file" #fo name="fo" (change)="imagenSelecionado($event)" required />
+              <small [hidden]="file" class="text-danger"> Archivo es requerido. </small>
+              <!-- descripcion --> 
+              <br /><br />
+              <div class="row" style="margin: 0px">
+                <label class="col-md-12" style="padding: 0px">Descripción:</label>
+                <textarea
+                  placeholder="Escriba la descripcion....."
+                  class="col-md-12"
+                  rows="3"
+                  cols="80"
+                  name="text_descripcion"
+                  [(ngModel)]="text_descripcion"
+                ></textarea>
+                <button class="col-md-2" type="button" mat-raised-button class="btn btn-success btn-sm" (click)="addDescripcion()">Agregar</button>
+              </div>
+              <br />
+              <!-- herramienta -->
+              <div class="row" style="margin: 0px">
+                <mat-form-field class="col-md-12" style="padding-left: 0px">
+                  <input matInput placeholder="Herramienta" name="text_herramienta" [(ngModel)]="text_herramienta" type="text" />
+                </mat-form-field>
+                <button class="col-md-2" type="button" mat-raised-button class="btn btn-success btn-sm" (click)="addHerramienta()">Agregar</button>
+              </div>
+              <br />
+              <!-- articulo -->
+              <div class="row" style="margin: 0px">
+                <mat-form-field class="col-md-12" style="padding-left: 0px">
+                  <input matInput placeholder="Producto" name="text_articulo" [(ngModel)]="text_articulo" type="text" />
+                </mat-form-field>
+                <button class="col-md-2" type="button" mat-raised-button class="btn btn-success btn-sm" (click)="addArticulo()">Agregar</button>
+              </div>
+
+              <!-- Botón De Crear  -->
+              <div class="modal-footer justify-content-center">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round">Crear</button>
+              </div>
+            </form>
+
+            <!-- TABLAS PARA MOSTRAR LO QUE SE AGREGO -->
+            <!-- Tabla Descripción -->
+            <div class="row" style="margin: 0px" *ngIf="array_desc.length > 0">
+              <h6>Descripcion(es)</h6>
+              <div class="table-responsive">
+                <!-- TABLA RESPONSIVE-->
+                <table class="table">
+                  <!-- TABLA -->
+                  <thead>
+                    <tr>
+                      <th class="text-center">#</th>
+                      <th>Descripción</th>
+                      <th class="text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let desc of array_desc">
+                      <td class="text-center">-</td>
+                      <td>{{ desc.texto }}</td>
+                      <td class="td-actions text-right">
+                        <button
+                          mat-raised-button
+                          matTooltip="Quitar Descripción"
+                          type="button"
+                          class="btn btn-danger btn-round"
+                          (click)="eliminarDesc(desc)"
+                        >
+                          <i class="material-icons">close</i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <!-- END TABLE -->
+              </div>
+            </div>
+            <!-- Tabla Herramienta -->
+            <div class="row" style="margin: 0px" *ngIf="array_herra.length > 0">
+              <h6>Herramienta(s)</h6>
+              <div class="table-responsive">
+                <!-- TABLA RESPONSIVE-->
+                <table class="table">
+                  <!-- TABLA -->
+                  <thead>
+                    <tr>
+                      <th class="text-center">#</th>
+                      <th>Herramienta</th>
+                      <th class="text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let herra of array_herra">
+                      <td class="text-center">-</td>
+                      <td>{{ herra.texto }}</td>
+                      <td class="td-actions text-right">
+                        <button
+                          mat-raised-button
+                          matTooltip="Quitar Herramienta"
+                          type="button"
+                          class="btn btn-danger btn-round"
+                          (click)="eliminarHerra(herra)"
+                        >
+                          <i class="material-icons">close</i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <!-- END TABLE -->
+              </div>
+            </div>
+            <!-- Tabla Artículo -->
+            <div class="row" style="margin: 0px" *ngIf="array_arti.length > 0">
+              <h6>Producto(s)</h6>
+              <div class="table-responsive">
+                <!-- TABLA RESPONSIVE-->
+                <table class="table">
+                  <!-- TABLA -->
+                  <thead>
+                    <tr>
+                      <th class="text-center">#</th>
+                      <th>Producto</th>
+                      <th class="text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let arti of array_arti">
+                      <td class="text-center">-</td>
+                      <td>{{ arti.texto }}</td>
+                      <td class="td-actions text-right">
+                        <button
+                          mat-raised-button
+                          matTooltip="Quitar Artículo"
+                          type="button"
+                          class="btn btn-danger btn-round"
+                          (click)="eliminarArti(arti)"
+                        >
+                          <i class="material-icons">close</i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <!-- END TABLE -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

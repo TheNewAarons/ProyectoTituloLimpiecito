@@ -1,0 +1,240 @@
+
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Liquidación 
+            <button mat-raised-button type="button" title="Imprimir" style="float:right" class="btn btn-warning btn-sm"
+            (click)="imprimir()">
+              <i class="material-icons">picture_as_pdf</i>
+            </button></h4><br>
+            <button mat-raised-button title="Volver" class="btn btn-warning btn-sm" (click)="volver()">
+              <span class="btn-label">
+                <i class="material-icons">arrow_back</i>
+              </span>
+            </button> 
+            
+            <button *ngIf="liquidacion?.estado == 1" mat-raised-button title="Cerrar" style="float:right" class="btn btn-warning btn-sm"
+            (click)="cerrarLiquidacion()">
+              <span class="btn-label">
+                <i class="material-icons">close</i>
+              </span>
+              Cerrar
+            </button>
+            <button *ngIf="liquidacion?.estado == 1" mat-raised-button title="Editar" style="float:right" class="btn btn-warning btn-sm" [routerLink]="['/liquidacion/editar/',liquidacion?.id,trabajador.id]">
+              <span class="btn-label">
+                <i class="material-icons">edit</i>
+              </span>
+              Editar
+            </button>
+          </div>
+            <div class="card-body" id="imprimir">
+              <!-- <div class="row">
+                <div class="col-md-5">
+                  <img src="./assets/img/logotipo-limpiecito.png"/>
+                </div>
+                <div class="col-md-7">
+                  <h3 style="margin-bottom: 0px; margin-top: 40px;">Liquidación de Remuneraciones</h3>
+                  <h3 style="margin-bottom: 0px; margin-top: 0px;">Soc. Com. Limpiecito Ojane Muñoz Ltda.</h3>
+                </div>
+              </div> -->
+
+              <!-- Primera copia -->
+              <ng-container *ngTemplateOutlet="liquidacionTemplate"></ng-container>
+
+              <hr style="border: 1px dashed black; margin: 10px 0;">
+
+              <!-- Segunda copia -->
+              <ng-container *ngTemplateOutlet="liquidacionTemplate"></ng-container>
+
+
+
+
+              
+              <!-- <div class="row" style="margin-left: 0px;">
+                <p style="color: black;"><strong>Declaro que he recibido de Soc. Com. Limpiecito Ojane Muñoz Ltda. La suma como valor liquido 
+                  a pagar y que queda todo a mi entera satisfacción, que no tengo cobro alguno diferente a los que indican 
+                  en esta liquidación.</strong>
+                </p><br>
+                <p class="col-md-6" style="color: black; text-align: right;"><strong>FIRMA DEL TRABAJADOR</strong>
+                </p>
+                <p class="col-md-6" style="color: black;"><strong>_______________________________________</strong>
+                </p>
+              </div> -->
+            </div><!-- END CARD BODY IMPRIMIR-->
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+
+
+<ng-template #liquidacionTemplate>
+  <!-- Aquí pones toda tu tabla de liquidación -->
+  <div class="row">
+    <div class="col-md-5">
+      <img src="./assets/img/logotipo-limpiecito.png"/>
+    </div>
+    <div class="col-md-7">
+      <h3 style="margin-bottom: 0px; margin-top: 40px;">Liquidación de Remuneraciones</h3>
+      <h3 style="margin-bottom: 0px; margin-top: 0px;">Soc. Com. Limpiecito Ojane Muñoz Ltda.</h3>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table" border="1">
+                      <table class="table" border="1">
+                        <tr>
+                          <td id="importante" colspan="3" align="center" >Nombre</td>
+                          <td id="importante" colspan="1">Nº Empleado</td>
+                          <td id="importante" align="center">Rut</td>
+                          <td id="importante" >Período</td>
+                        </tr>
+                        <tr>
+                          <td colspan="3" align="center" >{{trabajador?.nombre}} {{trabajador?.apellido}}</td>
+                          <td >{{trabajador?.n_empleado}}</td>
+                          <td align="center">{{trabajador?.rut | rut}}</td>
+                          <td>{{liquidacion?.fecha_creacion | date:'dd/MM/yyyy '}}</td>
+                        </tr>
+                        <tr>
+                          <td id="importante" colspan="4" align="center">Cliente: {{centro_costo?.cliente.representante}} </td>
+                          <td id="importante"  >C.Familiares</td>
+                          <td id="importante" >% Salud</td>
+                        </tr>
+                        <tr>
+                          <td id="importante" >AFP</td>
+                          <td colspan="3" align="center">{{trabajador?.instituto_previsione.nombre}}</td>
+                          <td>{{liquidacion?.cant_familiar}}</td>
+                          <td>{{trabajador?.salude.comision}}</td>
+                        </tr>
+                        <tr>
+                          <td id="importante" >Días Trabajados</td>
+                          <td colspan="3" align="center" >{{liquidacion?.dias_trabajados}}</td>
+                          <td id="importante" ></td>
+                          <td id="importante" ></td>
+                        </tr>
+                        <tr>
+                          <td colspan="3" align="center"> Haberes </td>
+                          <td colspan="3" align="center"> Descuentos</td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"> Sueldo Base </td>
+                          <td> {{liquidacion?.sueldo_base | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2"> Cotización Obligatoria </td>
+                          <td> {{liquidacion?.cotizacion_obligatoria | currency:'USD' :'symbol':'1.0'}}</td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"> Monto del Mes </td>
+                          <td> {{liquidacion?.monto_mes | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2"> Salud </td>
+                          <td> {{liquidacion?.salud | currency:'USD' :'symbol':'1.0'}}</td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"> Monto Hrs. Extras </td>
+                          <td> {{liquidacion?.valor_horas_extras | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2"> Valor Horas Descuentos </td>
+                          <td> {{liquidacion?.valor_hora_faltante | currency:'USD' :'symbol':'1.0'}}</td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"> Gratificación </td>
+                          <td> {{liquidacion?.gratificacion | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2">  </td>
+                          <td> </td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"> Reajuste sueldo retroactivo </td>
+                          <td> {{liquidacion?.reajuste_retroactivo | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2">  </td>
+                          <td> </td>
+                        </tr>
+                        <tr *ngIf="liquidacion?.bono_indemnizacion != 0">
+                          <td colspan="2">Bono Indemnización</td>
+                          <td> {{liquidacion?.bono_indemnizacion | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2"> Seguro de Cesantía </td>
+                          <td>{{liquidacion?.seguro_cesantia | currency:'USD' :'symbol':'1.0'}} </td>
+                        </tr>
+                        <tr *ngIf="liquidacion?.bono_indemnizacion == 0">
+                          
+                          <td > Seguro de Cesantía </td>                    
+                          <td colspan="2">{{liquidacion?.seguro_cesantia | currency:'USD' :'symbol':'1.0'}} </td>
+                          <td colspan="2"></td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"> Asig. Familiar </td>
+                          <td> {{liquidacion?.valor_carga_familiar | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2">  </td>
+                          <td> </td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"> Movilización </td>
+                          <td> {{liquidacion?.valor_movilizacion | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2">  </td>
+                          <td> </td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"> Colación</td>
+                          <td> {{liquidacion?.colacion | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2">  </td>
+                          <td> </td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"> Producción</td>
+                          <td> {{liquidacion?.bono_produccion | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2">  </td> 
+                          <td> </td>
+                        </tr>
+                        <tr *ngIf="liquidacion?.valor_hora_feriado != 0">
+                          <td colspan="2"> Días Feriados </td>
+                          <td> {{liquidacion?.valor_hora_feriado | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2">  </td>
+                          <td> </td>
+                        </tr>
+                        <tr>
+                          <td colspan="2"> Bono Responsabilidad </td>
+                          <td> {{liquidacion?.bono_responsabilidad | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td colspan="2">  </td>
+                          <td> </td>
+                        </tr>
+                        <tr>
+                          <td id="importante" colspan="2" align="center"> Total Haber </td>
+                          <td> {{liquidacion?.total_haber | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td id="importante" colspan="2" align="center"> Total Descuento </td>
+                          <td> {{liquidacion?.total_descuento | currency:'USD' :'symbol':'1.0'}}</td>
+                        </tr>
+                        <tr>
+                          <td colspan="3"> </td>
+                          <td colspan="2" > Anticipo</td>
+                          <td>{{liquidacion?.anticipo | currency:'USD' :'symbol':'1.0'}}</td>
+                        </tr>
+                        <tr>
+                          <td colspan="3"> </td>
+                          <td colspan="2" > Alimentación</td>
+                          <td>{{liquidacion?.alimentacion | currency:'USD' :'symbol':'1.0'}}</td>
+                        </tr>
+                        <tr>
+                          <td id="importante" colspan="2" align="center"> Total Imponible </td>
+                          <td> {{liquidacion?.total_imponible | currency:'USD' :'symbol':'1.0'}}</td>
+                          <td id="importante" colspan="2" align="center">  Liquido a pagar</td>
+                          <td> {{liquidacion?.liquido_pagar | currency:'USD' :'symbol':'1.0'}} </td>
+                        </tr>
+                      </table>
+          </table>
+        </div>
+
+  <div class="row" style="margin-left: 0px;">
+    <p style="color: black;">
+      <strong>Declaro que he recibido de Soc. Com. Limpiecito Ojane Muñoz Ltda. La suma como valor liquido 
+                  a pagar y que queda todo a mi entera satisfacción, que no tengo cobro alguno diferente a los que indican 
+                  en esta liquidación.</strong>
+    </p>
+    <p class="col-md-6" style="color: black; text-align: right;"><strong>FIRMA DEL TRABAJADOR</strong></p>
+    <p class="col-md-6" style="color: black;"><strong>_______________________________________</strong></p>
+  </div>
+</ng-template>

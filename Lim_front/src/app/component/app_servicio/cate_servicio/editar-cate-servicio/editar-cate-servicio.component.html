@@ -1,0 +1,109 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card" *ngIf="cateServicio">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Editar Categoria Servicio</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" routerLink="/adm_servicio/cate_servicios">
+              <span class="btn-label"></span>
+              Volver
+            </button>
+            <button
+              *ngIf="cateServicio?.horario"
+              style="float: right"
+              mat-raised-button
+              matTooltip="Editar horario"
+              class="btn btn-info btn-sm"
+              [routerLink]="['/adm_servicio/editar-horario/', cateServicio?.horario.id]"
+            >
+              <span class="btn-label"></span>
+              Editar Horario
+            </button>
+            <button
+              *ngIf="cateServicio?.img_extra"
+              style="float: right"
+              mat-raised-button
+              matTooltip="Editar horario"
+              class="btn btn-info btn-sm"
+              [routerLink]="['/adm_servicio/editar-img-extra/', cateServicio?.img_extra.id]"
+            >
+              <span class="btn-label"></span>
+              Editar Imagen Extra
+            </button>
+          </div>
+          <div class="card-body" >
+            <form #f1="ngForm" (submit)="editarCateServicio(f1.valid)">
+              <mat-form-field class="example-full-width">
+                <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]="cateServicio.nombre" required type="text" />
+                <small [hidden]="nombre.valid || (nombre.pristine && !f1.submitted)" class="text-danger"> Nombre es requerido. </small>
+              </mat-form-field>
+              <mat-form-field class="example-full-width">
+                <mat-select
+                  placeholder="Reserva por Cantidad..."
+                  name="activar_cantidad"
+                  #activar_cantidad="ngModel"
+                  [(ngModel)]="cateServicio.activar_cantidad"
+                >
+                  <mat-option *ngFor="let activar_cantidad of activar_cantidades" [value]="activar_cantidad.valor">
+                    {{ activar_cantidad.nombre }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <input type="file" #fo name="fo" (change)="imagenSelecionado($event)" required />
+              <small [hidden]="file" class="text-danger"> Archivo es requerido. </small>
+              <div class="modal-footer justify-content-center">
+                <button mat-raised-button type="submit" class="btn btn-sm btn-success">Editar</button>
+              </div>
+            </form>
+            <h5>Descripciones:</h5>
+            <div class="row divRow" *ngFor="let desc of cateServicio.descripciones">
+              <label class="col-md-12 adentroRow">Descripción:</label>
+              <textarea
+                placeholder="Escriba la descripcion....."
+                class="col-md-12"
+                rows="3"
+                cols="80"
+                name="texto"
+                [(ngModel)]="desc.texto"
+              ></textarea>
+              <button class="col-md-2" type="button" mat-raised-button class="btn btn-success btn-sm" (click)="editarDescripcion(desc)">
+                Editar
+              </button>
+              <button class="col-md-2" type="button" mat-raised-button class="btn btn-danger btn-sm" (click)="eliminarDescripcion(desc.id)">
+                Eliminar
+              </button>
+            </div>
+            <h5>Herramientas:</h5>
+            <div class="row divRow" *ngFor="let herra of cateServicio.herramientas">
+              <mat-form-field class="col-md-12 adentroRow">
+                <input matInput placeholder="Herramienta" name="texto" [(ngModel)]="herra.texto" type="text" />
+              </mat-form-field>
+              <button class="col-md-2" type="button" mat-raised-button class="btn btn-success btn-sm" (click)="editarHerramienta(herra)">
+                Editar
+              </button>
+              <button class="col-md-2" type="button" mat-raised-button class="btn btn-danger btn-sm" (click)="eliminarHerramienta(herra.id)">
+                Eliminar
+              </button>
+            </div>
+
+            <h5>Productos:</h5>
+            <div class="row divRow" *ngFor="let arti of cateServicio.articulos">
+              <mat-form-field class="col-md-12 adentroRow">
+                <input matInput placeholder="Producto" name="texto" [(ngModel)]="arti.texto" type="text" />
+              </mat-form-field>
+              <button class="col-md-2" type="button" mat-raised-button class="btn btn-success btn-sm" (click)="editarArticulo(arti)">Editar</button>
+              <button class="col-md-2" type="button" mat-raised-button class="btn btn-danger btn-sm" (click)="eliminarArticulo(arti.id)">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

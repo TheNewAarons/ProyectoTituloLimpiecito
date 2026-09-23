@@ -1,0 +1,251 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Centro de Costos</h4>
+            <br />
+            <button
+              *ngIf="caja_activa != null && usuario.role.nombre != 'APOYO_LVL_1' && usuario && clientes.length > 0"
+              mat-raised-button
+              matTooltip="Crear "
+              class="btn btn-warning btn-sm"
+              data-toggle="modal"
+              data-target="#createModal"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear
+            </button>
+          </div>
+          <div *ngIf="caja_activa == null" class="card-body">
+            <p style="text-align: center;">NO HAY CAJA ACTIVA</p>
+          </div>
+          <div *ngIf="caja_activa != null" class="card-body">
+            <!-- TABS PARA ACTIVO E INACTIVO-->
+            <ul class="nav nav-pills nav-pills-info justify-content-center" role="tablist">
+              <li class="nav-item">
+                <a class="nav-link active" data-toggle="tab" href="#activo" role="tablist">
+                  Activo
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-toggle="tab" href="#cerrado" role="tablist">
+                  Cerrado
+                </a>
+              </li>
+            </ul>
+            <!-- END TABS -->
+            <!-- TAB CONTENT -->
+            <div class="tab-content tab-space">
+              <div class="tab-pane active" id="activo">
+                <!-- ACTIVOS-->
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchActivo"
+                    class="form-control"
+                    [(ngModel)]="searchActivo"
+                    placeholder="Buscar..."
+                    (change)="buscarActivo()"
+                  />
+                </div>
+                <br />
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE -->
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Fecha Inicio</th>
+                        <th>Valor CC</th>
+                        <th>Total Costo</th>
+                        <th>Utilidad</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let centroActivo of centrosActivos | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                        <td>{{ centroActivo.cliente.representante }}</td>
+                        <td>
+                          {{ centroActivo.fecha_inicio | date: 'dd/MM/yyyy HH:mm:ss' }}
+                        </td>
+                        <td *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
+                          {{ centroActivo.precio_servicio | currency: 'USD':'symbol':'1.0' }}
+                        </td>
+                        <td *ngIf="usuario.role.nombre === 'APOYO_LVL_1'">
+                          -
+                        </td>
+                        <td>
+                          {{ centroActivo.total_costos | currency: 'USD':'symbol':'1.0' }}
+                        </td>
+                        <td>
+                          {{ centroActivo.utilidad | currency: 'USD':'symbol':'1.0' }}
+                        </td>
+                        <td class="td-actions text-right">
+                          <button
+                            mat-raised-button
+                            type="button"
+                            matTooltip="Ver Detalle CC"
+                            class="btn btn-info btn-round"
+                            [routerLink]="['/ver/', centroActivo.id]"
+                          >
+                            <i class="material-icons">remove_red_eye</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <ngb-pagination
+                    [(page)]="page"
+                    [pageSize]="pageSize"
+                    [collectionSize]="centrosActivos?.length"
+                    [maxSize]="5"
+                    [rotate]="true"
+                    [boundaryLinks]="true"
+                  >
+                  </ngb-pagination>
+                </div>
+                <!-- END TABLE RESPONSIVE-->
+              </div>
+              <!-- END ACTIVOS-->
+              <div class="tab-pane" id="cerrado">
+                <!-- CERRADOS -->
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchInactivo"
+                    class="form-control"
+                    [(ngModel)]="searchInactivo"
+                    placeholder="Buscar..."
+                    (change)="buscarInactivo()"
+                  />
+                </div>
+                <br />
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE-->
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Fecha Inicio</th>
+                        <th>Valor CC</th>
+                        <th>Total Costo</th>
+                        <th>Utilidad</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let centroInactivo of centrosInactivos | slice: (page1 - 1) * pageSize1:(page1 - 1) * pageSize1 + pageSize1">
+                        <td>{{ centroInactivo.cliente.representante }}</td>
+                        <td>{{ centroInactivo.fecha_inicio | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                        <td *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
+                          {{ centroInactivo.precio_servicio | currency: 'USD':'symbol':'1.0' }}
+                        </td>
+                        <td *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
+                          {{ centroInactivo.total_costos | currency: 'USD':'symbol':'1.0' }}
+                        </td>
+                        <td *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
+                          {{ centroInactivo.utilidad | currency: 'USD':'symbol':'1.0' }}
+                        </td>
+                        <td *ngIf="usuario.role.nombre === 'APOYO_LVL_1'">
+                          -
+                        </td>
+                        <td *ngIf="usuario.role.nombre === 'APOYO_LVL_1'">
+                          -
+                        </td>
+                        <td *ngIf="usuario.role.nombre === 'APOYO_LVL_1'">
+                          -
+                        </td>
+                        <td class="td-actions text-right">
+                          <button
+                            mat-raised-button
+                            type="button"
+                            matTooltip="Ver Detalle CC"
+                            class="btn btn-info btn-round"
+                            [routerLink]="['/ver/', centroInactivo.id]"
+                          >
+                            <i class="material-icons">remove_red_eye</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <ngb-pagination
+                    [(page)]="page1"
+                    [pageSize]="pageSize1"
+                    [collectionSize]="centrosInactivos?.length"
+                    [maxSize]="5"
+                    [rotate]="true"
+                    [boundaryLinks]="true"
+                  >
+                  </ngb-pagination>
+                </div>
+                <!-- END TABLE RESPONSIVE-->
+              </div>
+              <!-- END CERRADOS-->
+            </div>
+            <!-- END TAB CONTENT-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE MODAL -->
+<div class="modal fade" id="createModal" tabindex="-1" data-backdrop="static" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Crear Centro de costo</h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true" (click)="limpiar()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f1="ngForm" (submit)="crearCentro(f1.valid)">
+          <mat-form-field>
+            <mat-select
+              placeholder="Cliente..."
+              (selectionChange)="obtenerValorCliente($event.value)"
+              name="clienteId"
+              #clienteId="ngModel"
+              [(ngModel)]="centro.clienteId"
+            >
+              <mat-option *ngFor="let cliente of clientes" [value]="cliente.id">
+                {{ cliente.representante }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Precio Servicio"
+              [cleave]="cleaveOptions"
+              name="precio_servicio"
+              #precio_servicio="ngModel"
+              [(ngModel)]="centro.precio_servicio"
+              type="text"
+              required
+            />
+            <small [hidden]="precio_servicio.valid || (precio_servicio.pristine && !f1.submitted)" class="text-danger">
+              Precio del Servicio es requerido.
+            </small>
+          </mat-form-field>
+          <div class="modal-footer justify-content-center">
+            <button *ngIf="centro.clienteId != null" mat-raised-button type="submit" class="btn btn-info btn-round">
+              Crear
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END CREATE MODAL-->

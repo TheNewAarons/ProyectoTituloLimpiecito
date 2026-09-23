@@ -1,0 +1,23 @@
+#card_carpeta{
+    text-align: center;
+    margin-top: 0px;
+    margin-bottom: 5px;
+    /* margin-left: 10px;
+    margin-right: 10px; */
+    padding: 0px;
+}
+#card_cuerpo{
+    cursor: pointer;
+    text-align: center;
+    padding: 0px 5px 5px 5px;
+}
+#card_cabecera{
+    padding: 0px;
+}
+#icono{
+    font-size: 44px !important;
+    color: #EFC22E;
+}
+#icono_cerrar:hover{
+    color: red;
+}

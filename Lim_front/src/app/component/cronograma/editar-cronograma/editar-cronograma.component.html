@@ -1,0 +1,79 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">
+              Editar Cronograma Mes: <b> {{ cronograma?.mes | mes }} de {{ cronograma?.anio }}</b>
+            </h4>
+            <br />
+            <button mat-raised-button [routerLink]="['/cronograma/ver-cronograma', id_cliente, id_cronograma,turno]" class="btn btn-warning btn-sm">
+              Volver
+            </button>
+            <button mat-raised-button class="btn btn-info btn-sm" (click)="abrirModal()">Agregar Tarea</button>
+          </div>
+          <div class="card-body">
+            <div>
+              <h4>
+                Cliente: <b>{{ cronograma?.cliente?.representante }}</b> ; Turno:<b>{{turno}}</b>
+              </h4>
+            </div>
+            <div class="row">
+              <div class="table-responsive">
+                <table class="margen" border="1">
+                  <thead>
+                    <tr>
+                      <th class="no-left-top"></th>
+                      <th class="no-left-top"></th>
+                      <th class="no-left-top"></th>
+                      <th class="centrado" *ngFor="let semana of semanas" colspan="7">{{semana.nombre}}</th>
+                    </tr>
+                    <tr>
+                      <th class="centrado">SECTOR</th>
+                      <th class="centrado">AREA</th>
+                      <th class="centrado">TAREA</th>
+                      <th class="centrado" *ngFor="let fecha of fechas">
+                        {{ fecha.fecha_ver | date: 'dd/MM' }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let crono of cronograma_ordenado">
+                      <td class="centrado" *ngIf="crono.s_rows > 1" [attr.rowspan]="crono.s_rows">{{ crono.n_sector }}</td>
+                      <td class="centrado" *ngIf="crono.s_rows == 1">{{ crono.n_sector }}</td>
+                      <td class="centrado" *ngIf="crono.a_rows > 1" [attr.rowspan]="crono.a_rows">{{ crono.n_area }}</td>
+                      <td class="centrado" *ngIf="crono.a_rows == 1">{{ crono.n_area }}</td>
+                      <td class="centrado">
+                          {{ crono.n_tarea }}
+                        <div >
+                          <button
+                          style="padding: 5px; margin: 0px"
+                          mat-raised-button
+                          type="button"
+                          class="btn btn-link btn-sm btn-round"
+                          matTooltip="Quitar Tarea"
+                          (click)="eliminarLineaCronograma(crono.id_linea_cronograma)"
+                        >
+                          <i class="material-icons rojo">delete</i>
+                        </button>
+                        </div>
+                      </td>
+                      <td class="centrado" *ngFor="let lista of crono.checkeos">
+                        <i *ngIf="lista.check" class="material-icons">check</i>
+                        <!-- <i class="material-icons"></i> -->
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,92 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Cajas Actuales</h4>
+            <br />
+            <button
+              *ngIf="caja_actual == null"
+              mat-raised-button
+              matTooltip="Crear Caja"
+              class="btn btn-warning btn-sm"
+              (click)="crearCaja()"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear
+            </button>
+          </div>
+          <div class="card-body" style="text-align: center;">
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-left">Fecha Apertura</th>
+                    <th>Fecha Cierre</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let caja of cajas | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                    <td class="text-left">
+                      {{ caja.fecha_inicio | date: 'dd/MM/yyyy HH:mm' }}
+                    </td>
+                    <td>
+                      {{ caja.fecha_cierre == null ? 'Caja Abierta' : (caja.fecha_cierre | date: 'dd/MM/yyyy HH:mm') }}
+                    </td>
+                    <td class="td-actions text-right">
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Vista Previa"
+                        class="btn btn-info btn-round"
+                        [routerLink]="['/cajas/vista/', caja.id]"
+                      >
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Movimiento"
+                        class="btn btn-success btn-round"
+                        [routerLink]="['/cajas/ver/', caja.id]"
+                      >
+                        <i class="material-icons">account_balance_wallet</i>
+                      </button>
+                      <button
+                        *ngIf="caja.estado == 1"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Cerrar caja"
+                        class="btn btn-danger btn-round"
+                        (click)="cerrarCaja(caja.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <ngb-pagination
+                [(page)]="page"
+                [pageSize]="pageSize"
+                [collectionSize]="cajas?.length"
+                [maxSize]="5"
+                [rotate]="true"
+                [boundaryLinks]="true"
+              >
+              </ngb-pagination>
+            </div>
+            <!-- TABLE RESPONSIVE END -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

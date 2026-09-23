@@ -1,0 +1,59 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Cliente:{{nombre_cliente}}</h4>
+            <br />
+            <button
+              mat-raised-button
+              matTooltip="Volver"
+              class="btn btn-warning btn-sm"
+              [routerLink]="['/carpeta/vista_clientes']"
+            >
+              <span class="material-icons">
+              arrow_back
+              </span>
+            </button>
+            <button
+              style="float: right"
+              mat-raised-button
+              matTooltip="Crear Carpeta"
+              class="btn btn-success btn-sm"
+              [routerLink]="['/carpeta/crear-carpeta',id_cliente,id_carpeta_padre,nombre_cliente]"
+            >
+              <span class="material-icons">
+                create_new_folder
+              </span>
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="row" *ngIf="carpetas.length > 0">
+              <div class="card col-md-3" id="card_carpeta" *ngFor="let carpeta of carpetas" >
+                <div class="card-header" id="card_cabecera">
+                  <button mat-button type="button" class="close btn-sm"  aria-hidden="true">
+                    <i id="icono_cerrar" class="material-icons">close</i>
+                  </button>
+                </div>
+                <div class="card-body" id="card_cuerpo" [routerLink]="['/carpeta/carpeta_hijo/',id_cliente,id_carpeta_padre,carpeta.id,carpeta.id,nombre_cliente,carpeta.nombre]">
+                  <span id="icono" class="material-icons">
+                    folder
+                  </span>
+                  <h4 class="card-title" >{{carpeta.nombre}}</h4>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!carpetas.length " style="text-align: center;">
+              <h3>No Hay Carpetas Creadas Actualmente</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

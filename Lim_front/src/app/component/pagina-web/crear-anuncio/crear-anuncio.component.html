@@ -1,0 +1,56 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Crear Anuncio</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" routerLink="/pagina_web/anuncios">
+              <span class="btn-label"></span>
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <form #f1="ngForm" (submit)="crearAnuncio(f1.valid)">
+              <mat-form-field class="example-full-width">
+                <input matInput placeholder="Titulo" name="titulo" #titulo="ngModel" [(ngModel)]="anuncio.titulo" required type="text" />
+                <small [hidden]="titulo.valid || (titulo.pristine && !f1.submitted)" class="text-danger">
+                  Titulo es requerido.
+                </small>
+              </mat-form-field>
+              <mat-form-field class="example-full-width">
+                <input matInput placeholder="Sub Titulo" name="sub_titulo" #sub_titulo="ngModel" [(ngModel)]="anuncio.sub_titulo" required type="text" />
+                <small [hidden]="sub_titulo.valid || (sub_titulo.pristine && !f1.submitted)" class="text-danger">
+                  Sub Titulo es requerido.
+                </small>
+              </mat-form-field>
+
+              <mat-form-field class="example-full-width">
+                <input matInput placeholder="Descripcion" name="descripcion" #descripcion="ngModel" [(ngModel)]="anuncio.descripcion" required type="text" />
+                <small [hidden]="descripcion.valid || (descripcion.pristine && !f1.submitted)" class="text-danger">
+                  Descripcion requerido.
+                </small>
+              </mat-form-field>
+
+              <input type="file" #fo name="fo" (change)="imagenSelecionado($event)" required />
+              <small [hidden]="file" class="text-danger">
+                Archivo es requerido.
+              </small>
+              
+              
+              <div class="modal-footer justify-content-center">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round">
+                  Crear
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

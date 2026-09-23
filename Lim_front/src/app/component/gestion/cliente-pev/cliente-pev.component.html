@@ -1,0 +1,187 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Configuraciones PEV</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" (click)="volverAtras()">Volver</button>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="bmd-label-floating">Representante:</label>
+                  <input type="text" name="cliente?.representante" class="form-control" [ngModel]="cliente?.representante" disabled />
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label class="bmd-label-floating">Correo Encargado</label>
+                  <input type="text" name="cliente?.correo_encargado" class="form-control" [ngModel]="cliente?.correo_encargado" disabled />
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label class="bmd-label-floating">Nº Contacto</label>
+                  <input type="text" name="cliente?.numero_contacto" class="form-control" [ngModel]="cliente?.numero_contacto" disabled />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!turnos" class="col-md-12">
+        <div class="card" style="background-color: rgba(255, 0, 0, 0.393)">
+          <div class="card-body">
+            <h4 class="card-title"><b>Nota:</b> Debes generar los turnos</h4>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header card-header-success card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">domain_add</i>
+            </div>
+            <h4 class="card-title">Opciones "Sector"</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="row">
+                  <div class="col-md-6">
+                    <button
+                      [disabled]="!turnos"
+                      mat-raised-button
+                      class="btn btn-success btn-lg btn-block"
+                      [routerLink]="['/gestion/crear-sector-pev', cliente?.id]"
+                    >
+                      Registrar
+                    </button>
+                  </div>
+                  <div class="col-md-6">
+                    <button
+                      [disabled]="!turnos"
+                      mat-raised-button
+                      class="btn btn-success btn-lg btn-block"
+                      [routerLink]="['/gestion/sectores-pev', id_cliente]"
+                    >
+                      Ver Todos
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header card-header-success card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">camera_rear</i>
+            </div>
+            <h4 class="card-title">Opciones "Àreas"</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="row">
+                  <div class="col-md-6">
+                    <button
+                      [disabled]="!turnos"
+                      mat-raised-button
+                      class="btn btn-success btn-lg btn-block"
+                      [routerLink]="['/gestion/crear-area-pev', id_cliente]"
+                    >
+                      Registrar
+                    </button>
+                  </div>
+                  <div class="col-md-6">
+                    <button
+                      [disabled]="!turnos"
+                      mat-raised-button
+                      class="btn btn-success btn-lg btn-block"
+                      [routerLink]="['/gestion/areas-pev', id_cliente]"
+                    >
+                      Ver Todos
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header card-header-success card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">task</i>
+            </div>
+            <h4 class="card-title">Gestiòn "Tareas por Àreas"</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="row">
+                  <div class="col-md-12">
+                    <button
+                      [disabled]="!turnos"
+                      mat-raised-button
+                      class="btn btn-success btn-lg btn-block"
+                      [routerLink]="['/gestion/tareas-pev', id_cliente]"
+                    >
+                      Ver Todos
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header card-header-success card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">task</i>
+            </div>
+            <h4 class="card-title">Gestiòn "Turnos"</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="row">
+                  <div class="col-md-12">
+                    <button *ngIf="!turnos" mat-raised-button class="btn btn-warning btn-lg btn-block" (click)="generarTurnos()">
+                      Generar Turnos
+                    </button>
+                  </div>
+                  <!-- Mostrar cuando existan turnos-->
+                  <div class="col-md-12">
+                    <div class="togglebutton">
+                      <label *ngFor="let turno of turnos"
+                        >{{ turno.nombre }}
+                        <input (change)="cambiarEstadoTurno(turno.id, turno.estado)" type="checkbox" [checked]="turno.estado" />
+                        <span class="toggle"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,107 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Crear Stock</h4>
+            <br />
+            <button matTooltip="Volver" mat-raised-button class="btn btn-warning btn-sm" routerLink="/bodega/stock">
+              Volver
+            </button>
+          </div>
+          <app-loading *ngIf="loading" style="text-align: center;"></app-loading>
+          <div *ngIf="!loading" class="card-body">
+            <div class="row">
+              <!-- FORMULARIO PARA AÑADIR PRODUCTOS -->
+              <div class="col-lg-3 col-md-3 col-sm-12">
+                <ng-select
+                  [items]="productos"
+                  #select_producto
+                  autofocus
+                  bindLabel="nombre"
+                  [(ngModel)]="producto"
+                  placeholder="Producto..."
+                  (change)="obtenerStock()"
+                  [loading]="productosListo"
+                >
+                </ng-select>
+              </div>
+              <div class="col-lg-2 col-md-2 col-sm-2" style="margin-top: 13px;">
+                <mat-form-field class="example-full-width">
+                  <input matInput placeholder="Cantidad" name="cantidad" [(ngModel)]="cantidad" type="number" />
+                </mat-form-field>
+              </div>
+              <div class="col-lg-3 col-md-3 col-sm-6" style="margin-top: 13px;">
+                <mat-form-field class="example-full-width">
+                  <input matInput placeholder="Descripcion" name="comentario" [(ngModel)]="comentario" type="text" />
+                </mat-form-field>
+              </div>
+              <div class="col-lg-2 col-md-2 col-sm-2" style="margin-top: 13px;">
+                <mat-form-field class="example-full-width">
+                  <input matInput placeholder="Stock" disabled name="stock_actual" [(ngModel)]="stock_actual" type="number" />
+                </mat-form-field>
+              </div>
+              <div class="col-lg-2 col-md-2 col-sm-4" style="margin-top: 13px;">
+                <button mat-raised-button matTooltip="Agregar" *ngIf="cantidad > 0 && producto != null" (click)="agregar()" class="btn btn-success">
+                  Agregar
+                </button>
+              </div>
+            </div>
+            <!-- END FORMULARIO PARA AÑADIR -->
+            <!-- TABLA DONDE SE AÑADEN LOS PRODUCTOS A AGREGAR -->
+            <div class="row">
+              <div class="table-responsive">
+                <!-- TABLA RESPONSIVE-->
+                <table class="table">
+                  <!-- TABLA -->
+                  <thead>
+                    <tr>
+                      <th class="text-center">#</th>
+                      <th>Producto</th>
+                      <th>Cantidad</th>
+                      <th>Descripcion</th>
+                      <th class="text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let detalle_stock of detalle_stocks">
+                      <td class="text-center">-</td>
+                      <td>{{ detalle_stock.nombre_producto }}</td>
+                      <td>{{ detalle_stock.cantidad }}</td>
+                      <td>{{ detalle_stock.comentario }}</td>
+                      <td class="td-actions text-right">
+                        <button
+                          mat-raised-button
+                          matTooltip="Quitar Detalle"
+                          type="button"
+                          class="btn btn-danger btn-round"
+                          (click)="eliminarDetalle(detalle_stock)"
+                        >
+                          <i class="material-icons">close</i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <!-- END TABLE -->
+              </div>
+              <!-- END TABLA RESPONSIVE-->
+              <div *ngIf="detalle_stocks.length > 0" class="col-lg-4 col-md-4 col-sm-12">
+                <button mat-raised-button matTooltip="Crear Stock" (click)="crearStock()" class="btn btn-info">
+                  Crear Stock
+                </button>
+              </div>
+            </div>
+            <!-- END TABLA DONDE SE AÑADEN STOCK DE PRODUCTOS-->
+
+            <!-- END CREAR STOCK -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

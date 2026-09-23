@@ -1,0 +1,46 @@
+export class Liquidacion {
+  constructor(
+    public id: number,
+    public sueldo_base: number,
+    public monto_mes: number,
+    public cant_horas_extras: number,
+    public valor_horas_extras: number,
+    public porcentaje_gratificacion: number,
+    public gratificacion: number,
+    public reajuste_retroactivo: number,
+    public monto_indemnizacion: number,
+    public bono_indemnizacion: number,
+    public valor_movilizacion: number,
+    public movilizacion: number,
+    public colacion: number,
+    public monto_produccion: number,
+    public bono_produccion: number,
+    public dias_trabajados: number,
+    public monto_responsabilidad: number,
+    public bono_responsabilidad: number,
+    public total_haber: number,
+    public total_imponible: number,
+    public cotizacion_obligatoria: number,
+    public salud: number,
+    public seguro_cesantia: number,
+    public total_descuento: number,
+    public anticipo: number,
+    public liquido_pagar: number,
+    public hora_faltante: number,
+    public valor_hora_faltante: number,
+    public cant_familiar: number,
+    public valor_carga_familiar: number,
+    public fecha_creacion: string,
+    //public descuento_accion:number,
+    public horas_feriado: number,
+    public valor_hora_feriado: number,
+    public total_pago: number,
+    public alimentacion: number,
+    public tipo_trabajador: boolean,
+    public estado: number
+  ) // public trabajadoreId: number,
+  // public centroCostoId: number
+  //public centroCostoTrabajadoreId:number
+
+  {}
+}

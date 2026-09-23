@@ -1,0 +1,26 @@
+table > thead > tr >th{
+    font-weight: 1000; 
+}
+h3,h4{
+    font-weight: 1000;
+    color: black;
+}
+label{
+    color: black;
+    font-size: 19px;
+}
+#indicadores{
+    padding-left: 20px;
+    padding-right: 20px;
+}
+.box img{
+    width: 100%;
+    height: auto;
+  }
+  @supports(object-fit: cover){
+      .box img{
+        height: 100%;
+        object-fit: cover;
+        object-position: center center;
+      }
+  }

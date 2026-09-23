@@ -1,0 +1,156 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Egresos</h4>
+            <br />
+            <button
+              *ngIf="caja_activa != null"
+              mat-raised-button
+              title="Crear Egreso"
+              class="btn btn-warning btn-sm"
+              data-toggle="modal"
+              data-target="#createModal"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear
+            </button>
+            <div *ngIf="caja_activa == null">
+              <p style="text-align: center; color: black;">
+                <strong>NO HAY CAJA ACTIVA</strong>
+              </p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Usuario</th>
+                    <th>Descripcion</th>
+                    <th>Cantidad Dinero</th>
+                    <th>Fecha</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="
+                      let egreso of egresos
+                        | slice
+                          : (page - 1) * pageSize
+                          : (page - 1) * pageSize + pageSize
+                    "
+                  >
+                    <td>{{ egreso.usuario.nombre }}</td>
+                    <td>{{ egreso.comentario }}</td>
+                    <td>{{ egreso.monto | currency: "USD":"symbol":"1.0" }}</td>
+                    <td>{{ egreso.fecha | date: "dd/MM/yyyy HH:mm:ss" }}</td>
+                    <td class="td-actions text-right">
+                      <button
+                        mat-raised-button
+                        type="button"
+                        title="Eliminar Egreso"
+                        class="btn btn-danger btn-round"
+                        (click)="eliminarEgreso(egreso.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <ngb-pagination
+                [(page)]="page"
+                [pageSize]="pageSize"
+                [collectionSize]="egresos?.length"
+                [maxSize]="5"
+                [rotate]="true"
+                [boundaryLinks]="true"
+              >
+              </ngb-pagination>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- CREATE MODAL -->
+<div
+  class="modal fade"
+  id="createModal"
+  tabindex="-1"
+  role="dialog"
+  data-backdrop="static"
+  aria-labelledby="myModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Crear Egreso</h5>
+        <button
+          mat-button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-hidden="true"
+        >
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f1="ngForm" (submit)="crearEgreso(f1.valid)">
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              [cleave]="cleaveOptions"
+              placeholder="Dinero"
+              name="monto"
+              #monto="ngModel"
+              [(ngModel)]="egreso.monto"
+              required
+              type="text"
+            />
+            <small
+              [hidden]="monto.valid || (monto.pristine && !f1.submitted)"
+              class="text-danger"
+            >
+              Dinero es requerido.
+            </small>
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <input
+              matInput
+              placeholder="Comentario"
+              name="comentario"
+              #comentario="ngModel"
+              [(ngModel)]="egreso.comentario"
+              type="text"
+            />
+          </mat-form-field>
+          <div class="modal-footer justify-content-center">
+            <button
+              mat-raised-button
+              type="submit"
+              class="btn btn-info btn-round"
+            >
+              Crear
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END CREATE MODAL -->

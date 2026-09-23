@@ -1,0 +1,24 @@
+.centrado{
+    text-align: center;
+}
+
+.rojo{
+    color: red;
+}
+
+.margen{
+    margin-bottom: 1rem;
+}
+
+th{
+    padding: 8px 4px;
+}
+
+td{
+    padding: 8px 4px;
+}
+
+.no-left-top{
+    border-left-style: hidden;
+    border-top-style: hidden;
+}

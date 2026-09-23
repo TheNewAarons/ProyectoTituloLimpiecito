@@ -1,0 +1,113 @@
+<h1 mat-dialog-title>Lista Checkeo</h1>
+<div mat-dialog-content id="imprimir">
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Datos Listado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-md-6"><b>Nombre:</b> {{ data.trabajador?.nombre }} {{ data.trabajador?.apellido }}</td>
+          <td class="col-md-6"><b>Cliente:</b> {{ data.nombre_cliente }}</td>
+        </tr>
+        <tr>
+          <td class="col-md-6"><b>Fecha Generada:</b> {{ data.listasPevConLineasPev?.fecha_creacion | date: 'dd/MM/yyyy' }}</td>
+          <td class="col-md-6"><b>Fecha De Chequeo:</b> {{ data.listasPevConLineasPev?.fecha_chequeo | date: 'dd/MM/yyyy' }}</td>
+        </tr>
+        <tr>
+          <td class="col-md-6"><b>Estado:</b> {{ data.listasPevConLineasPev?.estado | estadoListaPevSup }}</td>
+          <td class="col-md-6"><b>Turno:</b> {{ data.turno }}</td>
+        </tr>
+        <tr *ngIf="data.listasPevConLineasPev?.fecha_firma">
+          <td class="col-md-6"><b>Fecha Firma:</b> {{ data.listasPevConLineasPev?.fecha_firma | date: 'dd/MM/yyyy' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-striped disabled" >
+      <thead>
+        <tr>
+          <th>Sector</th>
+          <th>Areas</th>
+          <th>Tareas</th>
+          <th>Check 1</th>
+          <th>Hora C1</th>
+          <th>Check 2</th>
+          <th>Hora C2</th>
+          <th>Check 3</th>
+          <th>Hora C3</th>
+          <th>Observaciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let lista of data.listaPev_vista; let indexOfelement = index">
+          <td class="col-md-3" *ngIf="lista.s_rows > 1" [attr.rowspan]="lista.s_rows">{{ lista.n_sector }}</td>
+          <td class="col-md-3" *ngIf="lista.s_rows == 1">{{ lista.n_sector }}</td>
+          <td class="col-md-3" *ngIf="lista.a_rows > 1" [attr.rowspan]="lista.a_rows">{{ lista.n_area }}</td>
+          <td class="col-md-3" *ngIf="lista.a_rows == 1">{{ lista.n_area }}</td>
+          <td class="col-md-6">
+            {{ lista.n_tarea }}
+          </td>
+          <td class="col-md-6 centrado">
+            <div [ngSwitch]="lista.check_trabajador_1">
+              <div *ngSwitchCase="true">
+                <mat-checkbox
+                  [disabled]="true"
+                  checked="true"
+                ></mat-checkbox>
+              </div>
+              <div *ngSwitchDefault>
+                <mat-checkbox [disabled]="true"></mat-checkbox>
+              </div>
+            </div>
+          </td>
+          <td class="col-md-6 centrado">
+            {{ lista.hora_check_trabajador_1 }}
+          </td>
+          <td class="col-md-6 centrado">
+            <div [ngSwitch]="lista.check_trabajador_2">
+              <div *ngSwitchCase="true">
+                <mat-checkbox
+                [disabled]="true"
+                  checked="true"
+                ></mat-checkbox>
+              </div>
+              <div *ngSwitchDefault>
+                <mat-checkbox [disabled]="true"></mat-checkbox>
+              </div>
+            </div>
+          </td>
+          <td class="col-md-6 centrado">
+            {{ lista.hora_check_trabajador_2 }}
+          </td>
+          <td class="col-md-6 centrado">
+            <div [ngSwitch]="lista.check_trabajador_3">
+              <div *ngSwitchCase="true">
+                <mat-checkbox
+                [disabled]="true"
+                  checked="true"
+                ></mat-checkbox>
+              </div>
+              <div *ngSwitchDefault>
+                <mat-checkbox [disabled]="true"></mat-checkbox>
+              </div>
+            </div>
+          </td>
+          <td class="col-md-6 centrado">
+            {{ lista.hora_check_trabajador_3 }}
+          </td>
+          <td class="col-md-6 centrado">
+            <textarea [disabled]="true" placeholder="Escriba texto" [(ngModel)]="lista.observaciones" rows="2">
+            </textarea>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="imprimir()" >Imprimir</button>
+</div>

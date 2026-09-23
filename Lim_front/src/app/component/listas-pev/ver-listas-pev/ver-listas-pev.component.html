@@ -1,0 +1,50 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Trabajadores Cliente: {{ nombre_cliente}} ; Turno:{{turno}}</h4>
+          </div>
+          <div class="card-body">
+            <button mat-raised-button class="btn btn-warning btn-sm" (click)="volverAtras()"><i class="material-icons">arrow_back</i></button>
+            <button mat-raised-button class="btn btn-info btn-sm lado-derecho" [disabled]="estado_cronograma === 2"
+            [routerLink]="['/listas-pev/asociar-trabajadores-cronograma', id_cronograma, id_cliente]"
+            ><i class="material-icons">add</i><i class="material-icons">engineering</i></button>
+            <div class="row">
+              <div *ngFor="let trabajador of trabajadores_cronograma" class="col-md-3 margen-abajo">
+                <div class="card card-testimonial">
+                  <div class="card-footer">
+                    <h4 class="card-title">{{trabajador?.trabajadore.nombre}}</h4>
+                    <h6 class="card-category"><b>{{trabajador?.trabajadore.apellido}}</b></h6>
+                    <div >
+                      <button
+                      *ngIf = "estado_cronograma === 1"
+                      style="padding: 5px; margin: 0px; color: red;"
+                      mat-raised-button
+                      type="button"
+                      class="btn btn-link btn-sm btn-round"
+                      matTooltip="Quitar Trabajador"
+                      (click)="quitarTrabajador(trabajador.id,trabajador.trabajadore.n_empleado)"
+                    >
+                      <i class="material-icons rojo">close</i>
+                    </button>
+                    </div>
+                    <div class="card-avatar">
+                      <a [routerLink]="['/listas-pev/ver-listas-pev-trabajador', id_cronograma, trabajador?.trabajadore.n_empleado,trabajador.trabajadore.nombre,trabajador.trabajadore.apellido,turno,nombre_cliente]">
+                        <img class="img" src="../../../../assets/img/default-avatar.png" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,124 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Reservas Aprobadas</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver Reservas" class="btn btn-warning btn-sm" routerLink="/adm_servicio/reservas">Volver</button>
+
+            <button
+              mat-raised-button
+              style="float: right"
+              matTooltip="Ver Finalizados"
+              class="btn btn-rose btn-sm"
+              [routerLink]="['/adm_servicio/reserva-finalizado/', idCategoria, nombre]"
+            >
+              Finalizados
+            </button>
+            <button
+              mat-raised-button
+              style="float: right"
+              matTooltip="Ver Rechazado"
+              class="btn btn-rose btn-sm"
+              [routerLink]="['/adm_servicio/reserva-proceso/', idCategoria, nombre]"
+            >
+              En Proceso
+            </button>
+            <button
+              mat-raised-button
+              style="float: right"
+              matTooltip="Ver Rechazado"
+              class="btn btn-rose btn-sm"
+              [routerLink]="['/adm_servicio/reserva-rechazado/', idCategoria, nombre]"
+            >
+              Rechazado
+            </button>
+          </div>
+          <app-loading *ngIf="loading" style="text-align: center"></app-loading>
+          <div class="card-body" *ngIf="!loading">
+            <!-- BUSCADOR -->
+            <!-- <div class="input-group no-border">
+              <input type="text" name="search" class="form-control" [(ngModel)]="search" placeholder="Buscar..." (change)="buscar()" />
+            </div> -->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>N° Orden</th>
+                    <th>Fecha Petición</th>
+                    <th>Fecha Reserva</th>
+                    <th>Bloque</th>
+                    <th>Cant.</th>
+                    <th>Valor</th>
+                    <th>Pagado</th>
+                    <th>Servicio</th>
+                    <th>Cliente</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let reserva of reservas | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                    <td>{{ reserva.orden }}</td>
+                    <td>{{ reserva.fecha_creacion | date: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ reserva.fecha_reserva | date: 'dd/MM/yyyy' }}</td>
+                    <td>{{ reserva.hora_inicio }} - {{ reserva.hora_fin }}</td>
+                    <td>{{ reserva.cantidad }}</td>
+                    <td>{{ reserva.precio_total | currency: 'USD':'symbol':'1.0' }}</td>
+                    <td>{{ reserva.pagado ? 'Si' : 'No' }}</td>
+                    <td>{{ reserva.servicio.nombre  }}</td>
+                    <td>{{ reserva.usuario_app.nombre}}</td>
+                    <td class="td-actions text-right">
+                      <!-- <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Editar Categoria Servicio"
+                        class="btn btn-success btn-round"
+                        [routerLink]="['/adm_servicio/editar-cate_servicio/', cate.id]"
+                      >
+                        <i class="material-icons">edit</i>
+                      </button> -->
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Ver Reserva"
+                        class="btn btn-info btn-round"
+                        [routerLink]="['/adm_servicio/ver-reserva/', reserva.id]"
+                      >
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                      <!-- <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Desactivar Categoria Servicio"
+                        class="btn btn-danger btn-round"
+                        (click)="desactivarCateServicio(cate.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button> -->
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <ngb-pagination
+                [(page)]="page"
+                [pageSize]="pageSize"
+                [collectionSize]="reservas?.length"
+                [maxSize]="5"
+                [rotate]="true"
+                [boundaryLinks]="true"
+              >
+              </ngb-pagination>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

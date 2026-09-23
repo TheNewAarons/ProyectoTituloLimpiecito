@@ -1,0 +1,70 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Listas Pev trabajador: {{nombre_trabajador}} {{apellido_trabajador}} ; Cliente:{{nombre_cliente}}; Turno: {{turno}}</h4>
+          </div>
+          <div class="card-body">
+            <button mat-raised-button class="btn btn-warning btn-sm" (click)="volverAtras()"><i class="material-icons">arrow_back</i></button>
+            <button
+              [disabled]="estado_cronograma === 2"
+              [routerLink]="['/listas-pev/crear-lista-pev-trabajador', id_cronograma, n_empleado]"
+              mat-raised-button
+              matTooltip="Registrar lista pev a trabajador"
+              class="btn btn-warning btn-sm lado-derecho"
+            >
+              Generar Lista
+            </button>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="negrito">Estado</th>
+                    <th class="negrito">Fecha Creado</th>
+                    <th class="negrito">Fecha De Chequeo</th>
+                    <th class="negrito">Fecha Firma</th>
+                    <th class="negrito">Nº Empleado</th>
+                    <th class="text-right negrito">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let listaPevTrabajador of listasPevTrabajador">
+                    <td>{{ listaPevTrabajador.estado | estadoListaPevSup }}</td>
+                    <td>{{ listaPevTrabajador.fecha_creacion | date: 'dd/MM/yyyy' }}</td>
+                    <td>{{ listaPevTrabajador.fecha_chequeo | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ listaPevTrabajador.fecha_firma | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ listaPevTrabajador.n_empleado }}</td>
+                    <td class="td-actions text-right">
+                      <button
+                        [routerLink]="['/listas-pev/vista-lista-pev-trabajador', listaPevTrabajador.id,nombre_cliente,turno]"
+                        mat-raised-button
+                        type="button"
+                        class="btn btn-info"
+                        matTooltip="Ver lista"
+                      >
+                        <i class="material-icons">view_timeline</i>
+                      </button>
+                      <button *ngIf="listaPevTrabajador.listas_super_trabajadore" mat-raised-button matTooltip="Ver Lista Supervisor" type="button" class="btn btn-warning"
+                        [routerLink]="['/listas-supervisor/ver_lista_supervisor',listaPevTrabajador.listas_super_trabajadore.id,nombre_cliente,turno]" >
+                        <i class="material-icons">visibility</i>
+                      </button>
+                      <button *ngIf="!listaPevTrabajador.listas_super_trabajadore" [disabled]="estado_cronograma === 2" mat-raised-button matTooltip="Crear Lista Supervisor" type="button" class="btn btn-success"
+                        [routerLink]="['/listas-supervisor/crear-lista',listaPevTrabajador.id]">
+                        <i class="material-icons">add</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

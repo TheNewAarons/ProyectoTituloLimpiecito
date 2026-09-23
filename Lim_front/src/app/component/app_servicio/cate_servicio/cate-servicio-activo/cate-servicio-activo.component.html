@@ -1,0 +1,100 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Categoria Servicios Activos</h4>
+            <br />
+            <button
+              mat-raised-button
+              matTooltip="Crear Categoria Servicio"
+              class="btn btn-warning btn-sm"
+              routerLink="/adm_servicio/crear-cate_servicio"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear
+            </button>
+            <button
+              mat-raised-button
+              style="float: right"
+              matTooltip="Ver Inactivos"
+              class="btn btn-rose btn-sm"
+              routerLink="/adm_servicio/cate_servicio-inactivo"
+            >
+              Ver Inactivos
+            </button>
+          </div>
+          <div class="card-body">
+            <!-- BUSCADOR -->
+            <!-- <div class="input-group no-border">
+              <input type="text" name="search" class="form-control" [(ngModel)]="search" placeholder="Buscar..." (change)="buscar()" />
+            </div> -->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Reserva por cantidad</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let cate of cateServicios | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                    <td>{{ cate.nombre }}</td>
+                    <td>{{ cate.activar_cantidad ? 'Activado' : 'Desactivado' }}</td>
+                    <td class="td-actions text-right">
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Editar Categoria Servicio"
+                        class="btn btn-success btn-round"
+                        [routerLink]="['/adm_servicio/editar-cate_servicio/', cate.id]"
+                      >
+                        <i class="material-icons">edit</i>
+                      </button>
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Ver Categoria Servicio"
+                        class="btn btn-info btn-round"
+                        [routerLink]="['/adm_servicio/ver-cate_servicio/', cate.id]"
+                      >
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Desactivar Categoria Servicio"
+                        class="btn btn-danger btn-round"
+                        (click)="desactivarCateServicio(cate.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <ngb-pagination
+                [(page)]="page"
+                [pageSize]="pageSize"
+                [collectionSize]="cateServicios?.length"
+                [maxSize]="5"
+                [rotate]="true"
+                [boundaryLinks]="true"
+              >
+              </ngb-pagination>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

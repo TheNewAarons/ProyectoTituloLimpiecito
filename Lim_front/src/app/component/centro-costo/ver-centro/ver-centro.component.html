@@ -1,0 +1,604 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">
+              CENTRO DE COSTO
+              <button
+                *ngIf="usuario.role.nombre != 'APOYO_LVL_1'"
+                mat-raised-button
+                type="button"
+                matTooltip="PDF"
+                style="float: right;"
+                class="btn btn-warning btn-sm"
+                [routerLink]="['/centro_costos/vista_previa/', centro?.id]"
+              >
+                <i class="material-icons">picture_as_pdf</i>
+              </button>
+            </h4>
+            <br />
+            <button mat-raised-button title="Volver Centros" class="btn btn-warning btn-sm" (click)="volverCentros()">
+              CENTROS
+            </button>
+            <button
+              *ngIf="usuario.role.nombre != 'APOYO_LVL_1'"
+              mat-raised-button
+              matTooltip="Volver Caja"
+              style="float: right;"
+              class="btn btn-warning btn-sm"
+              (click)="volverCajasVer()"
+            >
+              Movimiento Caja
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <label class="col-md-4"><strong>Cliente:</strong>{{ centro?.cliente.representante }}</label>
+              <label class="col-md-4"><strong>Fecha:</strong>{{ centro?.fecha_inicio | date: 'dd/MM/yyyy HH:mm:ss' }}</label>
+              <label class="col-md-4"><strong>Número:</strong>{{ centro?.numero_cc }}</label>
+            </div>
+            <div class="row">
+              <label *ngIf="usuario.role.nombre != 'APOYO_LVL_1'" class="col-md-4"
+                ><strong>Valor Servicio:</strong>{{ centro?.precio_servicio | currency: 'USD':'symbol':'1.0' }}</label
+              >
+              <!-- SI CENTRO COSTO ESTA CERRADO SE MUESTRA SUS VALORES CORRESPONDIENTES, SI NO SE MUESTRA LOS FICTIOSOS-->
+              <label *ngIf="centro?.estado == 0 && usuario.role.nombre != 'APOYO_LVL_1'" class="col-md-4"
+                ><strong>Utilidad:</strong>{{ centro?.utilidad | currency: 'USD':'symbol':'1.0' }}</label
+              >
+              <label *ngIf="centro?.estado == 0 && usuario.role.nombre != 'APOYO_LVL_1'" class="col-md-4"
+                ><strong>Total Costos:</strong>{{ centro?.total_costos | currency: 'USD':'symbol':'1.0' }}</label
+              >
+              <label *ngIf="centro?.estado == 1 && usuario.role.nombre != 'APOYO_LVL_1'" class="col-md-4"
+                ><strong>Utilidad:</strong>{{ utilidadMoment | currency: 'USD':'symbol':'1.0' }}</label
+              >
+              <label *ngIf="centro?.estado == 1 && usuario.role.nombre != 'APOYO_LVL_1'" class="col-md-4"
+                ><strong>Total Costos:</strong>{{ total_costosMoment | currency: 'USD':'symbol':'1.0' }}</label
+              >
+            </div>
+            <div class="row" *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
+              <label class="col-md-4"><strong>Insumos:</strong>{{ totalLista | currency: 'USD':'symbol':'1.0' }}</label>
+              <label class="col-md-4"><strong>Egresos:</strong>{{ totalEgresos | currency: 'USD':'symbol':'1.0' }}</label>
+              <label class="col-md-4"><strong>Liquidaciones:</strong>{{ totalLiquidacion | currency: 'USD':'symbol':'1.0' }}</label>
+            </div>
+            <button
+              *ngIf="centro?.estado == 1 && usuario.role.nombre != 'APOYO_LVL_1'"
+              mat-raised-button
+              matTooltip="Agregar Trabajador"
+              class="btn btn-warning btn-sm"
+              data-toggle="modal"
+              data-target="#createAsociacion"
+              (click)="limpiar()"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Asociar Trabajador
+            </button>
+            <button
+              *ngIf="centro?.estado == 1 && usuario.role.nombre != 'APOYO_LVL_1' && usuario.role.nombre != 'ADMINISTRADOR_LVL_3'"
+              mat-raised-button
+              matTooltip="Cerrar"
+              style="float: right;"
+              class="btn btn-warning btn-sm"
+              (click)="cerrarCentro()"
+            >
+              <span class="btn-label">
+                <i class="material-icons">close</i>
+              </span>
+              Cerrar
+            </button>
+            <h4 *ngIf="centro?.estado == 0 && usuario.role.nombre != 'APOYO_LVL_1'"><strong>LISTA DE TRABAJADORES</strong></h4>
+            <!-- TABLA DE TRABAJADORES -->
+            <div class="table-responsive" *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Telefono</th>
+                    <th>Telefono Emer.</th>
+                    <th>Liquidación</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let trabajador of trabajadores">
+                    <td class="text-center">-</td>
+                    <td>{{ trabajador.trabajadore.nombre }}</td>
+                    <td>{{ trabajador.trabajadore.apellido }}</td>
+                    <td>{{ trabajador.trabajadore.telefono }}</td>
+                    <td>{{ trabajador.trabajadore.telefono_emergencia }}</td>
+                    <td *ngIf="trabajador.liquidacione">{{ trabajador.liquidacione?.estado == 1 ? 'Abierta' : 'Cerrada' }}</td>
+                    <td *ngIf="!trabajador.liquidacione">Sin Liquidación</td>
+                    <td class="td-actions text-right">
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Crear Liquidación"
+                        class="btn btn-success btn-round"
+                        *ngIf="trabajador.liquidacione == null && usuario.role.nombre != 'APOYO_LVL_1'"
+                        [routerLink]="['/liquidacion/crear/', trabajador.trabajadore.id, centro.id, trabajador.id]"
+                      >
+                        <i class="material-icons">add</i>
+                      </button>
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Ver Liquidación"
+                        class="btn btn-info btn-round"
+                        *ngIf="trabajador.liquidacione && usuario.role.nombre != 'APOYO_LVL_1'"
+                        [routerLink]="['/liquidacion/ver/', trabajador.liquidacione.id]"
+                      >
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                      <button
+                        *ngIf="centro?.estado == 1 && usuario.role.nombre != 'APOYO_LVL_1'"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Eliminar Trabajador"
+                        class="btn btn-danger btn-round"
+                        (click)="eliminarAsociacion(trabajador.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+            <button
+              *ngIf="centro?.estado == 1 && productos?.length > 0"
+              mat-raised-button
+              matTooltip="Crear Lista"
+              class="btn btn-warning btn-sm"
+              data-toggle="modal"
+              data-target="#createLista"
+              (click)="limpiar()"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear Lista Insumo
+            </button>
+            <span *ngIf="productos?.length == 0"><strong>NO HAY PRODUCTOS DISPONIBLES</strong></span>
+            <h4 *ngIf="centro?.estado == 0"><strong>LISTA DE INSUMOS</strong></h4>
+            <!-- TABLA DE LISTAS DE INSUMO -->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Fecha</th>
+                    <th>Total</th>
+                    <th>Creada Por</th>
+                    <th>Aprobada Por</th>
+                    <th>Estado</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let listaInsumo of listaInsumos">
+                    <td class="text-center">-</td>
+                    <td>{{ listaInsumo.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td>{{ listaInsumo.total | currency: 'USD':'symbol':'1.0' }}</td>
+                    <td>{{ listaInsumo.crea ? listaInsumo.crea.nombre + listaInsumo.crea.apellido : ''}}</td>
+                    <td>{{ listaInsumo.aprueba ? listaInsumo.aprueba.nombre + listaInsumo.aprueba.apellido : ''}}</td>
+                    <td>{{ listaInsumo.estado == 1 ? 'Aprobado' : 'En Espera' }}</td>
+                    <td class="td-actions text-right">
+                      <button
+                        *ngIf="listaInsumo.estado == 0 && usuario.role.nombre != 'APOYO_LVL_1'"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Aprobar"
+                        class="btn btn-success btn-round"
+                        (click)="aprobarLista(listaInsumo.id)"
+                      >
+                        <i class="material-icons">done</i>
+                      </button>
+                      <button
+                        
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Lista Excel"
+                        class="btn btn-default btn-round"
+                        [routerLink]="['/lista_insumo/nueva_vista/', centro?.id, listaInsumo.id]"
+                      >
+                        <i class="material-icons">picture_as_pdf</i>
+                      </button>
+                      <button
+                        *ngIf="listaInsumo.estado == 1"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Pdf"
+                        class="btn btn-warning btn-round"
+                        [routerLink]="['/lista_insumo/vista_previa/', centro?.id, listaInsumo.id]"
+                      >
+                        <i class="material-icons">picture_as_pdf</i>
+                      </button>
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Ver Lista "
+                        class="btn btn-info btn-round"
+                        data-toggle="modal"
+                        data-target="#viewLista"
+                        (click)="verLista(listaInsumo)"
+                      >
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                      <button
+                        *ngIf="listaInsumo.estado == 0 && usuario.role.nombre != 'APOYO_LVL_1'"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Eliminar Lista"
+                        class="btn btn-danger btn-round"
+                        (click)="eliminarLista(listaInsumo.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+            <button
+              *ngIf="centro?.estado == 1 && usuario.role.nombre != 'APOYO_LVL_1'"
+              mat-raised-button
+              matTooltip="Crear Perdida"
+              class="btn btn-warning btn-sm"
+              data-toggle="modal"
+              data-target="#createEgreso"
+              (click)="limpiar()"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear Egreso
+            </button>
+            <h4 *ngIf="centro?.estado == 0 && usuario.role.nombre != 'APOYO_LVL_1'"><strong>LISTA DE EGRESOS</strong></h4>
+            <!-- TABLA DE PERDIDA -->
+            <div class="table-responsive" *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Comentario</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let egreso of egresos">
+                    <td class="text-center">-</td>
+                    <td>{{ egreso.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td>{{ egreso.monto | currency: 'USD':'symbol':'1.0' }}</td>
+                    <td>{{ egreso.comentario }}</td>
+                    <td class="td-actions text-right">
+                      <button
+                        *ngIf="centro?.estado == 1 && usuario.role.nombre != 'APOYO_LVL_1'"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Eliminar Egreso"
+                        class="btn btn-danger btn-round"
+                        (click)="eliminarEgreso(egreso.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+            <!-- Tabla Ingreso -->
+            <button
+              *ngIf="centro?.estado == 1 && usuario.role.nombre != 'APOYO_LVL_1'"
+              mat-raised-button
+              matTooltip="Crear Ingreso"
+              class="btn btn-warning btn-sm"
+              data-toggle="modal"
+              data-target="#createIngreso"
+              (click)="limpiar()"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear Ingreso
+            </button>
+            <h4 *ngIf="centro?.estado == 0 && usuario.role.nombre != 'APOYO_LVL_1'"><strong>LISTA DE INGRESOS</strong></h4>
+            <!-- TABLA DE PERDIDA -->
+            <div class="table-responsive" *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Comentario</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let ingreso of ingresos">
+                    <td class="text-center">-</td>
+                    <td>{{ ingreso.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td>{{ ingreso.monto | currency: 'USD':'symbol':'1.0' }}</td>
+                    <td>{{ ingreso.comentario }}</td>
+                    <td class="td-actions text-right">
+                      <button
+                        *ngIf="centro?.estado == 1 && usuario.role.nombre != 'APOYO_LVL_1'"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Eliminar Ingreso"
+                        class="btn btn-danger btn-round"
+                        (click)="eliminarIngreso(ingreso.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ZONA DE LOS MODAL! -->
+
+<!-- CREATE ASOCIACION TRABAJADOR -->
+<div class="modal fade" id="createAsociacion" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Asociar Trabajador</h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f1="ngForm" (submit)="crearAsociacion(f1.valid)">
+          <!-- <mat-form-field>
+            <mat-select placeholder="Trabajador.." name="trabajadoreId" #trabajadoreId="ngModel" [(ngModel)]="centroTrabajador.trabajadoreId">
+              <mat-option *ngFor="let trabajadorActivo of trabajadoresActivos" [value]="trabajadorActivo.id">
+                {{ trabajadorActivo.nombre }} {{trabajadorActivo.apellido}} - {{trabajadorActivo.rut}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field> -->
+          <ng-select
+            class="col-lg-12 col-md-12"
+            [items]="trabajadoresActivos"
+            name="trabajadoreId"
+            #trabajadoreId
+            autofocus
+            bindLabel="nombre"
+            bindValue="id"
+            [(ngModel)]="centroTrabajador.trabajadoreId"
+            placeholder="Trabajador..."
+          >
+            <ng-template ng-option-tmp let-item="item">
+              {{ item.nombre }}<br />
+              <small>{{ item.rut | rut }}</small>
+            </ng-template>
+          </ng-select>
+
+          <div class="modal-footer justify-content-center">
+            <button mat-raised-button *ngIf="centroTrabajador.trabajadoreId != null" type="submit" class="btn btn-info btn-round">
+              Crear Asociación
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END CREATE MODAL ASOCIACION TRABAJADOR-->
+
+<!-- CREATE LISTA INSUMOS -->
+<div class="modal fade" id="createLista" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Crear Lista</h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f2="ngForm" (submit)="crearLista(f2.valid)" (keydown.enter)="$event.preventDefault()">
+          <div class="row">
+            <ng-select
+              class="col-lg-5 col-md-5"
+              [items]="productos"
+              #producto1
+              [ngModelOptions]="{ standalone: true }"
+              autofocus
+              bindLabel="nombre"
+              [(ngModel)]="producto"
+              placeholder="Producto..."
+            >
+            </ng-select>
+            <mat-form-field class="col-lg-4 col-md-4" style="margin-top: 6px;">
+              <input matInput placeholder="Cantidad" name="cantidad" #cantidad="ngModel" min="1" [(ngModel)]="lineaInsumo.cantidad" type="number" />
+              <small [hidden]="cantidad.valid || (cantidad.pristine && !f3.submitted)" class="text-danger">
+                Cantidad es requerido.
+              </small>
+            </mat-form-field>
+            <div class="col-lg-2 col-md-2" style="margin-top: 17px; padding: 0px;">
+              <button
+                mat-raised-button
+                *ngIf="producto != null && lineaInsumo.cantidad > 0"
+                title="Agregar Producto"
+                class="btn btn-warning btn-sm"
+                (click)="agregarDetalle()"
+              >
+                Añadir
+              </button>
+            </div>
+          </div>
+
+          <!-- Detalle de productos -->
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Precio</th>
+                  <th>Cantidad</th>
+                  <th>SubTotal</th>
+                  <th class="text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let detalle of detalles">
+                  <td>{{ detalle.nombre }}</td>
+                  <td>{{ detalle.precio | currency: 'USD':'symbol':'1.0' }}</td>
+                  <td>{{ detalle.cantidad }}</td>
+                  <td>{{ detalle.total_linea | currency: 'USD':'symbol':'1.0' }}</td>
+                  <td class="td-actions text-right">
+                    <button
+                      mat-raised-button
+                      type="button"
+                      title="Eliminar Perdida"
+                      class="btn btn-danger btn-round"
+                      (click)="eliminarDetalle(detalle)"
+                    >
+                      <i class="material-icons">close</i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- Termina detalle de productos -->
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button *ngIf="detalles.length > 0" mat-raised-button type="submit" class="btn btn-info btn-round">Crear Lista</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END CREATE MODAL LISTA DE INSUMO -->
+
+<!-- CREATE EGRESO -->
+<div class="modal fade" id="createEgreso" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Crear Perdida</h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f3="ngForm" (submit)="crearPerdida(f3.valid)">
+          <mat-form-field class="col-lg-4 col-md-4" style="display: inline-block !important;">
+            <input matInput placeholder="Dinero" [cleave]="cleaveOptions" name="monto" #monto="ngModel" [(ngModel)]="egreso.monto" type="text" />
+          </mat-form-field>
+          <mat-form-field class="col-lg-8 col-md-8" style="display: inline-block !important;">
+            <input matInput placeholder="Comentario" name="comentario" #comentario="ngModel" [(ngModel)]="egreso.comentario" type="text" />
+          </mat-form-field>
+
+          <div class="modal-footer justify-content-center">
+            <button mat-raised-button *ngIf="egreso.monto != ''" type="submit" class="btn btn-info btn-round">Crear Perdida</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END CREATE MODAL PERDIDA -->
+
+<!-- VER LISTA INSUMOS -->
+<div class="modal fade" id="viewLista" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel"><strong>DETALLE LISTA DE INSUMO</strong></h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <label><strong> CLIENTE:</strong> {{ centro?.cliente.representante }}</label
+          ><br />
+          <label><strong> FECHA:</strong> {{ viewLista?.fecha | date: 'dd/MM/yyyy ' }}</label>
+        </div>
+        <!-- Detalle de productos -->
+        <table class="table">
+          <thead>
+            <tr>
+              <th><strong>Producto</strong></th>
+              <th><strong>Precio</strong></th>
+              <th><strong>Cantidad</strong></th>
+              <th><strong>SubTotal</strong></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let detaLista of viewLista?.linea_insumos">
+              <td>{{ detaLista.producto.nombre }}</td>
+              <td>{{ detaLista.precio | currency: 'USD':'symbol':'1.0' }}</td>
+              <td>{{ detaLista.cantidad }}</td>
+              <td>{{ detaLista.total_linea | currency: 'USD':'symbol':'1.0' }}</td>
+            </tr>
+            <tr>
+              <td colspan="2"></td>
+              <td><strong>TOTAL:</strong></td>
+              <td>{{ viewLista?.total | currency: 'USD':'symbol':'1.0' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <!-- Termina detalle de productos -->
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END MODAL VER LISTA DE INSUMO -->
+
+<!-- CREATE INGRESO -->
+<div class="modal fade" id="createIngreso" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-notice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="myModalLabel">Crear Ingreso Extra</h5>
+        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #f4="ngForm" (submit)="crearIngreso(f4.valid)">
+          <mat-form-field class="col-lg-4 col-md-4" style="display: inline-block !important;">
+            <input matInput placeholder="Dinero" [cleave]="cleaveOptions" name="monto1" #monto1="ngModel" [(ngModel)]="ingreso.monto" type="text" />
+          </mat-form-field>
+          <mat-form-field class="col-lg-8 col-md-8" style="display: inline-block !important;">
+            <input matInput placeholder="Comentario" name="comentario1" #comentario1="ngModel" [(ngModel)]="ingreso.comentario" type="text" />
+          </mat-form-field>
+
+          <div class="modal-footer justify-content-center">
+            <button mat-raised-button *ngIf="ingreso.monto != ''" type="submit" class="btn btn-info btn-round">Crear Ingreso</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- END CREATE MODAL INGRESO -->

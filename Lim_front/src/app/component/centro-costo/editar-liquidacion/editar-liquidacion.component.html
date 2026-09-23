@@ -1,0 +1,282 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">EDITAR LIQUIDACIÓN</h4><br>
+            <button mat-raised-button title="Volver" class="btn btn-warning btn-sm" (click)="volver()">
+              <span class="btn-label">
+                <i class="material-icons">arrow_back</i>
+              </span>
+            </button>
+          </div>
+          <div class="card-body">
+            <form *ngIf="listo" #f1="ngForm" (submit)="editarLiquidacion(f1.valid)" (keydown.enter)="$event.preventDefault()">
+              <!--  -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>Fecha</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Fecha" name="fecha_creacion" #fecha_creacion="ngModel"  [(ngModel)]= "liquidacion.fecha_creacion" 
+                    type="date" required >
+                  </mat-form-field>
+                </div>
+                
+              </div>
+              
+              <!--  -->
+              <!--  -->
+              <div class="row">
+                <div class="col-md-3">
+                  <label class="col-md-12" style="text-align:center;"><b>SUELDO BASE</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Sueldo" name="sueldo_base" #sueldo_base="ngModel" min='0' [(ngModel)]= "liquidacion.sueldo_base" 
+                    required type="number" (change)="calcularMontoMes()">
+                    <small [hidden]="sueldo_base.valid || (sueldo_base.pristine && !f1.submitted)" class="text-danger">
+                      Sueldo es requerido.
+                    </small>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-3">
+                  <label class="col-md-12" style="text-align:center;"><b>DIAS TRABAJADOS</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Dias Trabajados" name="dias_trabajados" #dias_trabajados="ngModel" min='0' [(ngModel)]="liquidacion.dias_trabajados" 
+                    type="number" (change)="calcularMontoMes()">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-3">
+                  <label class="col-md-12" style="text-align:center;"><b>MONTO MES</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Monto Mes" name="monto_mes" #monto_mes="ngModel" [(ngModel)]="liquidacion.monto_mes" type="number" disabled>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-3">
+                  <label class="col-md-12" style="text-align:center;"><b>REA. SUEL. RETROACTIVO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Reajuste suel. retroactivo" name="reajuste_retroactivo" #reajuste_retroactivo="ngModel" [(ngModel)]="liquidacion.reajuste_retroactivo" (change)="calcularTotalImponible()" type="number">
+                  </mat-form-field>
+                </div>
+              </div>
+              
+              <!--  -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>GRATIFICACION</b></label>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="% Gratificacion" name="porcentaje_gratificacion" #porcentaje_gratificacion="ngModel" [(ngModel)]="liquidacion.porcentaje_gratificacion" 
+                    type="number" (change)="calcularGratificacion()" >
+                  </mat-form-field>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Gratificacion" name="gratificacion" #gratificacion="ngModel" [(ngModel)]="liquidacion.gratificacion" 
+                    type="number" disabled >
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>HORAS EXTRAS</b></label>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Cantidad Horas Extra" name="cant_horas_extras" #cant_horas_extras="ngModel" [(ngModel)]="liquidacion.cant_horas_extras" 
+                    type="number" min='0' (change)="calcularValorHoraExtra()">
+                  </mat-form-field>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Valor Horas Extra" name="valor_horas_extras" #valor_horas_extras="ngModel" [(ngModel)]="liquidacion.valor_horas_extras" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>FERIADOS</b></label>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Horas Feriado" name="horas_feriado" #horas_feriado="ngModel" min="0" [(ngModel)]="liquidacion.horas_feriado" 
+                    type="number" (change)="calcularValorHoraFeriado()">
+                  </mat-form-field>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Valor Hora Feriado" name="valor_hora_feriado" #valor_hora_feriado="ngModel" [(ngModel)]="liquidacion.valor_hora_feriado" 
+                    type="number" disabled >
+                  </mat-form-field>
+                </div>
+
+                <!--  -->
+                
+              </div>
+              <!--  -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>PRODUCCION</b></label>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Monto Produccion" name="monto_produccion" #monto_produccion="ngModel" min="0" [(ngModel)]="liquidacion.monto_produccion" 
+                    type="number" (change)="calcularBonoProduccion()">
+                  </mat-form-field>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Bono Produccion" name="bono_produccion" #bono_produccion="ngModel" [(ngModel)]="liquidacion.bono_produccion" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>INDEMNIZACION</b></label>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Monto Indemnizacion" name="monto_indemnizacion" #monto_indemnizacion="ngModel" min="0" [(ngModel)]="liquidacion.monto_indemnizacion" 
+                    type="number" (change)="calcularBonoIndemnizacion()">
+                  </mat-form-field>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Bono Indemnizacion" name="bono_indemnizacion" #bono_indemnizacion="ngModel" [(ngModel)]="liquidacion.bono_indemnizacion" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>RESPONSABILIDAD</b></label>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Monto Responsabilidad" name="monto_responsabilidad" #monto_responsabilidad="ngModel" min="0" [(ngModel)]="liquidacion.monto_responsabilidad" 
+                    type="number" (change)="calcularBonoResponsabilidad()">
+                  </mat-form-field>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Bono Responsabilidad" name="bono_responsabilidad" #bono_responsabilidad="ngModel" [(ngModel)]="liquidacion.bono_responsabilidad" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+              </div> 
+              <!--  -->
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="col-md-12" style="text-align:center;"><b>ALIMENTACIÓN</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Alimentación" name="aliementacion" #alimentacion="ngModel" min="0" [(ngModel)]="liquidacion.alimentacion" 
+                    type="number" (change)="calcularLiquidoPagar()" >
+                  </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                  <label class="col-md-12" style="text-align:center;"><b>TOTAL IMPONIBLE</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Total Imponible" name="total_imponible" #total_imponible="ngModel" [(ngModel)]="liquidacion.total_imponible" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+              </div>  
+              <!--  -->
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>COLACION</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Colacion" name="colacion" #colacion="ngModel" min="0" [(ngModel)]="liquidacion.colacion" 
+                    type="number" (change)="calcularTotalHaber()">
+                  </mat-form-field> 
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>MOVILIZACION</b></label>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Movilizacion" name="movilizacion" #movilizacion="ngModel" min="0" [(ngModel)]="liquidacion.movilizacion" 
+                    type="number" (change)="calcularValorMovilizacion()">
+                  </mat-form-field>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Valor Movilizacion" name="valor_movilizacion" #valor_movilizacion="ngModel" [(ngModel)]="liquidacion.valor_movilizacion" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <label class="col-md-12" style="text-align:center;"><b>CARGAS FAMILIARES</b></label>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Carga Familiar" name="cant_familiar" #cant_familiar="ngModel" [(ngModel)]="liquidacion.cant_familiar" 
+                    type="number" >
+                  </mat-form-field>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Valor Carga Familiar" name="valor_carga_familiar" #valor_carga_familiar="ngModel" [(ngModel)]="liquidacion.valor_carga_familiar" 
+                    type="number" (change)="calcularTotalHaber()">
+                  </mat-form-field>
+                </div>
+              </div>  
+              <!--  -->
+              <div class="row">
+                <label class="col-md-12" style="text-align:center;"><b>TOTAL HABER</b></label>
+                <mat-form-field class="col-md-6 ml-auto mr-auto" style="display:inline-block !important">
+                  <input matInput placeholder="Total Haber" name="total_haber" #total_haber="ngModel" [(ngModel)]="liquidacion.total_haber" 
+                  type="number" disabled>
+                </mat-form-field>
+              </div>
+              <!--  -->
+              <div class="row">
+                
+                <div class="col-md-3">
+                  <label class="col-md-12" style="text-align:center;"><b>AFP</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Afp" name="cotizacion_obligatoria" #cotizacion_obligatoria="ngModel" [(ngModel)]="liquidacion.cotizacion_obligatoria" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-3">
+                  <label class="col-md-12" style="text-align:center;"><b>SALUD</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Salud" name="salud" #salud="ngModel" [(ngModel)]="liquidacion.salud" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-3">
+                  <label class="col-md-12" style="text-align:center;"><b>SEGURO CESANTIA</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Seguro Cesantia" name="seguro_cesantia" #seguro_cesantia="ngModel" [(ngModel)]="liquidacion.seguro_cesantia" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div> 
+                <div class="col-md-3">
+                  <label class="col-md-12" style="text-align:center;"><b>HORAS FALTANTES</b></label>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Hora Faltantes" name="hora_faltante" #hora_faltante="ngModel" [(ngModel)]="liquidacion.hora_faltante" 
+                    type="number" (change)="calcularValorHoraFaltante()">
+                  </mat-form-field>
+                  <mat-form-field class="col-md-6" style="display:inline-block !important">
+                    <input matInput placeholder="Valor Hora Faltante" name="valor_hora_faltante" #valor_hora_faltante="ngModel" [(ngModel)]="liquidacion.valor_hora_faltante" 
+                    type="number" disabled>
+                    </mat-form-field>
+                </div> 
+              </div>
+              <!--  -->
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="col-md-12" style="text-align:center;"><b> TOTAL DESCUENTO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Total Descuento" name="total_descuento" #total_descuento="ngModel" [(ngModel)]="liquidacion.total_descuento" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                  <label class="col-md-12" style="text-align:center;"><b> TOTAL PAGO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Total a Pagar" name="total_pago" #total_pago="ngModel" [(ngModel)]="liquidacion.total_pago" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+              </div>
+              <!--  -->
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="col-md-12" style="text-align:center;"><b> ANTICIPO</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Anticipo" name="anticipo" #anticipo="ngModel" min="0" [(ngModel)]="liquidacion.anticipo"
+                    type="number" (change)="calcularLiquidoPagar()">
+                  </mat-form-field>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="col-md-12" style="text-align:center;"><b> LIQUIDO A PAGAR</b></label>
+                  <mat-form-field class="col-md-12" style="display:inline-block !important">
+                    <input matInput placeholder="Liquido A Pagar" name="liquido_pagar" #liquido_pagar="ngModel" [(ngModel)]="liquidacion.liquido_pagar" 
+                    type="number" disabled>
+                  </mat-form-field>
+                </div>
+                
+              </div>
+
+              <div class="modal-footer justify-content-center">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round" >Editar</button>
+              </div>
+            </form>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

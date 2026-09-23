@@ -1,0 +1,46 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Crear Carpetas</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" (click)="volver()">
+              <span class="material-icons">arrow_back</span>
+            </button>
+            <button mat-raised-button matTooltip="Añadir Campo Carpeta" style="float: right" class="btn btn-success btn-sm" (click)="agregarCarpeta()">
+              <span class="material-icons"> add</span>
+            </button>
+          </div>
+          <div class="card-body">
+            <form (submit)="crearCarpetas()" [formGroup]="carpetaForm">
+              <div formArrayName="carpetas" *ngFor="let carpeta of carpetas.controls;let i = index">
+                <div [formGroupName]="i">
+                  <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Nombre Carpeta" [attr.id]="'carperta' + i" name="nombre"  formControlName="nombre" type="text" />
+                  </mat-form-field>  
+                  <div style="text-align: center;" >
+                    <button mat-raised-button (click)="removerCarpeta(i)" class="btn btn-danger btn-sm">
+                      Quitar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer justify-content-rigth" *ngIf="carpetas.length > 0">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round">
+                  Crear Carpeta(s)
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

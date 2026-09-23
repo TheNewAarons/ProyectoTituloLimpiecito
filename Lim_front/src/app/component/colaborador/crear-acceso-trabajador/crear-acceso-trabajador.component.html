@@ -1,0 +1,46 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Crear Acceso Trabajador</h4>
+            <br />
+            <button
+              style="float: left;"
+              mat-raised-button
+              matTooltip="Volver"
+              class="btn btn-warning btn-sm"
+              [routerLink]="['/trabajador/ver/', idTrabajador]"
+            >
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <form #f1="ngForm" (submit)="crearAcceso(f1.valid)">
+              <mat-form-field class="example-full-width">
+                <input matInput placeholder="Correo" name="correo" #correo="ngModel" [(ngModel)]="acceso.correo" required type="email" />
+                <small [hidden]="correo.valid || (correo.pristine && !f1.submitted)" class="text-danger">
+                  Correo es requerido.
+                </small>
+              </mat-form-field>
+              <mat-form-field class="example-full-width">
+                <input matInput placeholder="Contraseña" name="password" #password="ngModel" [(ngModel)]="acceso.password" type="password" required />
+              </mat-form-field>
+              <div class="modal-footer justify-content-center">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round">
+                  Crear
+                </button>
+              </div>
+            </form>
+            <br /><br />
+          </div>
+          <!-- TERMINA BODY-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

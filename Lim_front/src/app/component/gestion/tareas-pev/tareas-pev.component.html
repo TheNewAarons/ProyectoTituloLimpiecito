@@ -1,0 +1,135 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Tareas</h4>
+          </div>
+          <div class="card-body">
+            <div>
+              <button  mat-raised-button class="btn btn-primary btn-sm" (click)="volverAtras()">Volver</button>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <mat-form-field  >
+                <mat-select (selectionChange)="consultarTareasPorArea()" placeholder="Seleccionar Area" [(ngModel)]="area"  required>
+                    <mat-option *ngFor="let area of areas"  [value]="area">
+                    {{ area.nombre }}
+                    </mat-option>
+                </mat-select>
+                </mat-form-field>
+                <mat-error *ngIf="!id_area">Area es Requerido</mat-error>
+              </div>
+            </div>
+            <!-- Formulario agregar tarea -->
+            <hr>
+            <div *ngIf="id_area" >
+              <h4  class="card-title">Agregar Tarea PEV</h4><br>
+              <h6  class="card-title">Vincular Turnos a Tarea</h6><br>
+              <div class="col-md-12">
+                <div class="togglebutton">
+                  <label *ngFor="let turno of turnos_aux; let index_turno=index;">{{turno.nombre}}
+                      <input (change)="vincularTurnosTareas(turno.id,index_turno)" type="checkbox" [checked]="turno.estado_turnoTarea">
+                      <span class="toggle"></span>
+                  </label>
+                </div>
+              </div>
+              <form [formGroup]="tareaForm">
+                <div class="row">
+                  <div class="col-md-8">
+                      <mat-form-field class="example-full-width">
+                          <input
+                          type="text"
+                          matInput
+                          placeholder="Nombre de la Tarea"
+                          formControlName="nombre"
+                          required>
+                      </mat-form-field>
+                      <mat-error *ngIf="fb.nombre?.errors?.required && fb.nombre.touched">Nombre es Requerido</mat-error>
+                  </div>
+                  <div class="col-md-4">
+                    <mat-form-field>
+                    <mat-select placeholder="Estado Inicial" name="estado" formControlName="estado" required>
+                        <mat-option *ngFor="let estado of estados"  [value]="estado.value">
+                        {{ estado.nombre }}
+                        </mat-option>
+                    </mat-select>
+                    </mat-form-field>
+                    <mat-error *ngIf="fb.estado?.errors?.required && fb.estado.touched">estadso es Requerido</mat-error> 
+                  </div>
+                </div>
+                <!-- APARTADO DE BOTONES -->
+                <div class="card-footer text-right">
+                  <div class="form-group">
+                    <button [disabled]="!tareaForm.valid || turnos_tareas.length == 0" mat-raised-button type="submit" class="btn btn-rose btn-sm btn-fill btn-wd" (click)="registrar()">Registrar</button>
+                    <!-- <button *ngIf="flag_editar" [disabled]="!areaForm.valid" mat-raised-button type="submit" class="btn btn-warning btn-sm btn-fill btn-wd" (click)="registrar()">Editar</button> -->
+                  </div>
+                </div>
+              </form>
+            </div>
+            <!-- fi nformualrio agregar tarea-->
+            <div class="card-body table-full-width">
+              <div class="table-responsive">
+                  <table *ngIf="id_area" class="table table-hover">
+                      <thead>
+                        <th> Nombre </th>
+                        <th class="text-right"> Turnos NO Vinculados  </th>
+                        <th class="text-right"> Turnos Vinculados  </th>
+                        <th class="text-right"> OFF/ON  </th>
+                        <th class="text-right"> Acciones  </th>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let tarea of tareas" >
+                          <td>{{tarea.nombre}} <a (click)="editarNombre(tarea)" matTooltip="Editar Nombre" class="btn btn-link btn-round"><i class="material-icons">edit</i></a></td>
+                          <td class="td-actions text-right">
+                            <div class="togglebutton">
+                              <label *ngFor="let turno_no_vinculado of tarea.turnos_no_vinculados[0]">
+                                  <label *ngIf="turno_no_vinculado.estado_turnoTarea == 0">{{turno_no_vinculado.nombre}}
+                                    <input [disabled]="tarea.estado == 0" type="checkbox" (change)="vincularUnTurnoATarea(turno_no_vinculado.id, tarea.id)" [checked]="turno_no_vinculado.estado_turnoTarea">
+                                  <span  class="toggle"></span>
+                                  </label>
+                              </label>
+                            </div>
+                          </td>
+                          <td class="td-actions text-right">
+                            <div class="togglebutton">
+                              <label *ngFor="let turno of tarea.turnos_tareas">{{turno.turno.nombre}}
+                                  <input [disabled]="tarea.estado == 0" (change)="cambiarEstadoTurnoTarea(turno.id,turno.estado)" type="checkbox" [checked]="turno.estado">
+                                  <span class="toggle"></span>
+                              </label>
+                            </div>
+                          </td>
+                          <td class="td-actions text-right">
+                            <div class="togglebutton">
+                              <label>
+                                  <input (change)="cambiarEstadoTarea(tarea.id, tarea.estado)" type="checkbox" [checked]="tarea.estado">
+                                  <span class="toggle"></span>
+                              </label>
+                            </div>
+                          </td>
+                          <td class="td-actions text-right">
+                            <button
+                            mat-raised-button
+                            type="button"
+                            matTooltip="Eliminar Tarea"
+                            class="btn btn-danger btn-round"
+                            (click)="eliminarTarea(tarea.id)"
+                          >
+                            <i class="material-icons">delete</i>
+                          </button>
+                          </td>
+                      </tr>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,13 @@
+.border{
+    border: 1 px solid;
+    text-align: center;
+}
+
+.desactivado{
+    color:red;
+    font-weight: bold;
+}
+
+.centrado{
+    text-align: center;
+}

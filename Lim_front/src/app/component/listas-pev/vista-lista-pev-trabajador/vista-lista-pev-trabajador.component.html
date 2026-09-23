@@ -1,0 +1,153 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Checkeo PEV; Cliente: {{ nombre_cliente }}</h4>
+          </div>
+          <div class="card-body">
+            <button mat-raised-button class="btn btn-warning btn-sm" (click)="volverAtras()"><i class="material-icons">arrow_back</i></button>
+            <button mat-raised-button class="lado-derecho btn btn-sm" (click)="abrirVistaImpresion()" ><i class="material-icons">print</i></button>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Datos Listado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="col-md-6"><b>Nombre:</b> {{ trabajador?.nombre }} {{ trabajador?.apellido }}</td>
+                  </tr>
+                  <tr>
+                    <td class="col-md-6"><b>Fecha Generada:</b> {{ listasPevConLineasPev?.fecha_creacion | date: 'dd/MM/yyyy' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="col-md-6"><b>Fecha De Chequeo:</b> {{listasPevConLineasPev?.fecha_chequeo | date: 'dd/MM/yyyy'}}</td>
+                  </tr>
+                  <tr *ngIf="listasPevConLineasPev?.fecha_firma">
+                    <td class="col-md-6"><b>Fecha Firma:</b> {{ listasPevConLineasPev?.fecha_firma | date: 'dd/MM/yyyy' }}</td>
+                  </tr>
+                  <tr>
+                    <td class="col-md-6"><b>Estado:</b> {{ listasPevConLineasPev?.estado | estadoListaPevSup }}</td>
+                  </tr>
+                  <tr>
+                    <td class="col-md-6"><b>Turno:</b> {{ turno }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button *ngIf="estado_cronograma === 1" mat-raised-button class="btn btn-rose btn-sm" [disabled]="listasPevConLineasPev?.estado != 1" (click)="cambiarEstadoListaPev()">
+              Finalizar y Firmar<i class="material-icons">playlist_add_check_circle</i>
+            </button>
+            <div class="table-responsive" >
+              <table class="table table-striped" [ngClass]="estado_cronograma === 2 ? 'disabled' : '' ">
+                <thead>
+                  <tr>
+                    <th>Sector</th>
+                    <th>Areas</th>
+                    <th>Tareas</th>
+                    <th>Check 1</th>
+                    <th>Hora C1</th>
+                    <th>Check 2</th>
+                    <th>Hora C2</th>
+                    <th>Check 3</th>
+                    <th>Hora C3</th>
+                    <th>Observaciones</th>
+                    <th>Guardar Obser.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let lista of listaPev_vista; let indexOfelement = index">
+                    <td class="col-md-3" *ngIf="lista.s_rows > 1" [attr.rowspan]="lista.s_rows">{{ lista.n_sector }}</td>
+                    <td class="col-md-3" *ngIf="lista.s_rows == 1">{{ lista.n_sector }}</td>
+                    <td class="col-md-3" *ngIf="lista.a_rows > 1" [attr.rowspan]="lista.a_rows">{{ lista.n_area }}</td>
+                    <td class="col-md-3" *ngIf="lista.a_rows == 1">{{ lista.n_area }}</td>
+                    <td class="col-md-6">
+                      {{ lista.n_tarea }}
+                    </td>
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.check_trabajador_1">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasPevConLineasPev?.estado != 1"
+                            checked="true"
+                            (change)="marcarCheck1(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasPevConLineasPev?.estado != 1" (change)="marcarCheck1(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="col-md-6 centrado">
+                      {{ lista.hora_check_trabajador_1 }}
+                    </td>
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.check_trabajador_2">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasPevConLineasPev?.estado != 1"
+                            checked="true"
+                            (change)="marcarCheck2(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasPevConLineasPev?.estado != 1" (change)="marcarCheck2(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="col-md-6 centrado">
+                      {{ lista.hora_check_trabajador_2 }}
+                    </td>
+                    <td class="col-md-6 centrado">
+                      <div [ngSwitch]="lista.check_trabajador_3">
+                        <div *ngSwitchCase="true">
+                          <mat-checkbox
+                            [disabled]="listasPevConLineasPev?.estado != 1"
+                            checked="true"
+                            (change)="marcarCheck3(indexOfelement)"
+                          ></mat-checkbox>
+                        </div>
+                        <div *ngSwitchDefault>
+                          <mat-checkbox [disabled]="listasPevConLineasPev?.estado != 1" (change)="marcarCheck3(indexOfelement)"></mat-checkbox>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="col-md-6 centrado">
+                      {{ lista.hora_check_trabajador_3 }}
+                    </td>
+                    <td class="col-md-6 centrado">
+                      <textarea
+                        [disabled]="listasPevConLineasPev?.estado != 1"
+                        placeholder="Escriba texto"
+                        [(ngModel)]="lista.observaciones"
+                        rows="2"
+                      >
+                      </textarea>
+                    </td>
+                    <td class="col-md-6 centrado">
+                      <button
+                        mat-raised-button
+                        type="submit"
+                        [disabled]="listasPevConLineasPev?.estado != 1"
+                        class="btn btn-link btn-sm"
+                        (click)="actualizarObservaciones(indexOfelement)"
+                      >
+                        <i class="material-icons">save</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

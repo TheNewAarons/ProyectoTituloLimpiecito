@@ -1,0 +1,28 @@
+<div class="row">
+  <div class="col-md-12">
+      <div *ngFor="let area of areas" class="col-md-4 cards">
+        <div class="card card-pricing card-raised">
+          <div class="card-body">
+            <h6 class="card-category"><b>Sector:</b> {{area.sectore.nombre}}</h6>
+            <div *ngIf="area.estado == 1" class="card-icon icon-info">
+              <i class="material-icons">synagogue</i>
+            </div>
+            <div *ngIf="area.estado == 0"  class="card-icon icon-rose">
+              <i class="material-icons">synagogue</i>
+            </div>
+            <h4 class="card-title corte-texto"><b>Área:</b> {{area.nombre}}</h4>
+            <div class="togglebutton">
+              <a *ngIf="area.estado == 1" [routerLink]="['/gestion/tareas-pev',id_cliente, area.id]" matTooltip="Agregar Tarea" class="btn btn-link btn-round"><i class="material-icons">add_task</i></a>
+              <a (click)="editarNombre(area)" matTooltip="Editar Nombre" class="btn btn-link btn-round"><i class="material-icons">edit</i></a>
+              <label> Off/On:
+                <input (change)="cambiarEstadoArea(area.id, area.estado)" type="checkbox" [checked]="area.estado">
+                <span class="toggle"></span>
+              </label>
+              <a (click)="eliminarArea(area.id)" matTooltip="Eliminar Tarea" class="btn btn-link btn-round btn-danger"><i class="material-icons">delete</i></a>
+            </div>
+            <!-- <a (click)="cambiarEstadoArea(area.id, area.estado)" matTooltip="Agregar Tarea" class="btn btn-info btn-round"><i class="material-icons">add_task</i></a> -->
+          </div>
+        </div>
+      </div>
+  </div>
+</div>

@@ -1,0 +1,82 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Instructivos</h4>
+            <br />
+            <button
+              mat-raised-button
+              matTooltip="Crear Instructivo"
+              class="btn btn-warning btn-sm"
+              routerLink="/adm_servicio/crear-instructivo"
+            >
+              <span class="btn-label">
+                <i class="material-icons">add</i>
+              </span>
+              Crear
+            </button>
+          </div>
+          <app-loading *ngIf="loading" style="text-align: center"></app-loading>
+          <div class="card-body" *ngIf="!loading">
+            <!-- BUSCADOR -->
+            <!-- <div class="input-group no-border">
+              <input type="text" name="search" class="form-control" [(ngModel)]="search" placeholder="Buscar..." (change)="buscar()" />
+            </div> -->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-left">Nombre</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let instructivo of instructivos | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                    <td class="text-left">{{ instructivo.nombre }}</td>
+                    <td class="td-actions text-right">
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Editar Instructivo"
+                        class="btn btn-success btn-round"
+                        [routerLink]="['/adm_servicio/editar-instructivo/', instructivo.id]"
+                      >
+                        <i class="material-icons">edit</i>
+                      </button>
+                      <button
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Eliminar instructivo"
+                        class="btn btn-danger btn-round"
+                        (click)="eliminarInstructivo(instructivo.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <ngb-pagination
+                [(page)]="page"
+                [pageSize]="pageSize"
+                [collectionSize]="instructivos?.length"
+                [maxSize]="5"
+                [rotate]="true"
+                [boundaryLinks]="true"
+              >
+              </ngb-pagination>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

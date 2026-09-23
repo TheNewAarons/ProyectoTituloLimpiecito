@@ -1,0 +1,76 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">
+              Asociar Trabajador Al Documento
+            </h4>
+            <br />
+            <button style="float: left;" mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" routerLink="/archivo/documentos">
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <div>
+              <!-- ORMULARIO PARA TRABAJADORES-->
+              <form #f2="ngForm" (submit)="asociarTrabajador(f2.valid)">
+                <ng-select
+                  class="col-lg-12 col-md-12"
+                  required
+                  name="trabajadores"
+                  [items]="trabajadores"
+                  bindLabel="nombre"
+                  (change)="agregarTrabajador($event)"
+                  placeholder="Trabajador.."
+                  [loading]="trabajadorListo"
+                >
+                </ng-select>
+                <div class="table-responsive">
+                  <!-- TABLE RESPONSIVE -->
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th class="text-center">#</th>
+                        <th>Nombre</th>
+                        <th>Fecha</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let asoc of asociaciones">
+                        <td class="text-center">-</td>
+                        <td>{{ asoc.nombre }}</td>
+                        <td>{{ asoc.fecha }}</td>
+                        <td class="td-actions text-right">
+                          <button
+                            mat-raised-button
+                            type="button"
+                            matTooltip="Quitar Cliente"
+                            class="btn btn-danger btn-round"
+                            (click)="quitarAsoc(asoc)"
+                          >
+                            <i class="material-icons">close</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div *ngIf="asociaciones.length > 0" class="modal-footer justify-content-center">
+                  <button mat-raised-button type="submit" class="btn btn-info btn-round">
+                    Asociar a Trabajador
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

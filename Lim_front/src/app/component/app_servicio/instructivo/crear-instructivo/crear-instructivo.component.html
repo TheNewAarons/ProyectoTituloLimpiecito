@@ -1,0 +1,65 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Crear Categoria Servicio</h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" routerLink="/adm_servicio/instructivos">
+              <span class="btn-label"></span>
+              Volver
+            </button>
+          </div>
+          <app-loading *ngIf="loading" style="text-align: center"></app-loading>
+          <div class="card-body" *ngIf="!loading">
+            <form #f1="ngForm" (keydown.enter)="$event.preventDefault()" (submit)="crearInstructivo(f1.valid)">
+              <mat-form-field class="example-full-width">
+                <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]="instructivo.nombre" required type="text" />
+                <small [hidden]="nombre.valid || (nombre.pristine && !f1.submitted)" class="text-danger"> Nombre es requerido. </small>
+              </mat-form-field>
+              <ng-select
+                style="padding: 0px 0px 20px !important;"
+                class="col-lg-12 col-md-12"
+                required
+                name="categoriaServicioId"
+                #categoriaDocumentoId="ngModel"
+                [items]="categorias"
+                bindLabel="nombre"
+                bindValue="id"
+                [(ngModel)]="instructivo.categoriaServicioId"
+                placeholder="Categoria*"
+                [clearable]="false"
+              >
+              </ng-select>
+              <!-- <input type="file" #fo name="fo" (change)="imagenSelecionado($event)" required />
+              <small [hidden]="file" class="text-danger"> Archivo es requerido. </small> -->
+              <div class="fileinput fileinput-new text-center" data-provides="fileinput">
+                <div class="fileinput-new thumbnail" id="back">
+                    <img src="./assets/img/image_placeholder.jpg" alt="...">
+                </div>
+                <div class="fileinput-preview fileinput-exists thumbnail"></div>
+                <div>
+                    <span class="btn btn-rose btn-round btn-file">
+                        <span class="fileinput-new">Seleccionar</span>
+                        <span class="fileinput-exists">Cambiar</span>
+                        <input type="file" #fo name="fo" (change)="imagenSelecionado($event)" required/>
+                    </span>
+                    <a  class="btn btn-danger btn-round fileinput-exists" data-dismiss="fileinput"><i class="fa fa-times"></i> Quitar</a>
+                </div>
+            </div>
+              <!-- Botón De Crear  -->
+              <div class="modal-footer justify-content-center">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round">Crear</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

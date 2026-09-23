@@ -1,0 +1,10 @@
+table > thead > tr >th{
+    font-weight: 1000; 
+}
+h3,h4{
+    font-weight: 1000;
+}
+label{
+    color: black;
+    font-size: 19px;
+}

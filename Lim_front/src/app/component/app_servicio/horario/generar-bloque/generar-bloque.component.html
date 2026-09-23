@@ -1,0 +1,107 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">Generar Bloques</h4>
+            <br />
+            <button
+              mat-raised-button
+              matTooltip="Volver"
+              class="btn btn-warning btn-sm"
+              [routerLink]="['/adm_servicio/ver-cate_servicio/',idCate]"
+            >
+              <span class="btn-label"></span>
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <h3>Información de Horario</h3>
+            <h4> Día: {{dia?.nombre}}</h4>
+            <form #f1="ngForm" >
+              <mat-form-field class="example-full-width">
+                <input
+                  matInput
+                  placeholder="Hora Inicio"
+                  name="hora_inicio"
+                  id="hora_inicio"
+                  [(ngModel)]="hora_inicio"
+                  required
+                  type="time"
+                />
+              </mat-form-field>
+              <mat-form-field class="example-full-width">
+                <input
+                  matInput
+                  placeholder="Hora Termino"
+                  name="hora_fin"
+                  id="hora_fin"
+                  [(ngModel)]="hora_fin"
+                  required
+                  type="time"
+                />
+              </mat-form-field>      
+              <div class="modal-footer justify-content-center">
+                <button mat-raised-button type="submit" class="btn btn-sm btn-info" (click)="crearBloques()">Generar Bloque</button>
+              </div>
+            </form>
+          </div>
+          <div class="row" style="margin: 0px" *ngIf="dia?.bloques.length > 0">
+            <h5 style="padding-left: 5%; font-weight: bold">Bloques</h5>
+            <div class="table-responsive">
+              <!-- TABLA RESPONSIVE-->
+              <table class="table">
+                <!-- TABLA -->
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Hora Inicio</th>
+                    <th>Hora Fin</th>
+                    <th>Estado</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let bloque of dia.bloques">
+                    <td class="text-center">-</td>
+                    <td>{{ bloque.hora_inicio }} hrs</td>
+                    <td>{{ bloque.hora_fin }} hrs</td>
+                    <td>{{ bloque.activo == 1 ? 'Activo' : 'Inactivo'}}</td>
+                    <td class="td-actions text-right">
+                      <button
+                        *ngIf="!bloque.activo"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Activar Bloque"
+                        class="btn btn-success btn-round"
+                        (click)="activarBloque(bloque.id)"
+                      >
+                        <i class="material-icons">cached</i>
+                      </button>
+                      <button
+                        *ngIf="bloque.activo"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Desactivar Bloque"
+                        class="btn btn-danger btn-round"
+                        (click)="desactivarBloque(bloque.id)"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <!-- END TABLE -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

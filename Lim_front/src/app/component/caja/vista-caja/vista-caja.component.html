@@ -1,0 +1,185 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">assignment</i>
+            </div>
+            <h4 class="card-title">
+              DETALLES DE LA CAJA
+              <button
+                mat-raised-button
+                type="button"
+                matTooltip="Obtener PDF"
+                style="float: right;"
+                class="btn btn-warning btn-sm"
+                (click)="imprimir()"
+              >
+                <i class="material-icons">picture_as_pdf</i>
+              </button>
+            </h4>
+            <br />
+            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" [routerLink]="['/cajas']">
+              <span class="btn-label">
+                <i class="material-icons">arrow_back</i>
+              </span>
+            </button>
+          </div>
+          <div class="card-body" id="imprimir">
+            <div class="row" style="display: flex; align-items: center;">
+              <div class="box col-md-4">
+                <img src="./assets/img/logotipo-limpiecito.png" />
+              </div>
+              <div class="col-md-8" style="margin: 0 auto; padding-left: 0px;">
+                <h3 class="card-title"><strong>REPORTE GENERAL</strong></h3>
+                <br />
+              </div>
+            </div>
+            <div id="indicadores" class="row">
+              <label class="col-md-4"><strong>Fecha Inicio:</strong>{{ caja?.fecha_inicio | date: 'dd/MM/yyyy ' }}</label>
+              <label class="col-md-4"><strong>Fecha Cierre:</strong>{{ caja?.fecha_cierre | date: 'dd/MM/yyyy ' }}</label>
+              <label class="col-md-4"><strong>Egreso General:</strong>{{ egresoGeneral | currency: 'USD':'symbol':'1.0' }}</label>
+            </div>
+            <div id="indicadores" class="row">
+              <label *ngIf="caja?.estado == 1" class="col-md-4"
+                ><strong>Total Ingresos:</strong>{{ total_ingresoMoment | currency: 'USD':'symbol':'1.0' }}</label
+              >
+              <label *ngIf="caja?.estado == 1" class="col-md-4"
+                ><strong>Total Egresos:</strong>{{ total_egresoMoment | currency: 'USD':'symbol':'1.0' }}</label
+              >
+              <label *ngIf="caja?.estado == 1" class="col-md-4"
+                ><strong>Utilidad Total:</strong>{{ utilidadMoment | currency: 'USD':'symbol':'1.0' }}</label
+              >
+              <label *ngIf="caja?.estado == 0" class="col-md-4"
+                ><strong>Total Ingresos:</strong>{{ caja?.total_ingreso | currency: 'USD':'symbol':'1.0' }}</label
+              >
+              <label *ngIf="caja?.estado == 0" class="col-md-4"
+                ><strong>Total Egresos:</strong>{{ caja?.total_egreso | currency: 'USD':'symbol':'1.0' }}</label
+              >
+              <label *ngIf="caja?.estado == 0" class="col-md-4"
+                ><strong>Utilidad Total:</strong>{{ caja?.utilidad | currency: 'USD':'symbol':'1.0' }}</label
+              >
+            </div>
+            <br />
+            <h4><strong>LISTA DE CENTROS CC</strong></h4>
+            <!-- TABLA DE CENTRO DE COSTOS-->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Fecha</th>
+                    <th>Número Centro Costo</th>
+                    <th>Cliente</th>
+                    <th>Ingreso</th>
+                    <th>Egreso</th>
+                    <th>Utilidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let centro of centros">
+                    <td class="text-center">-</td>
+                    <td>{{ centro.fecha_inicio | date: 'dd/MM/yyyy ' }}</td>
+                    <td>{{ centro.numero_cc }}</td>
+                    <td>{{ centro.cliente.representante }}</td>
+                    <td>
+                      {{ centro.precio_servicio | currency: 'USD':'symbol':'1.0' }}
+                    </td>
+                    <td>
+                      {{ centro.total_costos | currency: 'USD':'symbol':'1.0' }}
+                    </td>
+                    <td>
+                      {{ centro.utilidad | currency: 'USD':'symbol':'1.0' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+            <h4><strong>LIQUIDACION DE TRABAJADORES</strong></h4>
+            <!-- TABLA DE LIQUIDACIONES -->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Nombre Trabajador</th>
+                    <th>Nº Centro Costo</th>
+                    <th>Cliente</th>
+                    <th>Monto Liquidación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let tablaLiquidacion of tablaLiquidaciones">
+                    <td class="text-center">-</td>
+                    <td>{{ tablaLiquidacion.trabajador }}</td>
+                    <td>{{ tablaLiquidacion.numero_cc }}</td>
+                    <td>{{ tablaLiquidacion.cliente }}</td>
+                    <td>
+                      {{ tablaLiquidacion.liquido_pagar | currency: 'USD':'symbol':'1.0' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+            <h4><strong>LISTA DE INSUMOS</strong></h4>
+            <!-- TABLA DE LISTAS DE INSUMO -->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Nombre Producto</th>
+                    <th>Cantidad</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let tablaInsumo of tablaInsumos">
+                    <td class="text-center">-</td>
+                    <td>{{ tablaInsumo.producto }}</td>
+                    <td>{{ tablaInsumo.cantidad }}</td>
+                    <td>
+                      {{ tablaInsumo.total | currency: 'USD':'symbol':'1.0' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+            <h4><strong>LISTA DE EGRESOS</strong></h4>
+            <!-- TABLA DE EGRESO POR CC  -->
+            <div class="table-responsive">
+              <!-- TABLE RESPONSIVE -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-center">#</th>
+                    <th>Número Centro Costo</th>
+                    <th>Cliente</th>
+                    <th>Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let egreso of tablaEgresos">
+                    <td class="text-center">-</td>
+                    <td>{{ egreso.numero_cc }}</td>
+                    <td>{{ egreso.centro }}</td>
+                    <td>{{ egreso.monto | currency: 'USD':'symbol':'1.0' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- END TABLE RESPONSIVE-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
