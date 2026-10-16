@@ -3,6 +3,7 @@
 > **Equipo:** Aaron Soto · Bastián Jofré
 > **Aplica a:** todo el código del repositorio (backend Node/Express, frontend Angular, migraciones) y a cualquier agente que trabaje en él (Claude Code).
 > **Principio base:** el sistema está en producción. Nada llega a producción sin revisión cruzada, paso por el ambiente de pruebas y aprobación del dueño en el Sprint Review.
+> **Sin CI:** el proyecto **no usa integración continua** (GitHub Actions u otra). Las verificaciones (tests, migraciones, build) se ejecutan **localmente**: primero el autor antes de abrir el PR y luego el revisor al probar la rama. El despliegue a AWS es manual.
 
 ---
 
@@ -88,8 +89,15 @@ git push --force-with-lease                  # nunca --force a secas
 
 ### 2.3 Terminar un requerimiento
 
-1. Rebase final sobre `origin/develop` y verificar que todo corre (`npm test`, levantar front y back).
-2. Abrir un Pull Request **hacia `develop`** usando la plantilla de la sección 6.
+1. Rebase final sobre `origin/develop` y ejecutar la **verificación local** (no hay CI que lo haga por ustedes):
+   ```bash
+   cd backend  && npm test                                   # tests del backend
+   npx sequelize-cli db:migrate:undo:all && npx sequelize-cli db:migrate   # sólo BD local
+   cd ../frontend && ng build --prod                         # el frontend compila
+   git diff origin/develop --stat | grep -i "\.env"          # no debe mostrar nada
+   ```
+   Además, levantar front y back y probar el flujo del requerimiento a mano.
+2. Abrir un Pull Request **hacia `develop`** usando la plantilla de la sección 8.3.
 3. **El otro integrante revisa y aprueba.** Nadie aprueba su propio PR.
 4. Hacer merge con **Squash and merge**: el requerimiento queda como un solo commit en `develop`, con el título del PR.
 5. Borrar la rama (GitHub lo hace automáticamente si se activa la opción).
@@ -272,9 +280,11 @@ Es el principal foco de conflicto entre dos desarrolladores.
 | Aprobaciones requeridas | 1 | 1 |
 | Descartar aprobaciones al subir nuevos commits | ✅ | ✅ |
 | Requerir rama actualizada antes del merge | ✅ | ✅ |
-| Requerir que pase CI (cuando exista) | ✅ | ✅ |
 | Prohibir force push | ✅ | ✅ |
 | Prohibir eliminación | ✅ | ✅ |
+| Status checks / CI obligatorios | ❌ No se usa | ❌ No se usa |
+
+Como no hay CI, la aprobación del revisor es la única barrera antes del merge: **aprobar significa que el revisor ejecutó la verificación local (sección 2.3) sobre la rama**, no sólo que leyó el código.
 
 ### 8.2 Opciones del repositorio (Settings → General)
 
@@ -307,7 +317,8 @@ Sprint: N
 
 ## Checklist
 - [ ] Rebase sobre develop actualizado
-- [ ] Tests pasan
+- [ ] Verificación local ejecutada por el autor: `npm test`, migraciones undo/migrate, `ng build --prod`
+- [ ] Verificación local repetida por el revisor antes de aprobar
 - [ ] Sin secretos ni `.env` en el diff
 - [ ] Auditoría registrada si toca caja, bodega o liquidaciones
 ```
@@ -335,9 +346,10 @@ Agregar al inicio de `REQUERIMIENTOS_LIMPIECITO_ERP.md` (sección 0) o en `CLAUD
 1. Trabaja siempre en una rama `feature/<código>-<desc>` o `refactor/<código>-<desc>` creada desde `develop` actualizado.
 2. **Nunca** hagas commit ni push a `main` o `develop`, ni crees tags.
 3. Un requerimiento por rama; commits con formato Conventional Commits incluyendo el código.
-4. Antes de terminar: rebase sobre `origin/develop`, tests pasando, migraciones verificadas con `undo` + `migrate`.
-5. Termina abriendo el Pull Request con la plantilla; la revisión y el merge los hace el otro integrante del equipo.
-6. No uses `git push --force`; si es necesario, sólo `--force-with-lease` y sólo en tu propia rama.
+4. Antes de terminar: rebase sobre `origin/develop` y ejecutar la verificación local de la sección 2.3 (tests, migraciones `undo` + `migrate`, build del frontend). Indicar en el PR el resultado de cada comando.
+5. No crear archivos de CI (`.github/workflows/`, ni configuraciones de otros servicios de integración continua): el proyecto no usa CI.
+6. Termina abriendo el Pull Request con la plantilla; la revisión y el merge los hace el otro integrante del equipo.
+7. No uses `git push --force`; si es necesario, sólo `--force-with-lease` y sólo en tu propia rama.
 
 ---
 
