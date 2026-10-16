@@ -24,15 +24,33 @@
             </button>
           </div>
           <div class="card-body">
-            <div class="input-group no-border">
-              <input
-                type="text"
-                name="searchActivo"
-                class="form-control"
-                [(ngModel)]="searchActivo"
-                placeholder="Buscar..."
-                (change)="buscar()"
-              />
+            <div class="row">
+              <div class="col-md-8">
+                <div class="input-group no-border">
+                  <input
+                    type="text"
+                    name="searchActivo"
+                    class="form-control"
+                    [(ngModel)]="searchActivo"
+                    placeholder="Buscar..."
+                    (change)="buscar()"
+                  />
+                </div>
+              </div>
+              <div class="col-md-4">
+                <mat-form-field class="col-md-12">
+                  <mat-select
+                    placeholder="Estado de pago"
+                    name="filtroEstadoPago"
+                    [(ngModel)]="filtroEstadoPago"
+                    (selectionChange)="cambiarFiltroEstado()"
+                  >
+                    <mat-option value="TODAS">Todas</mat-option>
+                    <mat-option value="EN_ESPERA">🕐 En espera</mat-option>
+                    <mat-option value="PAGADA">✅ Pagada</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
             </div>
             <br />
             <!-- TABLA DE LIQUIDACIONES -->
@@ -56,7 +74,7 @@
                 <tbody>
                   <tr
                     *ngFor="
-                      let centroTrabajador of centroTrabajadores
+                      let centroTrabajador of centroTrabajadoresFiltrados
                         | slice
                           : (page - 1) * pageSize
                           : (page - 1) * pageSize + pageSize
@@ -136,7 +154,7 @@
               <ngb-pagination
                 [(page)]="page"
                 [pageSize]="pageSize"
-                [collectionSize]="centroTrabajadores?.length"
+                [collectionSize]="centroTrabajadoresFiltrados?.length"
                 [maxSize]="5"
                 [rotate]="true"
                 [boundaryLinks]="true"
