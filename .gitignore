@@ -39,3 +39,25 @@ typings/
 # System Files
 .DS_Store
 Thumbs.db
+
+# IA local (Claude Code): no se versiona
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.claudeignore
+TASK_PLAN.md
+TASK_PLAN.md.bak
+Docs/API_V1.md
+Docs/DECISIONES.md
+
+# uploads / dumps (guía de versionado §8.4)
+uploads/
+uploads_limpiecitoweb/
+*.log
+*.sql
+*.dump
+*.zip
+*.bak
+
+# scripts locales
+cronograma.py
