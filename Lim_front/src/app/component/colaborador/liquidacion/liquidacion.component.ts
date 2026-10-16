@@ -25,6 +25,8 @@ export class LiquidacionComponent implements OnInit {
   //ESTADO DE PAGO (RF-CAJA-02)
   public esAdmin = false;
   public seleccionadas: number[] = [];
+  public filtroEstadoPago: 'TODAS' | EstadoPagoLiquidacion = 'TODAS';
+  public centroTrabajadoresFiltrados = [];
 
   constructor(
     private liquidacionService: LiquidacionService,
@@ -51,12 +53,29 @@ export class LiquidacionComponent implements OnInit {
         this.respuesta = response;
         this.centroTrabajadores = this.respuesta.centroTrabajadores;
         this.seleccionadas = [];
+        this.aplicarFiltroEstado();
       },
       error => {
         console.log(error);
       }
     );
   }
+
+  //FILTRA LA LISTA POR ESTADO DE PAGO (RF-CAJA-02)
+  aplicarFiltroEstado(): void {
+    const lista = this.centroTrabajadores || [];
+    this.centroTrabajadoresFiltrados = this.filtroEstadoPago === 'TODAS'
+      ? lista
+      : lista.filter(centroTrabajador => this.estadoPago(centroTrabajador) === this.filtroEstadoPago);
+  }
+
+  //AL CAMBIAR EL FILTRO SE VUELVE A LA PAGINA 1 Y SE LIMPIA LA SELECCION PARA NO PAGAR FILAS OCULTAS
+  cambiarFiltroEstado(): void {
+    this.page = 1;
+    this.seleccionadas = [];
+    this.aplicarFiltroEstado();
+  }
+
   //BUSCADOR
   buscar(): void {
     this.liquidacionService.obtenerBusqueda(this.searchActivo).subscribe(
@@ -64,6 +83,7 @@ export class LiquidacionComponent implements OnInit {
         this.respuesta = response;
         this.centroTrabajadores = this.respuesta.centroTrabajadores;
         this.seleccionadas = [];
+        this.aplicarFiltroEstado();
       },
       error => {
         console.log(error);
