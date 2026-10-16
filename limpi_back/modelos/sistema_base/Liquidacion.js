@@ -112,6 +112,24 @@ module.exports = db.sequelize.define(
     estado: {
       type: Sequelize.INTEGER,
     },
+    // RF-CAJA-02: estado de pago (independiente de `estado`, que indica liquidación cerrada)
+    estado_pago: {
+      type: Sequelize.ENUM("EN_ESPERA", "PAGADA", "ANULADA"),
+      allowNull: false,
+      defaultValue: "EN_ESPERA",
+    },
+    fecha_pago: {
+      type: Sequelize.DATEONLY,
+      allowNull: true,
+    },
+    egreso_id: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+    },
+    pagada_por: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+    },
   },
   {
     timestamps: false,
