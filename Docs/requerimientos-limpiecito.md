@@ -28,7 +28,7 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 | Código | Requerimiento | Módulo | Prioridad | Esf. | Tipo | Sprint | Depende de | Estado |
 |---|---|---|---|---|---|---|---|---|
 | RF-CAJA-01 | Traspaso automático de saldo entre meses | Caja | 🔴 Alta | M | Mejora | 1 | — | Sin empezar |
-| RF-CAJA-02 | Estado de pago en liquidaciones de sueldo | Caja | 🔴 Alta | M | Feature nueva | 1 | — | Sin empezar |
+| RF-CAJA-02 | Estado de pago en liquidaciones de sueldo | Caja | 🔴 Alta | M | Feature nueva | 1 | — | En revisión |
 | RF-BOD-01 | Solicitud de insumos/EPP por supervisor | Bodega | 🔴 Alta | L | Feature nueva | 2 | — | Sin empezar |
 | RF-BOD-02 | Cruce automático solicitud vs stock | Bodega | 🔴 Alta | M | Feature nueva | 2 | BOD-01 | Sin empezar |
 | RF-BOD-03 | Envío automático de orden de compra al proveedor | Bodega | 🔴 Alta | M | Feature nueva | 2 | BOD-02 | Sin empezar |
@@ -248,11 +248,11 @@ liquidaciones (existente) + columnas:
 **Frontend:** columna "Estado de pago" con badge (🕐 En espera / ✅ Pagada), botón "Marcar como pagada", checkbox de selección múltiple y acción de pago en lote.
 
 **Criterios de aceptación:**
-- [ ] Generar una liquidación no altera el saldo ni la utilidad de caja.
-- [ ] Marcarla pagada el día 5 del mes siguiente genera el egreso en ese mes.
-- [ ] El pago en lote es atómico (todas o ninguna).
-- [ ] Las liquidaciones históricas conservan su efecto en caja tras la migración.
-- [ ] Pago y reversión quedan en auditoría.
+- [ ] Generar una liquidación no altera el saldo ni la utilidad de caja. *(requiere verificación manual con MySQL real: no hay test que ejecute `crearLiquidacion` legacy y compare `calcularSaldo` antes/después.)*
+- [x] Marcarla pagada el día 5 del mes siguiente genera el egreso en ese mes. (`tests/api/liquidaciones.v1.test.js` "pagar con fecha_pago en dia 5 del mes siguiente..."; `tests/services/liquidaciones/pago.test.js` "paga correctamente: crea egreso, actualiza liquidacion...")
+- [x] El pago en lote es atómico (todas o ninguna). (`tests/services/liquidaciones/pago.test.js` "es atomico: si falla el 3er pago, rechaza todo el lote (0 pagadas)...")
+- [ ] Las liquidaciones históricas conservan su efecto en caja tras la migración. *(verificado manualmente en el clon local `aseolimp_caja02_verif`, TASK_PLAN §7 P3; no hay test automatizado contra una BD real con datos históricos.)*
+- [x] Pago y reversión quedan en auditoría. (`tests/services/liquidaciones/pago.test.js` "...audita PAGO + CREAR" y "revierte un pago normal: anula el egreso logicamente...")
 
 ---
 
