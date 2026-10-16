@@ -62,6 +62,13 @@
                 ><strong>Utilidad Total:</strong>{{ caja?.utilidad | currency: 'USD':'symbol':'1.0' }}</label
               >
             </div>
+            <div id="indicadores" class="row" *ngIf="resumenPendientesPago?.cantidad > 0">
+              <label class="col-md-12 text-warning">
+                <strong>Liquidaciones pendientes de pago:</strong>
+                {{ resumenPendientesPago.cantidad }} —
+                {{ resumenPendientesPago.monto_total | currency: 'USD':'symbol':'1.0' }}
+              </label>
+            </div>
             <br />
             <h4><strong>LISTA DE CENTROS CC</strong></h4>
             <!-- TABLA DE CENTRO DE COSTOS-->

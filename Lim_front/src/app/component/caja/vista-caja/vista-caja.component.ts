@@ -6,8 +6,12 @@ import * as html2pdf from 'html2pdf.js';
 import { CentroCostoService } from '../../../services/centro_costo/centro-costo.service';
 import { CajaService } from '../../../services/caja/caja.service';
 import { EgresoService } from '../../../services/egreso/egreso.service';
+import { LiquidacionService } from '../../../services/liquidacion/liquidacion.service';
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
 import { forkJoin } from 'rxjs';
+
+//MODELOS
+import { ResumenPendientesPago } from '../../../model/liquidacion-pago';
 
 export class detalleLiquidacion {
   constructor(public trabajador: string, public numero_cc: number, public cliente: string, public liquido_pagar: number) {}
@@ -37,6 +41,9 @@ export class VistaCajaComponent implements OnInit {
   public total_egresoMoment = 0;
   public utilidadMoment = 0;
 
+  //RESUMEN DE LIQUIDACIONES PENDIENTES DE PAGO (RF-CAJA-02)
+  public resumenPendientesPago: ResumenPendientesPago = { cantidad: 0, monto_total: 0 };
+
   //TABLAS PARA DESPLEGAR
   public tablaLiquidaciones = [];
   public detalleLiquidacion: detalleLiquidacion;
@@ -48,6 +55,7 @@ export class VistaCajaComponent implements OnInit {
   constructor(
     private centroCostoService: CentroCostoService, private _route: ActivatedRoute,
     private cajaService: CajaService, private egresoService: EgresoService,
+    private liquidacionService: LiquidacionService,
     private alertaService:AlertasService
   ) {}
 
@@ -75,11 +83,24 @@ export class VistaCajaComponent implements OnInit {
         }
         this.centros = response[2].centros
         this.calcularDatos();
+        this.obtenerResumenPendientesPago();
       },
       error => {
         this.alertaService.cerrarAlerta()
       }
     )
+  }
+  //OBTENER RESUMEN DE LIQUIDACIONES PENDIENTES DE PAGO DEL PERIODO DE LA CAJA
+  obtenerResumenPendientesPago(): void {
+    const periodo = this.caja && this.caja.fecha_inicio ? String(this.caja.fecha_inicio).substring(0, 7) : null;
+    this.liquidacionService.obtenerResumenPendientesPago(periodo).subscribe(
+      (response) => {
+        this.resumenPendientesPago = response.data;
+      },
+      () => {
+        this.resumenPendientesPago = { cantidad: 0, monto_total: 0 };
+      }
+    );
   }
   //CALCULAR DATOS
   calcularDatos() {
