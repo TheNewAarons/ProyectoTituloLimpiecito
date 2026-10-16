@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node node_modules/jest/bin/jest.js --runInBand --passWithNoTests",
+    "db:migrate": "node node_modules/sequelize-cli/lib/sequelize db:migrate",
+    "db:migrate:undo": "node node_modules/sequelize-cli/lib/sequelize db:migrate:undo",
+    "db:migrate:status": "node node_modules/sequelize-cli/lib/sequelize db:migrate:status"
   },
   "author": "",
   "license": "ISC",
@@ -30,5 +33,10 @@
     "sequelize": "^4.38.0",
     "transbank-sdk": "2.1.3",
     "uuid": "^8.2.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "sequelize-cli": "^5.5.1",
+    "supertest": "^6.3.4"
   }
 }
