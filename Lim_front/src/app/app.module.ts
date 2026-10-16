@@ -2,7 +2,8 @@ import { NgModule } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterModule, PreloadAllModules } from '@angular/router';
 import { HttpModule } from '@angular/http';
-import { APP_BASE_HREF } from '@angular/common';
+import { APP_BASE_HREF, registerLocaleData } from '@angular/common';
+import localeEsCl from '@angular/common/locales/es-CL';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -65,6 +66,9 @@ import { RecuperarPasswordComponent } from './component/recuperar-password/recup
 //RECUPERAR PASSWORD APP
 import { RecuperarPassAppComponent } from './component/recuperar-pass-app/recuperar-pass-app.component';
 
+
+//DATOS DE LOCALE es-CL PARA EL PIPE currency (RF-CAJA-01)
+registerLocaleData(localeEsCl);
 
 @NgModule({
   exports: [
