@@ -290,6 +290,7 @@ api.use('/cliente-trabajador',ClienteTrabajador)
 // app.use('/api-aseo', api);
 app.use(process.env.PREFIJO, api);
 app.use(process.env.PREFIJO + '/api/v1', api); // RNF-API-01: alias versionado del mismo router
+app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas
 
 // const port = process.env.PORT || 3000;
 const port = process.env.PORT || 3000;
