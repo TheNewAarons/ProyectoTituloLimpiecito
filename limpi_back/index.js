@@ -290,6 +290,11 @@ api.use('/cliente-trabajador',ClienteTrabajador)
 // app.use('/api-aseo', api);
 app.use(process.env.PREFIJO, api);
 app.use(process.env.PREFIJO + '/api/v1', api); // RNF-API-01: alias versionado del mismo router
+
+// RF-CAJA-02: router nuevo, SOLO bajo /api/v1 (no en el prefijo legacy ni en `api`/routes.js legacy).
+const LiquidacionesV1 = require('./api/apartado_base/liquidacion/routes-v1');
+app.use(process.env.PREFIJO + '/api/v1/liquidaciones', LiquidacionesV1);
+
 app.use(process.env.PREFIJO + '/api/v1', require('./middleware/errores').noEncontrado); // RNF-API-02: 404 JSON solo en /api/v1
 app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas
 

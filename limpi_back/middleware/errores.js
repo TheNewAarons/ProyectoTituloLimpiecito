@@ -1,14 +1,9 @@
 // RNF-API-02: manejo centralizado de errores. Formato (spec 2.6): { ok: false, error: { code, message, details? } }.
 
-class AppError extends Error {
-  constructor(code, message, httpStatus = 500, details) {
-    super(message);
-    this.name = 'AppError';
-    this.code = code;
-    this.httpStatus = httpStatus;
-    this.details = details;
-  }
-}
+// RF-CAJA-02: reexporta libs/app-error.js (la misma clase que usan services/*) en vez de declarar
+// una AppError paralela: `err instanceof AppError` no reconocia los errores de services/liquidaciones
+// y services/caja, y caian como 500 genericos.
+const AppError = require('../libs/app-error');
 
 // Express 4 no captura promesas rechazadas: envuelve los handlers async de los endpoints nuevos.
 const asyncHandler = (fn) => (req, res, next) => {
