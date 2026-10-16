@@ -9,6 +9,19 @@
             </div>
             <h4 class="card-title">LIQUIDACIONES</h4>
             <br />
+            <button
+              *ngIf="seleccionadas.length > 0"
+              mat-raised-button
+              type="button"
+              matTooltip="Pagar Seleccionadas"
+              class="btn btn-success btn-sm"
+              (click)="pagarSeleccionadas()"
+            >
+              <span class="btn-label">
+                <i class="material-icons">done</i>
+              </span>
+              Pagar Seleccionadas ({{ seleccionadas.length }})
+            </button>
           </div>
           <div class="card-body">
             <div class="input-group no-border">
@@ -28,6 +41,7 @@
               <table class="table">
                 <thead>
                   <tr>
+                    <th class="text-center">Sel.</th>
                     <th>Nombre Trabajador</th>
                     <th>Rut</th>
                     <th>Num. CC</th>
@@ -35,7 +49,8 @@
                     <th>Días Trabajados</th>
                     <th>Imponible</th>
                     <th>Fecha</th>
-                    <th>Acción</th>
+                    <th>Estado de pago</th>
+                    <th class="text-right">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -47,6 +62,13 @@
                           : (page - 1) * pageSize + pageSize
                     "
                   >
+                    <td class="text-center">
+                      <mat-checkbox
+                        [disabled]="!esSeleccionable(centroTrabajador)"
+                        [checked]="estaSeleccionada(centroTrabajador.liquidacioneId)"
+                        (change)="toggleSeleccion(centroTrabajador.liquidacioneId)"
+                      ></mat-checkbox>
+                    </td>
                     <td>
                       {{ centroTrabajador.trabajadore.nombre }}
                       {{ centroTrabajador.trabajadore.apellido }}
@@ -69,11 +91,16 @@
                           | date: "dd/MM/yyyy"
                       }}
                     </td>
-                    <td class="td-actions text-center">
+                    <td>
+                      <span [ngClass]="claseBadgeEstadoPago(centroTrabajador)">
+                        {{ textoBadgeEstadoPago(centroTrabajador) }}
+                      </span>
+                    </td>
+                    <td class="td-actions text-right">
                       <button
                         mat-raised-button
                         type="button"
-                        title="Ver Liquidación"
+                        matTooltip="Ver Liquidación"
                         class="btn btn-info btn-round"
                         [routerLink]="[
                           '/liquidacion/pdf/',
@@ -81,6 +108,26 @@
                         ]"
                       >
                         <i class="material-icons">remove_red_eye</i>
+                      </button>
+                      <button
+                        *ngIf="esSeleccionable(centroTrabajador)"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Marcar como Pagada"
+                        class="btn btn-success btn-round"
+                        (click)="marcarComoPagada(centroTrabajador)"
+                      >
+                        <i class="material-icons">done</i>
+                      </button>
+                      <button
+                        *ngIf="esAdmin && estadoPago(centroTrabajador) === 'PAGADA'"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Revertir Pago"
+                        class="btn btn-danger btn-round"
+                        (click)="revertirPago(centroTrabajador)"
+                      >
+                        <i class="material-icons">close</i>
                       </button>
                     </td>
                   </tr>

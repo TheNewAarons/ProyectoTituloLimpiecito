@@ -1,6 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HttpClient} from '@angular/common/http'; 
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment'
+import { LoginService } from '../login/login.service';
+import {
+  ApiOkResponse,
+  EstadoPagoLiquidacion,
+  LiquidacionPago,
+  ResumenPendientesPago
+} from '../../model/liquidacion-pago';
 
 @Injectable({
   providedIn: 'root'
@@ -8,10 +16,17 @@ import { environment } from '../../../environments/environment'
 export class LiquidacionService {
 
   public url_backend;
- 
-  constructor(private http:HttpClient) {
+  public url_backend_v1;
+
+  constructor(private http: HttpClient, private loginService: LoginService) {
     this.url_backend = environment.url;
+    this.url_backend_v1 = environment.url + '/api/v1';
    }
+
+  //CABECERA CON TOKEN PARA LOS ENDPOINTS /api/v1
+  private obtenerCabeceras(): HttpHeaders {
+    return new HttpHeaders({ 'x-access-token': this.loginService.getToken() || '' });
+  }
 
   //CREAR LIQUIDACION
   crearLiquidacion(liquidacion,id){
@@ -42,7 +57,59 @@ export class LiquidacionService {
     return  this.http.get(this.url_backend+"/liquidacion/obtener-busca/"+busca);
   }
 
-  
+  /** ========= RF-CAJA-02: Estado de pago de liquidaciones (/api/v1) ========= */
+
+  //OBTENER LIQUIDACIONES FILTRADAS POR PERIODO Y ESTADO DE PAGO
+  obtenerLiquidacionesPago(periodo?: string, estadoPago?: EstadoPagoLiquidacion): Observable<ApiOkResponse<LiquidacionPago[]>> {
+    let url = this.url_backend_v1 + '/liquidaciones';
+    const parametros: string[] = [];
+    if (periodo) {
+      parametros.push('periodo=' + encodeURIComponent(periodo));
+    }
+    if (estadoPago) {
+      parametros.push('estado_pago=' + encodeURIComponent(estadoPago));
+    }
+    if (parametros.length > 0) {
+      url += '?' + parametros.join('&');
+    }
+    return this.http.get<ApiOkResponse<LiquidacionPago[]>>(url, { headers: this.obtenerCabeceras() });
+  }
+
+  //MARCAR UNA LIQUIDACION COMO PAGADA
+  marcarComoPagada(id: number, fechaPago: string): Observable<ApiOkResponse<LiquidacionPago>> {
+    return this.http.patch<ApiOkResponse<LiquidacionPago>>(
+      this.url_backend_v1 + '/liquidaciones/' + id + '/pagar',
+      { fecha_pago: fechaPago },
+      { headers: this.obtenerCabeceras() }
+    );
+  }
+
+  //PAGAR LIQUIDACIONES EN LOTE
+  pagarLote(ids: number[], fechaPago: string): Observable<ApiOkResponse<LiquidacionPago[]>> {
+    return this.http.post<ApiOkResponse<LiquidacionPago[]>>(
+      this.url_backend_v1 + '/liquidaciones/pagar-lote',
+      { ids, fecha_pago: fechaPago },
+      { headers: this.obtenerCabeceras() }
+    );
+  }
+
+  //REVERTIR EL PAGO DE UNA LIQUIDACION (SOLO ADMIN)
+  revertirPago(id: number, motivo: string): Observable<ApiOkResponse<LiquidacionPago>> {
+    return this.http.patch<ApiOkResponse<LiquidacionPago>>(
+      this.url_backend_v1 + '/liquidaciones/' + id + '/revertir-pago',
+      { motivo },
+      { headers: this.obtenerCabeceras() }
+    );
+  }
+
+  //OBTENER RESUMEN DE LIQUIDACIONES PENDIENTES DE PAGO PARA UN PERIODO
+  obtenerResumenPendientesPago(periodo?: string): Observable<ApiOkResponse<ResumenPendientesPago>> {
+    let url = this.url_backend_v1 + '/liquidaciones/pendientes-resumen';
+    if (periodo) {
+      url += '?periodo=' + encodeURIComponent(periodo);
+    }
+    return this.http.get<ApiOkResponse<ResumenPendientesPago>>(url, { headers: this.obtenerCabeceras() });
+  }
 
 
 }
