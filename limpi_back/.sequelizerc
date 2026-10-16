@@ -1,0 +1,9 @@
+const path = require('path');
+
+// sequelize-cli 5.x (compatible con Sequelize v4). Solo migraciones: los modelos viven en modelos/
+module.exports = {
+  config: path.resolve(__dirname, 'config', 'config.js'),
+  'migrations-path': path.resolve(__dirname, 'migrations'),
+  'seeders-path': path.resolve(__dirname, 'seeders'),
+  'models-path': path.resolve(__dirname, 'modelos')
+};
