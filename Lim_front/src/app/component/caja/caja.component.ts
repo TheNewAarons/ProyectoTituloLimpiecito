@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { formatDate } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 
 //SERVICIOS
 import { CajaService } from './../../services/caja/caja.service';
@@ -100,12 +101,24 @@ export class CajaComponent implements OnInit {
               this.alertaService.alertaExitoMsj(response.mensaje)
             }
           },
-          (error) => {
-            this.alertaService.cerrarAlerta()
-            console.log(error);
+          (error: HttpErrorResponse) => {
+            this.mostrarErrorCierre(error);
           }
         );
       }
     });
+  }
+
+  //MOSTRAR MENSAJE DE ERROR AL CERRAR CAJA (ej. 401/403 POR TOKEN AUSENTE O SIN ROL ADMIN)
+  private mostrarErrorCierre(error: HttpErrorResponse): void {
+    this.alertaService.cerrarAlerta();
+    if (error.status === 401 || error.status === 403) {
+      this.alertaService.alertaErrorMsj('No tienes permisos para cerrar esta caja. Inicia sesión como Administrador.');
+      return;
+    }
+    const mensaje = (error && error.error && error.error.error && error.error.error.message)
+      ? error.error.error.message
+      : 'Ha ocurrido un problema al cerrar la caja.';
+    this.alertaService.alertaErrorMsj(mensaje);
   }
 }
