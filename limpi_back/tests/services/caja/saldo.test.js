@@ -115,9 +115,12 @@ describe('services/caja/saldo', () => {
       expect(resultado.egresos.total).toBe(85000);
       expect(resultado.saldo_final).toBe(10000 + 200000 - 85000);
 
-      // egresos generales excluyen anulados (Op.ne EGRESO_ANULADO)
+      // egresos generales: NULL-safe, excluyen anulados pero cuentan estado NULL como no anulado
+      // (Op.or: [{estado: null}, {estado: {Op.ne: EGRESO_ANULADO}}])
       const whereEgreso = Egreso.sum.mock.calls[0][1].where;
-      expect(whereEgreso.estado[Op.ne]).toBe(EGRESO_ANULADO);
+      const condiciones = whereEgreso[Op.or];
+      expect(condiciones).toContainEqual({ estado: null });
+      expect(condiciones).toContainEqual({ estado: { [Op.ne]: EGRESO_ANULADO } });
 
       // liquidaciones históricas: solo PAGADA y egreso_id null, filtradas por los ids del vínculo (sin null)
       const whereLiq = Liquidacion.sum.mock.calls[0][1].where;

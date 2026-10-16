@@ -28,7 +28,7 @@
             </button>
           </div>
           <div class="card-body" id="imprimir">
-            <div class="row" style="display: flex; align-items: center;">
+            <div class="row d-flex align-items-center">
               <div class="box col-md-4">
                 <img src="./assets/img/logotipo-limpiecito.png" />
               </div>
@@ -61,6 +61,75 @@
               <label *ngIf="caja?.estado == 0" class="col-md-4"
                 ><strong>Utilidad Total:</strong>{{ caja?.utilidad | currency: 'USD':'symbol':'1.0' }}</label
               >
+            </div>
+            <div id="indicadores" class="row" *ngIf="resumenPendientesPago?.cantidad > 0">
+              <label class="col-md-12 text-warning">
+                <strong>Liquidaciones pendientes de pago:</strong>
+                {{ resumenPendientesPago.cantidad }} —
+                {{ resumenPendientesPago.monto_total | currency: 'USD':'symbol':'1.0' }}
+              </label>
+            </div>
+            <br />
+            <!-- SALDO ENCADENADO POR PERIODO (RF-CAJA-01) -->
+            <div class="card card-stats" *ngIf="resumenPeriodo">
+              <div class="row d-flex align-items-center">
+                <label class="col-md-3">
+                  <strong>Saldo mes anterior:</strong>
+                  {{ resumenPeriodo.saldo_inicial | currency: 'CLP':'symbol-narrow':'1.0-0':'es-CL' }}
+                  <i
+                    *ngIf="resumenPeriodo.saldo_provisional"
+                    class="material-icons text-warning align-middle"
+                    [matTooltip]="tooltipSaldoProvisional()"
+                  >info</i>
+                </label>
+                <label class="col-md-3"
+                  ><strong>Ingresos:</strong>
+                  {{ resumenPeriodo.ingresos | currency: 'CLP':'symbol-narrow':'1.0-0':'es-CL' }}</label
+                >
+                <label class="col-md-3"
+                  ><strong>Egresos:</strong>
+                  {{ resumenPeriodo.egresos | currency: 'CLP':'symbol-narrow':'1.0-0':'es-CL' }}</label
+                >
+                <label class="col-md-3"
+                  ><strong>Saldo actual:</strong>
+                  {{ resumenPeriodo.saldo_actual | currency: 'CLP':'symbol-narrow':'1.0-0':'es-CL' }}</label
+                >
+              </div>
+              <div class="row d-flex align-items-center">
+                <div class="col-md-6">
+                  <span
+                    class="badge"
+                    [ngClass]="resumenPeriodo.estado === 'ABIERTA' ? 'badge-success' : 'badge-danger'"
+                  >
+                    {{ resumenPeriodo.estado === 'ABIERTA' ? 'ABIERTA' : 'CERRADA' }}
+                  </span>
+                  <span *ngIf="resumenPeriodo.saldo_provisional" class="text-warning ml-2">
+                    Saldo provisional (hay un mes anterior sin cerrar)
+                  </span>
+                </div>
+                <div class="col-md-6 text-right" *ngIf="esAdmin">
+                  <button
+                    *ngIf="resumenPeriodo.estado === 'ABIERTA'"
+                    mat-raised-button
+                    type="button"
+                    matTooltip="Cerrar mes"
+                    class="btn btn-success btn-sm"
+                    (click)="cerrarMes()"
+                  >
+                    <i class="material-icons">done</i> Cerrar mes
+                  </button>
+                  <button
+                    *ngIf="resumenPeriodo.estado === 'CERRADA'"
+                    mat-raised-button
+                    type="button"
+                    matTooltip="Reabrir mes"
+                    class="btn btn-danger btn-sm"
+                    (click)="reabrirMes()"
+                  >
+                    <i class="material-icons">lock_open</i> Reabrir mes
+                  </button>
+                </div>
+              </div>
             </div>
             <br />
             <h4><strong>LISTA DE CENTROS CC</strong></h4>

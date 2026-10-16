@@ -160,7 +160,8 @@ async function calcularSaldo(periodo, opciones) {
 
   const egresosGenerales = sumEnteroCLP(
     await Egreso.sum('monto', {
-      where: { cajaId: caja.id, estado: { [Op.ne]: EGRESO_ANULADO } },
+      // NULL-safe: egresos legacy pueden tener estado NULL (`<> -1` los excluiria).
+      where: { cajaId: caja.id, [Op.or]: [{ estado: null }, { estado: { [Op.ne]: EGRESO_ANULADO } }] },
       transaction: o.transaction
     })
   );

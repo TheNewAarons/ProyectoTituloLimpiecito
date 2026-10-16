@@ -1,22 +1,44 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import * as html2pdf from 'html2pdf.js';
+import swal from 'sweetalert2';
 
 //SERVICIOS
 import { CentroCostoService } from '../../../services/centro_costo/centro-costo.service';
 import { CajaService } from '../../../services/caja/caja.service';
 import { EgresoService } from '../../../services/egreso/egreso.service';
+import { LiquidacionService } from '../../../services/liquidacion/liquidacion.service';
+import { LoginService } from '../../../services/login/login.service';
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
 import { forkJoin } from 'rxjs';
 
+//MODELOS
+import { ResumenPendientesPago } from '../../../model/liquidacion-pago';
+import { CajaResumen } from '../../../model/caja-resumen';
+
 export class detalleLiquidacion {
-  constructor(public trabajador: string, public numero_cc: number, public cliente: string, public liquido_pagar: number) {}
+  constructor(
+    public trabajador: string,
+    public numero_cc: number,
+    public cliente: string,
+    public liquido_pagar: number,
+    public egreso_id: number = null
+  ) {}
 }
 export class detalleInsumo {
   constructor(public producto: string, public cantidad: number, public total: number) {}
 }
 export class detalleEgreso {
   constructor(public numero_cc: number, public centro: string, public monto: number) {}
+}
+
+//SESION MINIMA LEIDA DE LoginService (el modelo Usuario no declara `role`, que sí viene en el JWT decodificado)
+export interface UsuarioSesion {
+  id: number;
+  role?: {
+    nombre: string;
+  };
 }
 @Component({
   selector: 'app-vista-caja',
@@ -37,6 +59,15 @@ export class VistaCajaComponent implements OnInit {
   public total_egresoMoment = 0;
   public utilidadMoment = 0;
 
+  //RESUMEN DE LIQUIDACIONES PENDIENTES DE PAGO (RF-CAJA-02)
+  public resumenPendientesPago: ResumenPendientesPago = { cantidad: 0, monto_total: 0 };
+
+  //RESUMEN DE SALDO ENCADENADO POR PERIODO (RF-CAJA-01)
+  public resumenPeriodo: CajaResumen = null;
+  public periodo: string = null;
+  public esAdmin = false;
+  public usuario: UsuarioSesion | false;
+
   //TABLAS PARA DESPLEGAR
   public tablaLiquidaciones = [];
   public detalleLiquidacion: detalleLiquidacion;
@@ -48,14 +79,21 @@ export class VistaCajaComponent implements OnInit {
   constructor(
     private centroCostoService: CentroCostoService, private _route: ActivatedRoute,
     private cajaService: CajaService, private egresoService: EgresoService,
+    private liquidacionService: LiquidacionService, private loginService: LoginService,
     private alertaService:AlertasService
   ) {}
 
   ngOnInit() {
-    this.detalleLiquidacion = new detalleLiquidacion('', null, '', 0);
+    this.detalleLiquidacion = new detalleLiquidacion('', null, '', 0, null);
     this.detalleInsumo = new detalleInsumo('', 0, 0);
     this.detalleEgreso = new detalleEgreso(null, '', 0);
     this.idCaja = this._route.snapshot.paramMap.get('id');
+    this.usuario = this.loginService.obtenerDatosUsuario();
+    //NOTA: mismo criterio que liquidacion.component.ts: el rol Admin aparece como
+    //'ADMINISTRADOR' en app_guard.service.ts y como 'Administrador' en services/constantes.js
+    //del backend; se compara sin distinguir mayúsculas.
+    const nombreRol = this.usuario && this.usuario.role && this.usuario.role.nombre;
+    this.esAdmin = !!(nombreRol && String(nombreRol).toUpperCase() === 'ADMINISTRADOR');
     this.ObtenerDatos()
   }
   //OBTENER CAJA ACTIVA, EGRESOS GENERAL Y CENTRO DE COSTOS
@@ -74,12 +112,133 @@ export class VistaCajaComponent implements OnInit {
           });
         }
         this.centros = response[2].centros
+        this.periodo = this.caja && this.caja.fecha_inicio ? String(this.caja.fecha_inicio).substring(0, 7) : null;
         this.calcularDatos();
+        this.obtenerResumenPendientesPago();
+        this.obtenerResumenPeriodo();
       },
       error => {
         this.alertaService.cerrarAlerta()
       }
     )
+  }
+  //OBTENER RESUMEN DE LIQUIDACIONES PENDIENTES DE PAGO DEL PERIODO DE LA CAJA
+  obtenerResumenPendientesPago(): void {
+    this.liquidacionService.obtenerResumenPendientesPago(this.periodo).subscribe(
+      (response) => {
+        this.resumenPendientesPago = response.data;
+      },
+      () => {
+        this.resumenPendientesPago = { cantidad: 0, monto_total: 0 };
+      }
+    );
+  }
+
+  //OBTENER EL RESUMEN DE SALDO ENCADENADO (SALDO MES ANTERIOR / INGRESOS / EGRESOS / SALDO ACTUAL)
+  obtenerResumenPeriodo(): void {
+    if (!this.periodo) {
+      this.resumenPeriodo = null;
+      return;
+    }
+    this.cajaService.obtenerResumenPeriodo(this.periodo).subscribe(
+      (response) => {
+        this.resumenPeriodo = response.data;
+      },
+      () => {
+        this.resumenPeriodo = null;
+      }
+    );
+  }
+
+  //TEXTO DEL TOOLTIP CUANDO EL SALDO ES PROVISIONAL (RF-CAJA-01, saldo no congelado)
+  tooltipSaldoProvisional(): string {
+    return 'El saldo inicial se recalcula en vivo porque un mes anterior sigue abierto o reabierto; ' +
+      'no está congelado hasta que ese mes se cierre.';
+  }
+
+  //CERRAR EL MES ACTUAL (SOLO ADMIN)
+  cerrarMes(): void {
+    if (!this.esAdmin || !this.periodo) {
+      return;
+    }
+    swal.fire({
+      title: '¿Cerrar mes ' + this.periodo + '?',
+      text: 'Se congelará el saldo del periodo y se abrirá/actualizará el mes siguiente.',
+      icon: 'warning',
+      showCancelButton: true,
+      buttonsStyling: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      customClass: {
+        confirmButton: 'btn btn-success',
+        cancelButton: 'btn btn-danger'
+      },
+      confirmButtonText: 'Si, Cerrar mes!',
+      cancelButtonText: 'Cancelar'
+    }).then(result => {
+      if (result.value) {
+        this.alertaService.loading();
+        this.cajaService.cerrarMes(this.periodo).subscribe(
+          () => {
+            this.alertaService.cerrarAlerta();
+            this.alertaService.alertaExitoMsj('Mes cerrado correctamente.');
+            this.obtenerResumenPeriodo();
+          },
+          error => this.mostrarErrorBackend(error)
+        );
+      }
+    });
+  }
+
+  //REABRIR EL MES ACTUAL CON MOTIVO OBLIGATORIO (SOLO ADMIN, SOLO SI ESTA CERRADA)
+  reabrirMes(): void {
+    if (!this.esAdmin || !this.periodo) {
+      return;
+    }
+    swal.fire({
+      title: 'Reabrir mes ' + this.periodo,
+      text: 'Ingresa el motivo de la reapertura.',
+      input: 'text',
+      inputPlaceholder: 'Motivo',
+      showCancelButton: true,
+      buttonsStyling: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      customClass: {
+        confirmButton: 'btn btn-danger',
+        cancelButton: 'btn btn-default'
+      },
+      confirmButtonText: 'Si, Reabrir!',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (valor: string) => {
+        const longitud = valor ? valor.trim().length : 0;
+        if (longitud < 5 || longitud > 500) {
+          return 'El motivo debe tener entre 5 y 500 caracteres';
+        }
+        return null;
+      }
+    }).then(result => {
+      if (result.value) {
+        this.alertaService.loading();
+        this.cajaService.reabrirMes(this.periodo, result.value).subscribe(
+          () => {
+            this.alertaService.cerrarAlerta();
+            this.alertaService.alertaExitoMsj('Mes reabierto correctamente.');
+            this.obtenerResumenPeriodo();
+          },
+          error => this.mostrarErrorBackend(error)
+        );
+      }
+    });
+  }
+
+  //MOSTRAR MENSAJE DE ERROR DEVUELTO POR EL BACKEND ({ ok:false, error:{ message } })
+  private mostrarErrorBackend(error: HttpErrorResponse): void {
+    this.alertaService.cerrarAlerta();
+    const mensaje = (error && error.error && error.error.error && error.error.error.message)
+      ? error.error.error.message
+      : 'Ha ocurrido un problema al procesar la solicitud.';
+    this.alertaService.alertaErrorMsj(mensaje);
   }
   //CALCULAR DATOS
   calcularDatos() {
@@ -108,8 +267,10 @@ export class VistaCajaComponent implements OnInit {
               this.detalleLiquidacion.liquido_pagar = centro_costo.liquidacione.liquido_pagar;
               this.detalleLiquidacion.cliente = e.cliente.representante;
               this.detalleLiquidacion.trabajador = centro_costo.trabajadore.nombre + ' ' + centro_costo.trabajadore.apellido;
+              //RF-CAJA-02: si ya tiene egreso_id, el pago ya está contado en egresoGeneral (evita doble conteo N1/A6)
+              this.detalleLiquidacion.egreso_id = centro_costo.liquidacione.egreso_id || null;
               this.tablaLiquidaciones.push(this.detalleLiquidacion);
-              this.detalleLiquidacion = new detalleLiquidacion('', null, '', 0);
+              this.detalleLiquidacion = new detalleLiquidacion('', null, '', 0, null);
             }
           });
         }
@@ -144,7 +305,10 @@ export class VistaCajaComponent implements OnInit {
       if (this.caja.estado == 1) {
         let liquida = 0;
         this.tablaLiquidaciones.forEach((liqui) => {
-          liquida += liqui.liquido_pagar;
+          //RF-CAJA-02: las liquidaciones con egreso_id ya están en egresoGeneral (evita doble conteo N1/A6)
+          if (!liqui.egreso_id) {
+            liquida += liqui.liquido_pagar;
+          }
         });
         let egreso = 0;
         this.tablaEgresos.forEach((egre) => {

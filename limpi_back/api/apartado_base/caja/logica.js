@@ -1,3 +1,5 @@
+const Op = require('sequelize').Op;
+const { EGRESO_ANULADO } = require('../../../services/constantes');
 const Caja = require('../../../modelos/sistema_base/Caja');
 const Centro = require('../../../modelos/sistema_base/Centro_costo');
 const Cliente = require('../../../modelos/sistema_base/Cliente');
@@ -57,6 +59,7 @@ const obtenerTodasCajasDB = async() => {
 }
 
 const obtenerCajaActivaDB = async() => {
+    // A3 (orden por periodo) diferido a la rama RF-CAJA-01b (D-033): comportamiento previo intacto.
     let respuesta = await Caja.findOne({
         where: { estado: 1 }
       })
@@ -79,7 +82,7 @@ const obtenerCentroCostoCerradoDB = async(id_caja) => {
 }
 
 const obtenerEgresoCajaDB = async(id_caja) => {
-    let respuesta = await Egresogeneral.findAll({ where: { cajaId: id_caja } });
+    let respuesta = await Egresogeneral.findAll({ where: { cajaId: id_caja, [Op.or]: [{ estado: null }, { estado: { [Op.ne]: EGRESO_ANULADO } }] } });
     return respuesta
 }
 
