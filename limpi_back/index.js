@@ -289,11 +289,19 @@ api.use('/cliente-trabajador',ClienteTrabajador)
 
 // app.use('/api-aseo', api);
 app.use(process.env.PREFIJO, api);
+// RF-CAJA-01 (N2): el alias versionado del router legacy de caja exige token y rol Admin (el prefijo legacy no cambia).
+const { autenticar, requerirRol } = require('./middleware/auth');
+const { ROL_ADMIN_NOMBRES } = require('./services/constantes');
+app.use(process.env.PREFIJO + '/api/v1/caja', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES));
 app.use(process.env.PREFIJO + '/api/v1', api); // RNF-API-01: alias versionado del mismo router
 
 // RF-CAJA-02: router nuevo, SOLO bajo /api/v1 (no en el prefijo legacy ni en `api`/routes.js legacy).
 const LiquidacionesV1 = require('./api/apartado_base/liquidacion/routes-v1');
 app.use(process.env.PREFIJO + '/api/v1/liquidaciones', LiquidacionesV1);
+
+// RF-CAJA-01: resumen/cierre/reapertura/historial de caja por periodo (solo Admin).
+const CajasV1 = require('./api/apartado_base/caja/routes-v1');
+app.use(process.env.PREFIJO + '/api/v1/cajas', CajasV1);
 
 app.use(process.env.PREFIJO + '/api/v1', require('./middleware/errores').noEncontrado); // RNF-API-02: 404 JSON solo en /api/v1
 app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas
@@ -327,3 +335,10 @@ cron.schedule('0 18 * * *', async () => {
 cron.schedule('0 7 * * 1', async () => {
   await FuncionProgramada.vaciar_tabla();
 });
+
+// RF-CAJA-01: apertura automatica de la caja del mes, dia 1 a las 00:05 (America/Santiago).
+// Apagada por defecto; se enciende con CAJA_APERTURA_AUTOMATICA=true (ver .env.example).
+if (process.env.CAJA_APERTURA_AUTOMATICA === 'true') {
+  const { jobAperturaMensual } = require('./services/caja/apertura');
+  cron.schedule('5 0 1 * *', jobAperturaMensual, { timezone: 'America/Santiago' });
+}
