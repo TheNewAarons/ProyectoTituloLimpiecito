@@ -4,6 +4,8 @@
 
 const { buscarCajaPorPeriodo } = require('./periodo');
 const { calcularSaldo, aEnteroCLP, finDePeriodo } = require('./saldo');
+const { abrirMesAutomatico, jobAperturaMensual } = require('./apertura');
+const { obtenerResumen, obtenerHistorial } = require('./lectura');
 const { cerrarMes, reabrirMes, recalcularCascada, reintentarTransaccion, desplazarPeriodo } = require('./cierre');
 
 module.exports = {
@@ -11,6 +13,10 @@ module.exports = {
   calcularSaldo: calcularSaldo,
   aEnteroCLP: aEnteroCLP,
   finDePeriodo: finDePeriodo,
+  abrirMesAutomatico: abrirMesAutomatico,
+  jobAperturaMensual: jobAperturaMensual,
+  obtenerResumen: obtenerResumen,
+  obtenerHistorial: obtenerHistorial,
   cerrarMes: cerrarMes,
   reabrirMes: reabrirMes,
   recalcularCascada: recalcularCascada,

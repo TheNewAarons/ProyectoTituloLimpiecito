@@ -1,4 +1,6 @@
 const logicaDB = require('./logica');
+const cajaService = require('../../../services/caja');
+const AppError = require('../../../libs/app-error');
 
 const crearCaja = async (req, res) => {
   const caja = JSON.parse(req.body.caja);
@@ -109,53 +111,33 @@ const obtenerCajaId = async (req, res) => {
   }
 };
 
+// RF-CAJA-01: el cierre legacy delega en services/caja.cerrarMes (transaccion, saldo encadenado,
+// auditoria, sin doble conteo de liquidaciones). Se mantiene la respuesta { cerrar, mensaje }.
+// La fecha de cierre ya no se toma del cliente (D-030).
 const cerrarCaja = async (req, res) => {
-  const { fecha } = req.body;
   try {
-    let cant_centro_abierto = await logicaDB.obtenerCantidadCentroCostoAbiertoDB(req.params.idCaja);
-    if (cant_centro_abierto === 0) {
-      let centros = await logicaDB.obtenerCentroCostoCerradoDB(req.params.idCaja);
-      let egresos = await logicaDB.obtenerEgresoCajaDB(req.params.idCaja);
-      let total_egreso = 0;
-      for (i = 0; i < egresos.length; i++) {
-        total_egreso += egresos[i].monto;
-      }
-      let moment_total_cc_egreso = 0;
-      let moment_total_cc_ingreso = 0;
-      let moment_total_cc_utilidad = 0;
-      for (e = 0; e < centros.length; e++) {
-        moment_total_cc_utilidad += centros[e].utilidad;
-        moment_total_cc_egreso += centros[e].total_costos;
-        moment_total_cc_ingreso += centros[e].precio_servicio;
-      }
-      let total_cc_ingreso = moment_total_cc_ingreso;
-      let total_cc_egreso = moment_total_cc_egreso + total_egreso;
-      let total_cc_utilidad = moment_total_cc_utilidad - total_egreso;
-
-      const cajaData = {
-        fecha_cierre: fecha,
-        total_ingreso: total_cc_ingreso,
-        total_egreso: total_cc_egreso,
-        utilidad: total_cc_utilidad,
-        estado: 0
-      };
-      let filas = await logicaDB.editarCajaDB(req.params.idCaja, cajaData);
-      if (filas == 1) {
-        return res.json({ cerrar: true, mensaje: 'Tu Caja ha sido cerrada correctamente' });
-      } else {
+    if (!req.usuario || !req.usuario.id) {
+      return res.status(401).json({ cerrar: false, mensaje: 'Usuario no autenticado' });
+    }
+    const caja = await logicaDB.obtenerCajaIdDB(req.params.idCaja);
+    if (!caja) {
+      return res.json({ cerrar: false, mensaje: 'No se puede cerrar la caja' });
+    }
+    const usuario = { id: req.usuario.id, contexto: req.usuario.contexto };
+    await cajaService.cerrarMes(caja.periodo, { usuario, ip: req.ip });
+    return res.json({ cerrar: true, mensaje: 'Tu Caja ha sido cerrada correctamente' });
+  } catch (error) {
+    if (error instanceof AppError) {
+      if (error.code === 'CENTROS_ABIERTOS') {
         return res.json({
           cerrar: false,
-          mensaje: 'No se puede cerrar la caja'
+          mensaje: `No se puede cerrar la caja, existen ${error.details.cantidad} Centro(s) de Costo(s) abierto(s)`
         });
       }
-    } else {
-      return res.json({
-        cerrar: false,
-        mensaje: `No se puede cerrar la caja, existen ${cant_centro_abierto} Centro(s) de Costo(s) abierto(s)`
-      });
+      return res.json({ cerrar: false, mensaje: error.message });
     }
-  } catch (error) {
-    return res.send('error:' + error);
+    console.error('[caja] cerrarCaja fallo:', error && error.name, error && error.code);
+    return res.status(500).json({ cerrar: false, mensaje: 'No se pudo cerrar la caja' });
   }
 };
 
