@@ -1,7 +1,45 @@
 # Solicitudes de bodega (RF-BOD-01)
 
-> Estado: esquema listo (migración `20261024215235-RF-BOD-01-solicitudes-bodega`). Endpoints, tests y vista: en curso.
+> Estado: esquema, endpoints `/api/v1/bodega`, tests y vista de administración en Lim_front listos.
+> **Pendiente de definir: la entrada del supervisor desde su app** (ver "Pendientes").
 > Jira: SCRUM-8. Base para RF-BOD-02 (cruce con stock).
+
+## Endpoints (`/web-limpiecito/api/v1/bodega`)
+
+Header `x-access-token`. Respuestas `{ ok, data, meta }` / `{ ok:false, error:{ code, message, details } }` (spec §2.6).
+
+| Método | Ruta | Quién | Notas |
+|---|---|---|---|
+| GET | `/productos/solicitables` | Supervisor, Admin | `productos.estado = 1`; sin stock ni precio. |
+| GET | `/centros-costo/permitidos` | Supervisor, Admin | No está en la spec: lo necesita el formulario. Supervisor: sus centros abiertos; Admin: todos los abiertos. |
+| POST | `/solicitudes` | Supervisor, Admin | Body `{ centro_costo_id, items:[{producto_id, cantidad}], observacion }`. 1–100 ítems, cantidad entera 1–100000, repetidos se suman. 201. |
+| GET | `/solicitudes/mias` | Supervisor, Admin | Las creadas por quien consulta (columna de su contexto). |
+| GET | `/solicitudes?estado=&centro_costo_id=&page=&limit=` | Admin | `estado` acepta varios separados por coma (`PARCIAL,LISTA_ENTREGA` = "En proceso"). `limit` ≤ 100, `page` ≤ 10000. |
+| GET | `/solicitudes/:id` | Dueño, Admin | Supervisor no dueño → 404. `meta.acciones.puede_anular`. |
+| PATCH | `/solicitudes/:id/anular` | Supervisor (propia y `PENDIENTE`), Admin (no finalizada) | Body `{ motivo? }`. Queda en `auditoria`. |
+
+**No hay cambio de estado manual** (decisión tras la revisión): `PARCIAL`/`LISTA_ENTREGA` los pone el cruce (RF-BOD-02) y `ENTREGADA` la entrega (RF-BOD-04), para que nunca exista una entrega sin su movimiento de stock.
+
+## Autenticación (`limpi_back/middleware/auth-bodega.js`)
+
+- `jwt.verify` con `algorithms: ['HS256']`, una vez; el contexto se decide con el payload ya verificado.
+- **Supervisor:** token de `/acces_laboral/login` con `tipo_acceso = 1`. En cada request se revalida que el trabajador esté activo **y** que su `accesos_laborales` siga con `estado = 1` y `tipo = 1` (el token dura 1 día). Si no, 401 genérico `credenciales no validas`.
+- **Usuario intranet:** delega en `middleware/auth.autenticar` (RF-CAJA-02, sin modificarlo) y además exige que el usuario exista con `estado = 1`, el mismo `correo` y el mismo `roleId` del token. `autenticar` por sí solo acepta tokens de `acceso_clientes`/`usuario_apps` (traen `id` sin `roleId`; hoy los frena `requerirRol`); aquí se rechazan con 401.
+- Nunca se comparan ids entre contextos: `req.usuario.contexto` indica la tabla de `req.usuario.id`.
+
+## Auditoría
+
+Crear y anular registran en `auditoria` dentro de la misma transacción. **En este módulo, `contexto_usuario = 'acceso_trabajadores'` lleva en `usuario_id` el id de `trabajadores`** (el token del supervisor no trae el id de `accesos_laborales`). `contexto_usuario = 'usuarios'` lleva `usuarios.id`.
+
+## Vista en Lim_front
+
+Módulo con carga diferida `component/solicitudes-bodega/` (menú Bodega → Solicitudes): listado con filtro por estado y paginación del servidor, detalle con ítems y anulación (según `meta.acciones`), y formulario de nueva solicitud usable en celular. Usa el token de sesión existente (`LoginService.getToken()`); un 401 cierra sesión. `loadChildren` usa la sintaxis de string como el resto de `app.routing.ts`: con `"module": "es2015"` en `tsconfig.json`, `import()` no compila.
+
+## Pendientes
+
+- **Entrada del supervisor desde su app:** Lim_front sólo tiene login de `usuarios`. El login de supervisores (`/acces_laboral/login`) lo usa otra app que no está en este repo. La API ya acepta su token; falta definir dónde vive su pantalla (app existente, ruta nueva en Lim_front u otra).
+- **Rol de Operaciones (Subjefe):** no existe en la BD local; hoy sólo entra `Administrador`. Al agregarlo, usar una lista aparte para anular (la spec sólo permite anular a Supervisor y Admin).
+- **Token de recuperación de contraseña:** firma el mismo payload que el login (1 h) y no se distingue; sirve como sesión. Afecta también a `middleware/auth.js`. Deuda de RNF-SEC-01 (agregar un claim de propósito).
 
 ## Tablas nuevas
 
