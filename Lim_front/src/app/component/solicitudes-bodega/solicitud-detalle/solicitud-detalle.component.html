@@ -1,0 +1,73 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">assignment</i></div>
+            <h4 class="card-title">Solicitud N° {{ solicitud?.id }}</h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Volver" class="btn btn-rose btn-sm" (click)="volver()">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div *ngIf="!loading && solicitud">
+              <div class="row">
+                <div class="col-12 col-md-6">
+                  <p><strong>Estado:</strong> <span [class]="badge[solicitud.estado]">{{ solicitud.etiqueta_estado }}</span></p>
+                  <p><strong>Centro de costo:</strong> CC {{ solicitud.centro_costo?.numero_cc }}<span *ngIf="solicitud.centro_costo?.cliente"> · {{ solicitud.centro_costo.cliente }}</span></p>
+                  <p><strong>Solicitante:</strong> {{ solicitud.solicitante?.nombre || '—' }} <small class="text-muted">({{ solicitud.solicitante?.tipo === 'supervisor' ? 'Supervisor' : 'Usuario' }})</small></p>
+                </div>
+                <div class="col-12 col-md-6">
+                  <p><strong>Creada:</strong> {{ solicitud.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
+                  <p *ngIf="solicitud.entregada_at"><strong>Entregada:</strong> {{ solicitud.entregada_at | date:'dd/MM/yyyy HH:mm' }}</p>
+                  <p *ngIf="solicitud.anulada_at"><strong>Anulada:</strong> {{ solicitud.anulada_at | date:'dd/MM/yyyy HH:mm' }}</p>
+                  <p *ngIf="solicitud.observacion"><strong>Observación:</strong> {{ solicitud.observacion }}</p>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Producto</th>
+                      <th class="text-right">Pedido</th>
+                      <th class="text-right">Descontado</th>
+                      <th class="text-right">A Comprar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="!solicitud.items || solicitud.items.length === 0">
+                      <td colspan="4" class="text-center">Sin registros</td>
+                    </tr>
+                    <tr *ngFor="let item of solicitud.items">
+                      <td class="text-left">{{ item.producto || ('Producto ' + item.producto_id) }}</td>
+                      <td class="text-right">{{ item.cantidad_pedida | number:'1.0-0' }}</td>
+                      <td class="text-right">{{ item.cantidad_asignada | number:'1.0-0' }}</td>
+                      <td class="text-right">{{ item.cantidad_faltante === null ? 'Sin cruzar' : (item.cantidad_faltante | number:'1.0-0') }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <small class="text-muted">"Descontado" y "A Comprar" los completa el cruce con stock (RF-BOD-02).</small>
+            </div>
+          </div>
+          <div class="card-footer" *ngIf="!loading && solicitud && acciones.puede_anular">
+            <div class="row w-100">
+              <div class="col-12 text-right">
+                <button *ngIf="acciones.puede_anular" mat-raised-button type="button" class="btn btn-danger mb-2"
+                  [disabled]="enviando" matTooltip="Anular Solicitud" (click)="anular()">
+                  <span class="btn-label"><i class="material-icons">close</i></span>
+                  Anular
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
