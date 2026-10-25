@@ -4,6 +4,41 @@
 > **Pendiente de definir: la entrada del supervisor desde su app** (ver "Pendientes").
 > Jira: SCRUM-8. Base para RF-BOD-02 (cruce con stock).
 
+## Traspaso para Aarón (estado al 2026-10-25)
+
+Rama `feature/RF-BOD-01-solicitudes-bodega-bastian` (desde `develop` en `fcd5b92`). **Aún sin PR**: queda abierta una decisión sobre el supervisor (abajo). Todo es código nuevo; en archivos existentes sólo se agregaron 4 líneas en `limpi_back/index.js` (montaje del router) y 7 en `Lim_front` (`app.routing.ts` y el ítem del menú en `sidebar.component.ts`).
+
+### Qué se hizo
+| Commit | Qué |
+|---|---|
+| `db(RF-BOD-01)` | Migración `20261024215235`: tablas `solicitudes_bodega` y `solicitud_items` (sin tocar tablas existentes). Modelos en `limpi_back/modelos/sistema_bodega/`, constantes en `services/bodega/constantes.js`. |
+| `feat(RF-BOD-01)` endpoints | `api/v1/bodega/{routes,controlador}.js`, `services/bodega/solicitudes.js`, `middleware/auth-bodega.js`. |
+| `test(RF-BOD-01)` ×2 | Modelos, servicio, HTTP y autenticación (JWT real). |
+| `feat(RF-BOD-01)` vista | `Lim_front/src/app/component/solicitudes-bodega/` (módulo diferido), `services/solicitud-bodega/`, `model/solicitud-bodega.ts`. |
+| `fix(RF-BOD-01)` | Ajustes móviles: botones ≥ 44 px, tabla sin scroll a 360 px. |
+| `docs(RF-BOD-01)` | Este documento. |
+
+### Verificación hecha
+- `npm test` en `limpi_back`: 211/211. La suite `middleware/errores.test.js` aparece como fallida porque es `node:test` y Jest la recoge (ya pasaba en `develop`; 13/13 con `node --test`). Falta acordar config de Jest (p. ej. `testPathIgnorePatterns` o migrarla a Jest).
+- Migraciones en MySQL 9.7.4 local: `migrate`, `undo` y `migrate` de la nueva. Prueba del esquema contra la BD (FK, UNIQUE, UNSIGNED, RESTRICT) 15/15 dentro de una transacción con rollback.
+- `ng build --prod` OK. Vista nueva medida a 360 px.
+- Revisión con el subagente revisor: sin bloqueantes; se aplicaron los hallazgos 1, 2, 3, 7, 9 y 10 (ver "Autenticación") y se quitó el cambio de estado manual (hallazgo 4).
+
+### Cómo probarlo
+1. `cd limpi_back && npx sequelize-cli db:migrate` (sólo BD local) y `npm start` (`npm run dev` no funciona: `nodemon` no está en `package.json`).
+2. `cd Lim_front`, `NODE_OPTIONS=--openssl-legacy-provider npx ng serve`, entrar como Administrador.
+3. Datos mínimos desde las pantallas existentes: caja del mes, cliente, centro de costo abierto y algún producto.
+4. Menú **Bodega → Solicitudes**: crear, listar, filtrar por estado ("En proceso" = `PARCIAL` + `LISTA_ENTREGA`), ver detalle y anular.
+5. Supervisor (sin pantalla aún): crear trabajador, darle acceso laboral tipo "Trabajador y Supervisor" en *Colaborador → Trabajadores → Ver → Acciones*, asignarlo al centro de costo, y desde la consola del navegador hacer `POST /web-limpiecito/acces_laboral/login` con `{ credenciales: { correo, password } }` y usar el `token` contra `/api/v1/bodega`. **Ese acceso no sirve en el login de Lim_front** (que valida contra `usuarios`).
+
+### ❓ Decisión abierta: ¿quién es "el supervisor"?
+La spec (§2.2, RF-BOD-01 regla 1) dice que el supervisor entra con su usuario de trabajador; así quedó implementado (`accesos_laborales`, `tipo = 1`). Pero en *Gestión → Usuarios* también se crean usuarios con rol. Hay que confirmar:
+1. ¿El supervisor inicia sesión en **Lim_front como usuario con rol "Supervisor"** o en **la app de trabajadores con acceso laboral**?
+2. Si es usuario con rol: ¿cómo se sabe qué centros de costo tiene a cargo? Hoy los centros se asignan a **trabajadores** (`centro_costo_trabajadores`); un usuario no tiene relación con centros (opciones: ver todos los abiertos, tabla nueva usuario–centro, o vincular usuario con su ficha de trabajador).
+3. Nombres exactos en `roles` de producción para Supervisor y Subjefe de Operaciones (en local sólo existe `Administrador`).
+
+Impacto: el **esquema no cambia** en ninguno de los dos casos (`trabajador_id` y `usuario_id` son NULL-ables). Si es usuario con rol, cambian `middleware/auth-bodega.js` (supervisor por rol), `listarCentrosPermitidos` y la vista (una pantalla "Mis solicitudes" para ese rol); serían commits nuevos encima, sin reescribir los actuales.
+
 ## Endpoints (`/web-limpiecito/api/v1/bodega`)
 
 Header `x-access-token`. Respuestas `{ ok, data, meta }` / `{ ok:false, error:{ code, message, details } }` (spec §2.6).
@@ -40,6 +75,10 @@ Módulo con carga diferida `component/solicitudes-bodega/` (menú Bodega → Sol
 - **Entrada del supervisor desde su app:** Lim_front sólo tiene login de `usuarios`. El login de supervisores (`/acces_laboral/login`) lo usa otra app que no está en este repo. La API ya acepta su token; falta definir dónde vive su pantalla (app existente, ruta nueva en Lim_front u otra).
 - **Rol de Operaciones (Subjefe):** no existe en la BD local; hoy sólo entra `Administrador`. Al agregarlo, usar una lista aparte para anular (la spec sólo permite anular a Supervisor y Admin).
 - **Token de recuperación de contraseña:** firma el mismo payload que el login (1 h) y no se distingue; sirve como sesión. Afecta también a `middleware/auth.js`. Deuda de RNF-SEC-01 (agregar un claim de propósito).
+- **Login laboral legacy (no modificado, código existente):** `api/sistema_intranet/accesos_laborales/controlador.js` hace `console.log(credenciales)` (la contraseña queda en texto plano en el log del servidor) y, con contraseña incorrecta, responde el registro `acceso_laboral` completo (incluye el hash). Además `actualizarAccesoLaboralDB` (`logica.js`) guarda `password` vacío si se edita sin escribir contraseña. Corregirlo requiere autorización de ambos (RNF-SEC-01).
+- **`middleware/auth.autenticar` (RF-CAJA-02):** acepta tokens de `acceso_clientes`/`usuario_apps` (traen `id` sin `roleId`) y hoy sólo los frena `requerirRol`. Bodega no depende de eso (ver "Autenticación"), pero conviene revisarlo.
+- **`db:migrate:undo:all`** se detiene en `RNF-SEC-02` porque `auditoria` ya tiene filas (las escribe la migración de saldo encadenado). Es por diseño, pero en local impide volver a cero.
+- **Interceptor HTTP global (tarea D):** la vista maneja el 401 localmente (`solicitudes-bodega.errores.ts`, marcado `shortcut:`); al existir el interceptor se reemplaza.
 
 ## Tablas nuevas
 
