@@ -17,7 +17,8 @@ interface LineaSolicitud {
 // RF-BOD-01: formulario de nueva solicitud, usable desde el celular (RNF-UX-01)
 @Component({
   selector: 'app-solicitud-nueva',
-  templateUrl: './solicitud-nueva.component.html'
+  templateUrl: './solicitud-nueva.component.html',
+  styleUrls: ['../solicitudes-bodega.css']
 })
 export class SolicitudNuevaComponent implements OnInit {
   static readonly MAX_CANTIDAD = 100000;

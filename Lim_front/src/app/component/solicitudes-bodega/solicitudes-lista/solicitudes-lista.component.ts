@@ -11,7 +11,8 @@ import { mostrarErrorBodega } from '../solicitudes-bodega.errores';
 // RF-BOD-01: listado de solicitudes (Admin / Operaciones) con filtro por estado y paginación del servidor
 @Component({
   selector: 'app-solicitudes-lista',
-  templateUrl: './solicitudes-lista.component.html'
+  templateUrl: './solicitudes-lista.component.html',
+  styleUrls: ['../solicitudes-bodega.css']
 })
 export class SolicitudesListaComponent implements OnInit {
   solicitudes: SolicitudBodega[] = [];

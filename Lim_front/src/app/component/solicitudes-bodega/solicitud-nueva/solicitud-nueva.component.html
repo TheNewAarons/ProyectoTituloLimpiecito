@@ -23,7 +23,6 @@
 
               <div class="row align-items-end">
                 <div class="col-12 col-sm-7">
-                  <label class="mb-0">Producto</label>
                   <ng-select [items]="productos" bindLabel="nombre" name="producto" [(ngModel)]="producto"
                     placeholder="Buscar producto..." notFoundText="Sin resultados" [clearable]="true"></ng-select>
                 </div>
@@ -42,12 +41,12 @@
               </div>
 
               <div class="table-responsive mt-2">
-                <table class="table">
+                <table class="table tabla-compacta">
                   <thead>
                     <tr>
                       <th class="text-left">Producto</th>
                       <th class="text-right">Cantidad</th>
-                      <th class="text-right">Acciones</th>
+                      <th class="text-right"><span class="sr-only">Acciones</span></th>
                     </tr>
                   </thead>
                   <tbody>

@@ -12,7 +12,8 @@ import { mostrarErrorBodega } from '../solicitudes-bodega.errores';
 // RF-BOD-01: detalle con ítems; anulación según meta.acciones (lo decide el backend)
 @Component({
   selector: 'app-solicitud-detalle',
-  templateUrl: './solicitud-detalle.component.html'
+  templateUrl: './solicitud-detalle.component.html',
+  styleUrls: ['../solicitudes-bodega.css']
 })
 export class SolicitudDetalleComponent implements OnInit {
   solicitud: SolicitudBodega = null;
