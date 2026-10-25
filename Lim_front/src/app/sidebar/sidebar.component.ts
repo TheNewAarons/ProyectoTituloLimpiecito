@@ -51,6 +51,7 @@ export const ROUTES: RouteInfo[] = [
     collapse: 'bodega',
     children: [
       { path: 'producto', title: 'Producto EPP ', ab: 'P' },
+      { path: 'solicitudes', title: 'Solicitudes', ab: 'So' }, // RF-BOD-01
       { path: 'stock', title: 'Agregar Stock', ab: 'S' }
     ]
   },

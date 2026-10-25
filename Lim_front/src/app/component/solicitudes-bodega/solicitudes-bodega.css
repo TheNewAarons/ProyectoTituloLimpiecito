@@ -1,0 +1,12 @@
+/* RF-BOD-01 / RNF-UX-01: áreas táctiles de al menos 44 px en las vistas de solicitudes (sin colores nuevos). */
+.btn {
+  min-height: 44px;
+}
+
+/* Tabla del formulario: sin ancho mínimo para que quepa a 360 px sin scroll propio. */
+.tabla-compacta th,
+.tabla-compacta td {
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: normal;
+}
