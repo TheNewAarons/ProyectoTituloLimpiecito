@@ -303,8 +303,7 @@ app.use(process.env.PREFIJO + '/api/v1/liquidaciones', LiquidacionesV1);
 const CajasV1 = require('./api/apartado_base/caja/routes-v1');
 app.use(process.env.PREFIJO + '/api/v1/cajas', CajasV1);
 
-// RF-BOD-03: proveedores (CRUD) + edición/envío de órdenes de compra. Router autocontenido
-// (ver api/v1/bodega/routes.js): no depende del router bodega de otro integrante.
+// RF-BOD-01 (solicitudes de insumos/EPP) y RF-BOD-03 (proveedores, órdenes de compra), SOLO bajo /api/v1.
 const BodegaV1 = require('./api/v1/bodega/routes');
 app.use(process.env.PREFIJO + '/api/v1/bodega', BodegaV1);
 

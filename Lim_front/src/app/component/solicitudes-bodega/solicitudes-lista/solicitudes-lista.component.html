@@ -1,0 +1,67 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">list_alt</i></div>
+            <h4 class="card-title">Solicitudes De Bodega</h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Nueva Solicitud" class="btn btn-warning btn-sm" (click)="nueva()">
+              <span class="btn-label"><i class="material-icons">add</i></span>
+              Nueva Solicitud
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-md-4">
+                <mat-form-field class="example-full-width">
+                  <mat-select placeholder="Estado" name="estado" [(ngModel)]="estado" (selectionChange)="filtrar()">
+                    <mat-option *ngFor="let f of filtros" [value]="f.valor">{{ f.nombre }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div class="table-responsive" *ngIf="!loading">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-left">N°</th>
+                    <th>Fecha</th>
+                    <th>Centro De Costo</th>
+                    <th>Solicitante</th>
+                    <th class="text-center">Productos</th>
+                    <th>Estado</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="solicitudes.length === 0">
+                    <td colspan="7" class="text-center">Sin registros</td>
+                  </tr>
+                  <tr *ngFor="let s of solicitudes">
+                    <td class="text-left">{{ s.id }}</td>
+                    <td>{{ s.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>CC {{ s.centro_costo?.numero_cc }}<span *ngIf="s.centro_costo?.cliente"> · {{ s.centro_costo.cliente }}</span></td>
+                    <td>{{ s.solicitante?.nombre || '—' }}</td>
+                    <td class="text-center">{{ s.total_items }}</td>
+                    <td><span [class]="badge[s.estado]">{{ s.etiqueta_estado }}</span></td>
+                    <td class="td-actions text-right">
+                      <button mat-raised-button type="button" matTooltip="Ver Detalle" class="btn btn-info btn-round" (click)="ver(s.id)">
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card-footer" *ngIf="total > pageSize">
+            <ngb-pagination [(page)]="page" [pageSize]="pageSize" [collectionSize]="total" [maxSize]="5" [boundaryLinks]="true" (pageChange)="cargar()"></ngb-pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
