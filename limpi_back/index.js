@@ -303,7 +303,7 @@ app.use(process.env.PREFIJO + '/api/v1/liquidaciones', LiquidacionesV1);
 const CajasV1 = require('./api/apartado_base/caja/routes-v1');
 app.use(process.env.PREFIJO + '/api/v1/cajas', CajasV1);
 
-// RF-BOD-01: solicitudes de insumos/EPP (supervisor + Admin), SOLO bajo /api/v1.
+// RF-BOD-01 (solicitudes de insumos/EPP) y RF-BOD-03 (proveedores, órdenes de compra), SOLO bajo /api/v1.
 const BodegaV1 = require('./api/v1/bodega/routes');
 app.use(process.env.PREFIJO + '/api/v1/bodega', BodegaV1);
 

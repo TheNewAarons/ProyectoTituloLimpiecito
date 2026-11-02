@@ -15,5 +15,9 @@ module.exports = {
   // probable segun el spec. Revisar/ajustar antes de habilitar el flujo en un ambiente con el
   // rol real creado (TASK_PLAN).
   ROL_ADMIN_NOMBRES: ['Administrador'],
-  ROL_RRHH_NOMBRES: ['RRHH', 'Recursos Humanos']
+  ROL_RRHH_NOMBRES: ['RRHH', 'Recursos Humanos'],
+  // RF-BOD-03 — rol todavía no existe en la tabla `roles` de la BD local (aseolimp_minda_oficial09:
+  // solo Administrador/RRHH/Supervisor/APOYO_LVL_1); se deja el nombre mas probable segun el spec.
+  // Hasta que se cree, requerirRol(..., ROL_OPERACIONES_NOMBRES) solo deja pasar a Administrador.
+  ROL_OPERACIONES_NOMBRES: ['Operaciones']
 };

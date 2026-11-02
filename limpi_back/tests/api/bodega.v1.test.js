@@ -17,6 +17,9 @@ jest.mock('../../services/bodega/solicitudes', () => ({
   obtener: jest.fn(async (id) => ({ id: id })),
   anular: jest.fn(async (id) => ({ id: id, estado: 'ANULADA' }))
 }));
+// RF-BOD-03 comparte el router: sus servicios se simulan para no cargar modelos reales.
+jest.mock('../../services/bodega/proveedores', () => ({}));
+jest.mock('../../services/bodega/ordenesCompra', () => ({}));
 
 const express = require('express');
 const request = require('supertest');

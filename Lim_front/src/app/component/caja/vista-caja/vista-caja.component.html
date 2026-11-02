@@ -44,22 +44,22 @@
             </div>
             <div id="indicadores" class="row">
               <label *ngIf="caja?.estado == 1" class="col-md-4"
-                ><strong>Total Ingresos:</strong>{{ total_ingresoMoment | currency: 'USD':'symbol':'1.0' }}</label
+                ><strong>Ingresos devengados:</strong>{{ total_ingresoMoment | currency: 'USD':'symbol':'1.0' }}</label
               >
               <label *ngIf="caja?.estado == 1" class="col-md-4"
-                ><strong>Total Egresos:</strong>{{ total_egresoMoment | currency: 'USD':'symbol':'1.0' }}</label
+                ><strong>Egresos devengados:</strong>{{ total_egresoMoment | currency: 'USD':'symbol':'1.0' }}</label
               >
               <label *ngIf="caja?.estado == 1" class="col-md-4"
-                ><strong>Utilidad Total:</strong>{{ utilidadMoment | currency: 'USD':'symbol':'1.0' }}</label
+                ><strong>Utilidad devengada:</strong>{{ utilidadMoment | currency: 'USD':'symbol':'1.0' }}</label
               >
               <label *ngIf="caja?.estado == 0" class="col-md-4"
-                ><strong>Total Ingresos:</strong>{{ caja?.total_ingreso | currency: 'USD':'symbol':'1.0' }}</label
+                ><strong>Ingresos devengados:</strong>{{ caja?.total_ingreso | currency: 'USD':'symbol':'1.0' }}</label
               >
               <label *ngIf="caja?.estado == 0" class="col-md-4"
-                ><strong>Total Egresos:</strong>{{ caja?.total_egreso | currency: 'USD':'symbol':'1.0' }}</label
+                ><strong>Egresos devengados:</strong>{{ caja?.total_egreso | currency: 'USD':'symbol':'1.0' }}</label
               >
               <label *ngIf="caja?.estado == 0" class="col-md-4"
-                ><strong>Utilidad Total:</strong>{{ caja?.utilidad | currency: 'USD':'symbol':'1.0' }}</label
+                ><strong>Utilidad devengada:</strong>{{ caja?.utilidad | currency: 'USD':'symbol':'1.0' }}</label
               >
             </div>
             <div id="indicadores" class="row" *ngIf="resumenPendientesPago?.cantidad > 0">
@@ -70,6 +70,7 @@
               </label>
             </div>
             <br />
+            <!-- Devengado = centros de costo (incluye liquidaciones en espera); en caja = solo movimientos pagados (RF-CAJA-02) -->
             <!-- SALDO ENCADENADO POR PERIODO (RF-CAJA-01) -->
             <div class="card card-stats" *ngIf="resumenPeriodo">
               <div class="row d-flex align-items-center">
@@ -83,11 +84,11 @@
                   >info</i>
                 </label>
                 <label class="col-md-3"
-                  ><strong>Ingresos:</strong>
+                  ><strong>Ingresos en caja:</strong>
                   {{ resumenPeriodo.ingresos | currency: 'CLP':'symbol-narrow':'1.0-0':'es-CL' }}</label
                 >
                 <label class="col-md-3"
-                  ><strong>Egresos:</strong>
+                  ><strong>Egresos en caja:</strong>
                   {{ resumenPeriodo.egresos | currency: 'CLP':'symbol-narrow':'1.0-0':'es-CL' }}</label
                 >
                 <label class="col-md-3"

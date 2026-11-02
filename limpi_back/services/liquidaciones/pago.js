@@ -20,6 +20,7 @@ const { EGRESO_ANULADO, EGRESO_TIPO_LIQUIDACION, CAJA_ABIERTA } = require('../co
 const { buscarCajaPorPeriodo } = require('../caja/periodo');
 const { aEnteroCLP } = require('../caja/saldo');
 const { reintentarTransaccion } = require('../caja/cierre');
+const { abrirMesAutomatico } = require('../caja/apertura');
 
 const CAJA_ABIERTA_ESTADO = CAJA_ABIERTA;
 const LIQUIDACION_CERRADA = 0;
@@ -75,6 +76,20 @@ function validarFechaPago(fechaPago, fechaCreacion) {
       });
     }
   }
+}
+
+/**
+ * Si `fecha_pago` cae en el mes actual y su caja aún no existe (cron de apertura apagado o no
+ * ejecutado), la abre antes del pago; idempotente. Meses pasados sin caja siguen fallando
+ * (CAJA_NO_EXISTE) para no crear huecos en la cadena de saldos.
+ * @param {string} fechaPago
+ */
+async function asegurarCajaDelMesActual(fechaPago) {
+  if (!fecha.esFechaValida(fechaPago)) return;
+  const periodo = fechaPago.slice(0, 7);
+  if (periodo !== fecha.hoySantiago().slice(0, 7)) return;
+  if (await buscarCajaPorPeriodo(periodo)) return;
+  await abrirMesAutomatico({ periodo: periodo });
 }
 
 /**
@@ -180,6 +195,7 @@ async function pagar(liquidacionId, datos, opciones) {
   if (o.transaction) {
     return _pagarEnTransaccion(liquidacionId, datos, o.transaction);
   }
+  await asegurarCajaDelMesActual(datos.fecha_pago);
   return reintentarTransaccion(function () {
     return db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, function (t) {
       return _pagarEnTransaccion(liquidacionId, datos, t);
@@ -206,6 +222,7 @@ async function pagarLote(ids, datos) {
     throw new AppError('LOTE_INVALIDO', 'el lote no puede superar ' + LOTE_MAXIMO + ' liquidaciones', 400, { cantidad: idsUnicos.length });
   }
 
+  await asegurarCajaDelMesActual(datos.fecha_pago);
   return reintentarTransaccion(function () {
     return db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async function (t) {
       const pagadas = [];
