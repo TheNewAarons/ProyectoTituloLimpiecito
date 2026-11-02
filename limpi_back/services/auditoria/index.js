@@ -44,7 +44,7 @@ function aPlanoLimpio(valor) {
  * @param {{id: (number|null), contexto: string}} params.usuario usuario que ejecuta la acción (id null = sistema/cron)
  * @param {string} params.entidad nombre real de la tabla afectada (ej. 'cajas', 'liquidaciones')
  * @param {string|number} [params.entidad_id] id o periodo de la fila afectada
- * @param {string} params.accion 'CREAR' | 'EDITAR' | 'PAGO' | 'REVERSION_PAGO' | 'ANULAR' | 'CIERRE' | 'REAPERTURA' | 'RECALCULO' | 'LOGIN_OK' | 'LOGIN_FALLIDO'
+ * @param {string} params.accion 'CREAR' | 'EDITAR' | 'PAGO' | 'REVERSION_PAGO' | 'ANULAR' | 'CIERRE' | 'REAPERTURA' | 'RECALCULO' | 'LOGIN_OK' | 'LOGIN_FALLIDO' | 'ENVIAR' | 'REENVIAR' | 'ENVIAR_FALLIDO' (RF-BOD-03)
  * @param {object|null} [params.antes] instancia u objeto plano previo al cambio
  * @param {object|null} [params.despues] instancia u objeto plano posterior al cambio
  * @param {string} [params.motivo]

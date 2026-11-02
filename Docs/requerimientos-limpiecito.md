@@ -31,7 +31,7 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 | RF-CAJA-02 | Estado de pago en liquidaciones de sueldo | Caja | 🔴 Alta | M | Feature nueva | 1 | — | Integrado en `develop` – pendiente verificación en pruebas |
 | RF-BOD-01 | Solicitud de insumos/EPP por supervisor | Bodega | 🔴 Alta | L | Feature nueva | 2 | — | Sin empezar |
 | RF-BOD-02 | Cruce automático solicitud vs stock | Bodega | 🔴 Alta | M | Feature nueva | 2 | BOD-01 | Sin empezar |
-| RF-BOD-03 | Envío automático de orden de compra al proveedor | Bodega | 🔴 Alta | M | Feature nueva | 2 | BOD-02 | Sin empezar |
+| RF-BOD-03 | Envío automático de orden de compra al proveedor | Bodega | 🔴 Alta | M | Feature nueva | 2 | BOD-02 | En progreso (parcial) |
 | RF-BOD-04 | Recepción y actualización automática de bodega | Bodega | 🔴 Alta | M | Feature nueva | 3 | BOD-03 | Sin empezar |
 | RF-BOD-05 | Dashboard/Home de bodega (solicitudes, lista de compra, stock) | Bodega | 🟠 Media-Alta | M | Feature nueva | 3 | BOD-01..04 | Sin empezar |
 | RF-FAC-01 | Estado de pago en facturas (ingresos y egresos) | Facturación | 🟡 Media | S | Mejora | 3 | — | Sin empezar |
