@@ -31,14 +31,18 @@ const { autenticar, requerirRol } = require('../../../middleware/auth');
 const { ROL_ADMIN_NOMBRES, ROL_OPERACIONES_NOMBRES } = require('../../../services/constantes');
 const proveedores = require('./proveedores-controlador');
 const ordenesCompra = require('./ordenes-compra-controlador');
+const productos = require('./productos-controlador');
 
 const ADMIN_Y_OPERACIONES = [autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES.concat(ROL_OPERACIONES_NOMBRES))];
 
 router.get('/proveedores', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.listar));
+router.get('/proveedores/:id/productos', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.productos));
 router.get('/proveedores/:id', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.obtener));
 router.post('/proveedores', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.crear));
 router.patch('/proveedores/:id', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.editar));
 router.delete('/proveedores/:id', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.desactivar));
+
+router.patch('/productos/:id/proveedor', ADMIN_Y_OPERACIONES, asyncHandler(productos.asignarProveedor));
 
 router.get('/ordenes-compra/:id', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCompra.obtener));
 router.patch('/ordenes-compra/:id', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCompra.actualizar));

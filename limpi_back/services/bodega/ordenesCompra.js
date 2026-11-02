@@ -1,13 +1,13 @@
 /**
- * RF-BOD-03 — Edición y envío de órdenes de compra. No implementa (depende de otras tareas en
- * curso de otro integrante): generación `/desde-lista`, asignación proveedor↔producto ni el
- * bloqueo "producto sin proveedor no puede enviarse" (regla 3 del spec).
+ * RF-BOD-03 — Edición y envío de órdenes de compra. No implementa (depende de otra tarea en
+ * curso de otro integrante): generación `/desde-lista`.
  */
 
 const db = require('../../database/database');
 const Orden_compra = require('../../modelos/sistema_bodega/Orden_compra');
 const Orden_compra_item = require('../../modelos/sistema_bodega/Orden_compra_item');
 const Proveedor = require('../../modelos/sistema_bodega/Proveedor');
+const Producto = require('../../modelos/sistema_base/Producto');
 const AppError = require('../../libs/app-error');
 const { auditar } = require('../auditoria');
 const { enviarCorreoOrdenCompra } = require('./correoOrdenCompra');
@@ -129,6 +129,32 @@ async function registrarIntentoFallido(id, contexto, errorOriginal) {
 }
 
 /**
+ * Valida que cada item apunte a un producto con el mismo proveedor de la orden (spec regla 3).
+ * @param {object[]} items instancias Orden_compra_item (con `producto_id`)
+ * @param {number} proveedorId id del proveedor de la orden
+ * @param {object} [transaction]
+ * @param {*} [lock] p.ej. `t.LOCK.SHARE`
+ * @throws {AppError} PRODUCTO_SIN_PROVEEDOR (409) con `details.productos`
+ */
+async function validarProductosConProveedor(items, proveedorId, transaction, lock) {
+  const productoIds = items.map(function (i) { return i.producto_id; });
+  const opciones = { where: { id: productoIds }, transaction: transaction };
+  if (lock) opciones.lock = lock;
+  const productos = await Producto.findAll(opciones);
+  const productosPorId = productos.reduce(function (m, p) { m[p.id] = p; return m; }, {});
+  const sinProveedor = [];
+  items.forEach(function (item) {
+    const producto = productosPorId[item.producto_id];
+    if (!producto || producto.proveedor_id !== proveedorId) {
+      sinProveedor.push({ id: item.producto_id, nombre: producto ? producto.nombre : null });
+    }
+  });
+  if (sinProveedor.length > 0) {
+    throw new AppError('PRODUCTO_SIN_PROVEEDOR', 'hay productos sin el proveedor de la orden asignado', 409, { productos: sinProveedor });
+  }
+}
+
+/**
  * POST /ordenes-compra/:id/enviar — envía la orden por correo al proveedor. El correo se envía
  * ANTES de confirmar el estado en BD (no se mantiene la transacción abierta durante el SMTP);
  * el estado solo pasa a ENVIADA si `sendMail` tuvo éxito. Permite reenviar una orden ya ENVIADA
@@ -151,8 +177,8 @@ async function enviar(id, contexto) {
   if (!orden.items || orden.items.length === 0) {
     throw new AppError('ORDEN_SIN_ITEMS', 'la orden no tiene items, no se puede enviar', 409);
   }
-  // TODO(RF-BOD-03/RF-BOD-05): acá debe ir el bloqueo "producto sin proveedor asignado no puede
-  // enviarse" (spec regla 3) una vez exista la asignación proveedor↔producto (otra tarea).
+  // Bloqueo (spec regla 3): todo item debe apuntar a un producto con el mismo proveedor de la orden.
+  await validarProductosConProveedor(orden.items, orden.proveedor_id);
 
   const emailDestino = orden.proveedor.email;
   const accion = orden.estado === 'ENVIADA' ? 'REENVIAR' : 'ENVIAR';
@@ -175,6 +201,17 @@ async function enviar(id, contexto) {
         { ordenId: id, estado: ordenFresca.estado }
       );
       throw new AppError('ORDEN_NO_ENVIABLE', 'la orden cambio de estado mientras se enviaba el correo', 409, { estado: ordenFresca.estado });
+    }
+    try {
+      await validarProductosConProveedor(ordenFresca.items, ordenFresca.proveedor_id, t, t.LOCK.SHARE);
+    } catch (errorValidacion) {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[RF-BOD-03] la orden ' + id + ' perdio la asignacion proveedor-producto mientras se enviaba el correo; ' +
+          'el correo ya fue enviado a ' + emailDestino + ' pero no se marca ENVIADA',
+        { ordenId: id }
+      );
+      throw errorValidacion;
     }
 
     const antes = ordenFresca.get({ plain: true });
