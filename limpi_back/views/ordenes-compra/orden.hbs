@@ -1,0 +1,24 @@
+<!-- RF-BOD-03: plantilla Handlebars de orden de compra (autoescape activo; nunca usar triple llaves). -->
+<div>
+  <h2>{{empresaNombre}}</h2>
+  <p>RUT: {{empresaRut}}</p>
+  <h3>Orden de compra #{{numeroOrden}}</h3>
+  <p>Fecha: {{fecha}}</p>
+  <p>Proveedor: {{proveedorNombre}}</p>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Cantidad</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each items}}
+      <tr>
+        <td>{{this.producto_id}}</td>
+        <td>{{this.cantidad}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
