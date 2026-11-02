@@ -14,7 +14,8 @@
 - [ ] `db:migrate:undo` y re-`db:migrate` en la copia (nunca `undo:all` fuera de local).
 - [ ] Criterios de aceptación verificados (spec §13), RF-CAJA-02: generar no altera la caja; pagar el día 5 del mes siguiente crea el egreso en ese mes; lote todo-o-nada; histórico conserva su efecto; pago/reversión auditados; RRHH no revierte.
 - [ ] Criterios de aceptación verificados, RF-CAJA-01: cadena de ≥ 3 meses; −$2.000.000 se arrastra; cron dos veces no duplica; mes cerrado exige reabrir y el recierre recalcula.
-- [ ] Decidir `CAJA_APERTURA_AUTOMATICA` (apagado por defecto) para pruebas y producción.
+- [ ] Decidir `CAJA_APERTURA_AUTOMATICA` (apagado por defecto) para pruebas y producción. Con el flag apagado, pagar en el mes actual igual abre su caja (D-042); el flag solo gobierna el cron del día 1.
+- [ ] Vista de caja: confirmar con la empresa las etiquetas "devengado" vs "en caja" (D-043).
 - [ ] Autorización RF-CAJA-02-001 (`.claude/autorizaciones.json`) venció el 2026-10-31 y la firma de Bastián fue verbal: regularizar por escrito.
 - [ ] `npm test` en `limpi_back` en verde; `npx ng build --prod` en `Lim_front`.
 - [ ] Estado de RF-CAJA-01/02 en la spec actualizado tras la verificación.
