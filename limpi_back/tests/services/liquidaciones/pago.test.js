@@ -40,6 +40,9 @@ jest.mock('../../../services/auditoria', () => ({
 jest.mock('../../../services/caja/periodo', () => ({
   buscarCajaPorPeriodo: jest.fn()
 }));
+jest.mock('../../../services/caja/apertura', () => ({
+  abrirMesAutomatico: jest.fn()
+}));
 jest.mock('../../../services/caja/saldo', () => ({
   calcularSaldo: jest.fn(),
   aEnteroCLP: jest.fn((v) => {
@@ -56,6 +59,7 @@ const Egreso = require('../../../modelos/sistema_base/Egreso');
 const CentroCostoTrabajador = require('../../../modelos/sistema_base/Centro_costo_trabajadore');
 const { auditar } = require('../../../services/auditoria');
 const { buscarCajaPorPeriodo } = require('../../../services/caja/periodo');
+const { abrirMesAutomatico } = require('../../../services/caja/apertura');
 const fecha = require('../../../libs/fecha');
 
 const { pagar, pagarLote, revertirPago } = require('../../../services/liquidaciones/pago');
@@ -95,6 +99,24 @@ describe('services/liquidaciones/pago', () => {
     jest.clearAllMocks();
     auditar.mockResolvedValue({ id: 1 });
     CentroCostoTrabajador.findOne.mockResolvedValue(null); // comentario genérico por defecto
+  });
+
+  describe('pagar: caja del mes actual inexistente', () => {
+    it('abre la caja del mes actual antes de pagar', async () => {
+      fakeTransaction();
+      buscarCajaPorPeriodo.mockResolvedValueOnce(null).mockResolvedValue(instancia({ id: 7, estado: 1 }));
+      Liquidacion.findById.mockResolvedValue(instancia({ id: 1, fecha_creacion: '2026-01-01', estado: 1, estado_pago: 'EN_ESPERA', liquido_pagar: 10000 }));
+      await expect(pagar(1, { fecha_pago: hoy, usuario })).rejects.toMatchObject({ code: 'LIQUIDACION_NO_CERRADA' });
+      expect(abrirMesAutomatico).toHaveBeenCalledWith({ periodo: hoy.slice(0, 7) });
+    });
+
+    it('no abre cajas de meses pasados: sigue CAJA_NO_EXISTE', async () => {
+      fakeTransaction();
+      buscarCajaPorPeriodo.mockResolvedValue(null);
+      Liquidacion.findById.mockResolvedValue(instancia({ id: 1, fecha_creacion: '2020-01-01', estado: 0, estado_pago: 'EN_ESPERA', liquido_pagar: 10000 }));
+      await expect(pagar(1, { fecha_pago: '2020-02-03', usuario })).rejects.toMatchObject({ code: 'CAJA_NO_EXISTE' });
+      expect(abrirMesAutomatico).not.toHaveBeenCalled();
+    });
   });
 
   describe('pagar', () => {
