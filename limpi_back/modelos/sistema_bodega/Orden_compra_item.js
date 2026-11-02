@@ -1,6 +1,7 @@
 const Sequelize = require('sequelize')
 const db = require('../../database/database');
 const Orden_compra = require('./Orden_compra')
+const Producto = require('../sistema_base/Producto')
 
 // RF-BOD-03: tabla `orden_compra_items` (migración 20261102041711).
 const Orden_compra_item = db.sequelize.define(
@@ -15,7 +16,7 @@ const Orden_compra_item = db.sequelize.define(
             type: Sequelize.INTEGER,
             allowNull: false
         },
-        // Sin FK/asociación: productos_bodega aún no existe en el repo (otro integrante)
+        // FK fk_orden_compra_items_producto -> productos.id (migración 20261102151757)
         producto_id:{
             type: Sequelize.INTEGER,
             allowNull: false
@@ -44,5 +45,6 @@ const Orden_compra_item = db.sequelize.define(
 
 Orden_compra.hasMany(Orden_compra_item, { foreignKey: 'orden_id', as: 'items' })
 Orden_compra_item.belongsTo(Orden_compra, { foreignKey: 'orden_id', as: 'orden' })
+Orden_compra_item.belongsTo(Producto, { foreignKey: 'producto_id', as: 'producto' })
 
 module.exports = Orden_compra_item
