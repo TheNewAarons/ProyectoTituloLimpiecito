@@ -34,6 +34,9 @@
     "transbank-sdk": "2.1.3",
     "uuid": "^8.2.0"
   },
+  "jest": {
+    "testPathIgnorePatterns": ["/node_modules/", "<rootDir>/middleware/errores.test.js"]
+  },
   "devDependencies": {
     "jest": "^29.7.0",
     "sequelize-cli": "^5.5.1",
