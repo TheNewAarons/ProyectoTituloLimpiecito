@@ -27,8 +27,8 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 
 | Código | Requerimiento | Módulo | Prioridad | Esf. | Tipo | Sprint | Depende de | Estado |
 |---|---|---|---|---|---|---|---|---|
-| RF-CAJA-01 | Traspaso automático de saldo entre meses | Caja | 🔴 Alta | M | Mejora | 1 | — | Implementado – pendiente verificación/PR |
-| RF-CAJA-02 | Estado de pago en liquidaciones de sueldo | Caja | 🔴 Alta | M | Feature nueva | 1 | — | En revisión |
+| RF-CAJA-01 | Traspaso automático de saldo entre meses | Caja | 🔴 Alta | M | Mejora | 1 | — | Integrado en `develop` – pendiente verificación en pruebas |
+| RF-CAJA-02 | Estado de pago en liquidaciones de sueldo | Caja | 🔴 Alta | M | Feature nueva | 1 | — | Integrado en `develop` – pendiente verificación en pruebas |
 | RF-BOD-01 | Solicitud de insumos/EPP por supervisor | Bodega | 🔴 Alta | L | Feature nueva | 2 | — | Sin empezar |
 | RF-BOD-02 | Cruce automático solicitud vs stock | Bodega | 🔴 Alta | M | Feature nueva | 2 | BOD-01 | Sin empezar |
 | RF-BOD-03 | Envío automático de orden de compra al proveedor | Bodega | 🔴 Alta | M | Feature nueva | 2 | BOD-02 | Sin empezar |
