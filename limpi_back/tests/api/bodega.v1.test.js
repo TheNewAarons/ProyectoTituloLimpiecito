@@ -3,7 +3,17 @@
  * El servicio se simula (su lógica se cubre en tests/services/bodega): aquí se verifica cableado, permisos,
  * validación en el borde y formato { ok, data, meta } / { ok:false, error } (spec §2.6).
  */
-jest.mock('../../database/database', () => ({ sequelize: {} }));
+// RF-BOD-02: routes.js carga cruce-controlador.js -> services/bodega/cruceStock.js, que arrastra
+// modelos reales (Auditoria, etc.) que llaman db.sequelize.define al cargar (patron de pago.test.js).
+jest.mock('../../database/database', () => ({
+  sequelize: {
+    define: jest.fn(() => {
+      const m = {};
+      ['belongsTo', 'hasMany', 'hasOne', 'belongsToMany'].forEach((metodo) => { m[metodo] = jest.fn(() => m); });
+      return m;
+    })
+  }
+}));
 jest.mock('../../modelos/sistema_base/Role', () => ({ findById: jest.fn(async (id) => (id === 1 ? { nombre: 'Administrador' } : { nombre: 'Otro' })) }));
 jest.mock('../../modelos/sistema_base/Usuario', () => ({ findById: jest.fn() }));
 jest.mock('../../modelos/sistema_base/Trabajadore', () => ({ findById: jest.fn(async (id) => ({ id: id, nombre: 'Sup', estado: 1 })) }));

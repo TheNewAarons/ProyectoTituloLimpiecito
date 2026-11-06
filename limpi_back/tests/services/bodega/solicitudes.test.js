@@ -4,10 +4,23 @@
  */
 // Transacción simulada única para poder comprobar que el bloqueo y la auditoría usan la misma.
 const mockTransaccion = { id: 'tx-prueba', LOCK: { UPDATE: 'UPDATE' } };
+// RF-BOD-02: solicitudes.js ahora arrastra services/caja/cierre.js -> modelos/sistema_base/Caja.js,
+// que llama db.sequelize.define al cargar el modulo (patron de pago.test.js: define() stub, sin BD real).
 jest.mock('../../../database/database', () => ({
-  sequelize: { transaction: jest.fn(async (fn) => fn(mockTransaccion)) }
+  sequelize: {
+    transaction: jest.fn(async (fn) => fn(mockTransaccion)),
+    define: jest.fn(() => {
+      const m = {};
+      ['belongsTo', 'hasMany', 'hasOne', 'belongsToMany'].forEach((metodo) => { m[metodo] = jest.fn(() => m); });
+      return m;
+    })
+  }
 }));
 jest.mock('../../../services/auditoria', () => ({ auditar: jest.fn(async () => ({})) }));
+// RF-BOD-02: el cruce de stock corre dentro de la misma transacción de crear()/anular() (D-053/D-062).
+// Se mockea para que estos tests de RF-BOD-01 sigan verificando la lógica de solicitudes en PENDIENTE
+// sin depender del cálculo de stock (cubierto en tests/services/bodega/cruceStock.test.js).
+jest.mock('../../../services/bodega/cruceStock', () => ({ cruzar: jest.fn(async () => {}), revertir: jest.fn(async () => {}) }));
 
 const mem = { solicitudes: [], items: [], productos: [], centros: [], asignaciones: [] };
 
