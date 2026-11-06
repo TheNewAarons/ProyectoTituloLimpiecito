@@ -9,8 +9,17 @@ const ESTADOS_SOLICITUD = {
   ANULADA: 'ANULADA'
 };
 
+// RF-BOD-02: movimientos_bodega.tipo (VARCHAR validado aquí, D-052).
+const TIPOS_MOVIMIENTO = {
+  ENTRADA_COMPRA: 'ENTRADA_COMPRA',
+  SALIDA_SOLICITUD: 'SALIDA_SOLICITUD',
+  AJUSTE: 'AJUSTE',
+  REVERSA: 'REVERSA'
+};
+
 module.exports = {
   ESTADOS_SOLICITUD,
+  TIPOS_MOVIMIENTO,
   // Etiqueta para la UI (Jira SCRUM-8: Pendiente / En proceso / Entregada).
   ETIQUETA_ESTADO: {
     PENDIENTE: 'Pendiente',
