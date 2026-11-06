@@ -133,11 +133,9 @@ VARCHAR y no ENUM para que RF-BOD-02/04 no necesiten cambiar la columna. Constan
 - **Cruce inmediato (regla 7):** lo implementa RF-BOD-02. RF-BOD-01 deja la solicitud en `PENDIENTE` con `cantidad_faltante = NULL`.
 - **Anulación:** hoy sólo exige `PENDIENTE`; la condición "sin orden de compra enviada" se agrega cuando exista RF-BOD-03.
 
-## Para RF-BOD-02 (Aarón)
+## RF-BOD-02 (hecho)
 
-- Leer ítems con `cantidad_faltante IS NULL` para saber qué falta cruzar.
-- El cruce actualiza `cantidad_asignada`, `cantidad_faltante` y `estado` (`PARCIAL` / `LISTA_ENTREGA`) en una transacción con `LOCK.UPDATE` sobre `productos`.
-- Si se necesitan columnas nuevas (p. ej. `productos.categoria`, `stock_minimo`), van en una migración propia de RF-BOD-02.
+El cruce está implementado en `services/bodega/cruceStock.js` (ver `Docs/API_V1.md` §RF-BOD-02 y `Docs/DECISIONES.md` D-052…D-064): `crear()` bloquea los productos y cruza en la misma transacción (actualiza `cantidad_asignada`, `cantidad_faltante` y `estado`); `anular()` repone el stock asignado. No se agregaron columnas nuevas a `productos` (sin `categoria`/`stock_minimo`); solo la tabla aditiva `movimientos_bodega` (migración `20261106150736`).
 
 ## Reversión
 

@@ -32,8 +32,13 @@ const { ROL_ADMIN_NOMBRES, ROL_OPERACIONES_NOMBRES } = require('../../../service
 const proveedores = require('./proveedores-controlador');
 const ordenesCompra = require('./ordenes-compra-controlador');
 const productos = require('./productos-controlador');
+const cruce = require('./cruce-controlador');
 
 const ADMIN_Y_OPERACIONES = [autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES.concat(ROL_OPERACIONES_NOMBRES))];
+
+// RF-BOD-02: antes de /solicitudes/:id para que no choque con esa ruta (3 segmentos vs 2).
+router.get('/solicitudes/:id/cruce', ADMIN_Y_OPERACIONES, asyncHandler(cruce.obtenerCruce));
+router.get('/lista-compra', ADMIN_Y_OPERACIONES, asyncHandler(cruce.listaCompra));
 
 router.get('/proveedores', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.listar));
 router.get('/proveedores/:id/productos', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.productos));
@@ -47,5 +52,6 @@ router.patch('/productos/:id/proveedor', ADMIN_Y_OPERACIONES, asyncHandler(produ
 router.get('/ordenes-compra/:id', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCompra.obtener));
 router.patch('/ordenes-compra/:id', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCompra.actualizar));
 router.post('/ordenes-compra/:id/enviar', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCompra.enviar));
+router.post('/ordenes-compra/desde-lista', ADMIN_Y_OPERACIONES, asyncHandler(cruce.generarDesdeLista));
 
 module.exports = router;

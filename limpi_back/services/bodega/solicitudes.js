@@ -10,6 +10,8 @@ const Op = require('sequelize').Op;
 const db = require('../../database/database');
 const AppError = require('../../libs/app-error');
 const { auditar } = require('../auditoria');
+const { reintentarTransaccion } = require('../caja/cierre');
+const cruceStock = require('./cruceStock');
 const Solicitud = require('../../modelos/sistema_bodega/Solicitud_bodega');
 const Item = require('../../modelos/sistema_bodega/Solicitud_item');
 const Producto = require('../../modelos/sistema_base/Producto');
@@ -70,7 +72,7 @@ async function listarCentrosPermitidos(usuario) {
  *   items sin productos repetidos (el controlador suma cantidades, regla 4)
  */
 async function crear(entrada, usuario, ip) {
-  const id = await db.sequelize.transaction(async (t) => {
+  const id = await reintentarTransaccion(() => db.sequelize.transaction(async (t) => {
     const centro = await Centro.findById(entrada.centro_costo_id, { attributes: ['id', 'estado'], transaction: t });
     if (!centro || Number(centro.estado) !== CENTRO_ABIERTO) {
       throw new AppError('CENTRO_NO_DISPONIBLE', 'el centro de costo no existe o esta cerrado', 400, { centro_costo_id: entrada.centro_costo_id });
@@ -80,8 +82,15 @@ async function crear(entrada, usuario, ip) {
     }
 
     const pedidos = entrada.items.map((i) => i.producto_id);
-    const activos = await Producto.findAll({ where: { id: { [Op.in]: pedidos }, estado: PRODUCTO_ACTIVO }, attributes: ['id'], transaction: t });
-    const faltan = pedidos.filter((p) => !activos.some((a) => a.id === p));
+
+    // RF-BOD-02 (D-062): se bloquean los productos (id ASC) ANTES de insertar los items, para que
+    // el cruce de stock quede dentro de esta misma transacción sin upgrade de lock por la FK. La
+    // validación de "activo" corre sobre estas mismas filas ya bloqueadas (sin una lectura previa suelta).
+    const productosLock = await Producto.findAll({
+      where: { id: { [Op.in]: unicos(pedidos).sort((a, b) => a - b) } }, order: [['id', 'ASC']], lock: t.LOCK.UPDATE, transaction: t
+    });
+    const bloqueadosPorId = porId(productosLock);
+    const faltan = pedidos.filter((p) => !bloqueadosPorId[p] || Number(bloqueadosPorId[p].estado) !== PRODUCTO_ACTIVO);
     if (faltan.length) {
       throw new AppError('PRODUCTO_NO_SOLICITABLE', 'hay productos inexistentes o inactivos', 400, { producto_ids: faltan });
     }
@@ -89,6 +98,7 @@ async function crear(entrada, usuario, ip) {
     const datos = { centro_costo_id: centro.id, estado: E.PENDIENTE, observacion: entrada.observacion || null };
     datos[columnaDueno(usuario)] = usuario.id;
     const solicitud = await Solicitud.create(datos, { transaction: t });
+
     const items = [];
     for (const i of entrada.items) {
       items.push(await Item.create({ solicitud_id: solicitud.id, producto_id: i.producto_id, cantidad_pedida: i.cantidad }, { transaction: t }));
@@ -97,8 +107,11 @@ async function crear(entrada, usuario, ip) {
       transaction: t, usuario: actor(usuario), entidad: 'solicitudes_bodega', entidad_id: solicitud.id, accion: 'CREAR',
       antes: null, despues: { solicitud: solicitud.get({ plain: true }), items: items.map((x) => x.get({ plain: true })) }, ip: ip
     });
+
+    // RF-BOD-02 (D-053): el cruce corre en la misma transacción; si falla, rollback total.
+    await cruceStock.cruzar(solicitud, items, productosLock, actor(usuario), t, ip);
     return solicitud.id;
-  });
+  }));
   return obtener(id, usuario);
 }
 
@@ -184,16 +197,26 @@ async function bloquear(id, usuario, t) {
 
 // Supervisor: la propia y solo PENDIENTE. Admin: cualquiera no finalizada.
 async function anular(id, motivo, usuario, ip) {
-  await db.sequelize.transaction(async (t) => {
+  await reintentarTransaccion(() => db.sequelize.transaction(async (t) => {
     const s = await bloquear(id, usuario, t);
     const permitido = esSupervisor(usuario) ? s.estado === E.PENDIENTE : ESTADOS_FINALES.indexOf(s.estado) === -1;
     if (!permitido) {
       throw new AppError('ESTADO_NO_PERMITE_ANULAR', 'la solicitud no se puede anular en estado ' + s.estado, 409, { estado: s.estado });
     }
     const antes = s.get({ plain: true });
+
+    // RF-BOD-02 (D-062/D-063): repone lo asignado antes de marcar ANULADA (mismo orden de locks:
+    // solicitud -> productos id ASC).
+    const items = await Item.findAll({ where: { solicitud_id: s.id }, transaction: t });
+    const productoIds = unicos(items.map((i) => i.producto_id)).sort((a, b) => a - b);
+    if (productoIds.length) {
+      const productosLock = await Producto.findAll({ where: { id: { [Op.in]: productoIds } }, order: [['id', 'ASC']], lock: t.LOCK.UPDATE, transaction: t });
+      await cruceStock.revertir(s, items, productosLock, actor(usuario), t, ip);
+    }
+
     await s.update({ estado: E.ANULADA, anulada_at: new Date() }, { transaction: t });
     await auditar({ transaction: t, usuario: actor(usuario), entidad: 'solicitudes_bodega', entidad_id: s.id, accion: 'ANULAR', antes: antes, despues: s, motivo: motivo || null, ip: ip });
-  });
+  }));
   return obtener(id, usuario);
 }
 
