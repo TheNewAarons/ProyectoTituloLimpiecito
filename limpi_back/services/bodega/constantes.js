@@ -1,5 +1,5 @@
 // RF-BOD-01 — Constantes de bodega. Estados según la spec §7; la UI agrupa PARCIAL y LISTA_ENTREGA como "En proceso".
-const { ROL_ADMIN_NOMBRES } = require('../constantes');
+const { ROL_ADMIN_NOMBRES, ROL_OPERACIONES_NOMBRES } = require('../constantes');
 
 const ESTADOS_SOLICITUD = {
   PENDIENTE: 'PENDIENTE',
@@ -24,6 +24,6 @@ module.exports = {
   // Producto activo (productos.estado).
   PRODUCTO_ACTIVO: 1,
   CENTRO_ABIERTO: 1,
-  // Admin/Dueño + Subjefe de Operaciones (spec §2.3). Nombre de Operaciones pendiente de confirmar en `roles`.
-  ROL_BODEGA_ADMIN_NOMBRES: ROL_ADMIN_NOMBRES.concat([])
+  // Admin/Dueño + Subjefe de Operaciones (spec §2.3).
+  ROL_BODEGA_ADMIN_NOMBRES: ROL_ADMIN_NOMBRES.concat(ROL_OPERACIONES_NOMBRES)
 };

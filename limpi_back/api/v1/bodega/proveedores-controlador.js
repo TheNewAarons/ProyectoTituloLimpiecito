@@ -5,6 +5,7 @@
 
 const AppError = require('../../../libs/app-error');
 const proveedoresService = require('../../../services/bodega/proveedores');
+const proveedorProductoService = require('../../../services/bodega/proveedorProducto');
 
 /**
  * @param {object} req
@@ -70,10 +71,30 @@ const desactivar = async (req, res) => {
   return res.json({ ok: true, data: proveedor, meta: {} });
 };
 
+/** GET /api/v1/bodega/proveedores/:id/productos?pagina= */
+const productos = async (req, res) => {
+  const resultado = await proveedorProductoService.listarProductosDeProveedor(parsearId(req.params.id), {
+    pagina: req.query.pagina !== undefined ? Number(req.query.pagina) : undefined
+  });
+  return res.json({
+    ok: true,
+    data: resultado.productos,
+    meta: {
+      total: resultado.total,
+      pagina: resultado.pagina,
+      cantidad_paginas: resultado.cantidad_paginas,
+      cantidad_por_pagina: resultado.cantidad_por_pagina,
+      next: resultado.next,
+      prev: resultado.prev
+    }
+  });
+};
+
 module.exports = {
   listar: listar,
   obtener: obtener,
   crear: crear,
   editar: editar,
-  desactivar: desactivar
+  desactivar: desactivar,
+  productos: productos
 };
