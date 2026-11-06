@@ -20,6 +20,9 @@ jest.mock('../../services/bodega/solicitudes', () => ({
 // RF-BOD-03 comparte el router: sus servicios se simulan para no cargar modelos reales.
 jest.mock('../../services/bodega/proveedores', () => ({}));
 jest.mock('../../services/bodega/ordenesCompra', () => ({}));
+jest.mock('../../services/bodega/proveedorProducto', () => ({
+  asignarProveedor: jest.fn(async (id, proveedorId) => ({ id: id, proveedor_id: proveedorId }))
+}));
 
 const express = require('express');
 const request = require('supertest');
@@ -88,6 +91,20 @@ describe('permisos por ruta (spec §2.3)', () => {
   it('pasa al servicio el usuario con su contexto', async () => {
     await llamar('get', '/solicitudes/mias', SUPERVISOR);
     expect(servicio.listarMias.mock.calls[0][1]).toMatchObject({ id: 7, contexto: 'acceso_trabajadores' });
+  });
+});
+
+describe('PATCH /productos/:id/proveedor: validación en el borde', () => {
+  it('body sin la clave proveedor_id -> 400 CAMPO_INVALIDO', async () => {
+    const r = await llamar('patch', '/productos/1/proveedor', ADMIN, {});
+    expect(r.status).toBe(400);
+    expect(r.body).toMatchObject({ ok: false, error: { code: 'CAMPO_INVALIDO' } });
+  });
+
+  it('proveedor_id: null desasigna igual (clave presente) -> 200', async () => {
+    const r = await llamar('patch', '/productos/1/proveedor', ADMIN, { proveedor_id: null });
+    expect(r.status).toBe(200);
+    expect(r.body.data.proveedor_id).toBeNull();
   });
 });
 

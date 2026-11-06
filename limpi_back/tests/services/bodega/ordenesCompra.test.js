@@ -1,7 +1,6 @@
 /**
  * Tests unitarios de services/bodega/ordenesCompra.js (modelos, db, auditoria y correo mockeados,
- * sin BD ni SMTP real). Cubre enviar() y actualizar(); el bloqueo "producto sin proveedor" queda
- * pendiente (ver TODO en el servicio, depende de otra tarea).
+ * sin BD ni SMTP real). Cubre enviar() y actualizar(), incluido el bloqueo "producto sin proveedor".
  */
 jest.mock('../../../database/database', () => ({
   sequelize: { transaction: jest.fn() }
@@ -14,6 +13,9 @@ jest.mock('../../../modelos/sistema_bodega/Orden_compra_item', () => ({
   count: jest.fn()
 }));
 jest.mock('../../../modelos/sistema_bodega/Proveedor', () => ({}));
+jest.mock('../../../modelos/sistema_base/Producto', () => ({
+  findAll: jest.fn()
+}));
 jest.mock('../../../services/auditoria', () => ({
   auditar: jest.fn()
 }));
@@ -24,6 +26,7 @@ jest.mock('../../../services/bodega/correoOrdenCompra', () => ({
 const db = require('../../../database/database');
 const Orden_compra = require('../../../modelos/sistema_bodega/Orden_compra');
 const Orden_compra_item = require('../../../modelos/sistema_bodega/Orden_compra_item');
+const Producto = require('../../../modelos/sistema_base/Producto');
 const { auditar } = require('../../../services/auditoria');
 const { enviarCorreoOrdenCompra } = require('../../../services/bodega/correoOrdenCompra');
 const { enviar, actualizar } = require('../../../services/bodega/ordenesCompra');
@@ -60,6 +63,11 @@ describe('services/bodega/ordenesCompra', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     auditar.mockResolvedValue({ id: 1 });
+    // Por defecto, cada producto coincide con el proveedor de la orden (undefined en los fixtures
+    // que no lo declaran), para no romper los tests que no les concierne el bloqueo PRODUCTO_SIN_PROVEEDOR.
+    Producto.findAll.mockImplementation((opciones) =>
+      Promise.resolve((opciones.where.id || []).map((id) => ({ id: id, nombre: 'Producto ' + id, proveedor_id: undefined })))
+    );
   });
 
   describe('enviar', () => {
@@ -226,7 +234,54 @@ describe('services/bodega/ordenesCompra', () => {
       expect(enviarCorreoOrdenCompra).not.toHaveBeenCalled();
     });
 
-    test.todo('bloquea envío si algún producto no tiene proveedor (pendiente productos_bodega.proveedor_id)');
+    it('bloquea envio si algun producto no tiene el proveedor de la orden asignado (409 PRODUCTO_SIN_PROVEEDOR)', async () => {
+      const orden = instanciaOrden({
+        id: 1,
+        estado: 'BORRADOR',
+        proveedor_id: 5,
+        proveedor: { activo: 1, email: 'proveedor@test.com' },
+        items: [instanciaItem({ id: 1, producto_id: 10, cantidad: 2 })]
+      });
+      Orden_compra.findById.mockResolvedValue(orden);
+      Producto.findAll.mockResolvedValue([{ id: 10, nombre: 'Guantes', proveedor_id: null }]);
+
+      await expect(enviar(1, { usuario, transporte: {} })).rejects.toMatchObject({
+        code: 'PRODUCTO_SIN_PROVEEDOR',
+        httpStatus: 409,
+        details: { productos: [{ id: 10, nombre: 'Guantes' }] }
+      });
+      expect(enviarCorreoOrdenCompra).not.toHaveBeenCalled();
+      expect(orden.update).not.toHaveBeenCalled();
+      expect(orden.estado).toBe('BORRADOR');
+    });
+
+    it('carrera: el producto pierde el proveedor entre el chequeo y la confirmacion -> 409 PRODUCTO_SIN_PROVEEDOR, no marca ENVIADA y loguea', async () => {
+      fakeTransaction();
+      const transporte = { sendMail: jest.fn().mockResolvedValue({}) };
+      const orden = instanciaOrden({
+        id: 1,
+        estado: 'BORRADOR',
+        proveedor_id: 5,
+        proveedor: { activo: 1, email: 'proveedor@test.com' },
+        items: [instanciaItem({ id: 1, producto_id: 10, cantidad: 2 })]
+      });
+      Orden_compra.findById.mockResolvedValue(orden);
+      Producto.findAll
+        .mockResolvedValueOnce([{ id: 10, nombre: 'Guantes', proveedor_id: 5 }])
+        .mockResolvedValueOnce([{ id: 10, nombre: 'Guantes', proveedor_id: null }]);
+      enviarCorreoOrdenCompra.mockResolvedValue();
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      await expect(enviar(1, { usuario, transporte })).rejects.toMatchObject({
+        code: 'PRODUCTO_SIN_PROVEEDOR',
+        httpStatus: 409
+      });
+      expect(enviarCorreoOrdenCompra).toHaveBeenCalled();
+      expect(orden.update).not.toHaveBeenCalled();
+      expect(orden.estado).toBe('BORRADOR');
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('1'), expect.objectContaining({ ordenId: 1 }));
+      errorSpy.mockRestore();
+    });
   });
 
   describe('actualizar', () => {
