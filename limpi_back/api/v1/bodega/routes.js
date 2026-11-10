@@ -54,4 +54,13 @@ router.patch('/ordenes-compra/:id', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCom
 router.post('/ordenes-compra/:id/enviar', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCompra.enviar));
 router.post('/ordenes-compra/desde-lista', ADMIN_Y_OPERACIONES, asyncHandler(cruce.generarDesdeLista));
 
+// RF-BOD-04: recepción, entrega, formato de entrega y movimientos (Admin y Operaciones).
+const recepcionBodega = require('./recepcion-controlador');
+router.post('/ordenes-compra/:id/recepcion', admin, asyncHandler(recepcionBodega.recibir));
+router.post('/solicitudes/:id/entregar', admin, asyncHandler(recepcionBodega.entregar));
+router.get('/solicitudes/:id/formato-entrega', admin, asyncHandler(recepcionBodega.formatoEntrega));
+router.get('/movimientos', admin, asyncHandler(recepcionBodega.listarMovimientos));
+router.get('/ordenes-compra', admin, asyncHandler(recepcionBodega.listarOrdenes));
+router.get('/ordenes-compra/:id/recepcion', admin, asyncHandler(recepcionBodega.detalleRecepcion));
+
 module.exports = router;
