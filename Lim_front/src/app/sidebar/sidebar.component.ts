@@ -52,6 +52,8 @@ export const ROUTES: RouteInfo[] = [
     children: [
       { path: 'producto', title: 'Producto EPP ', ab: 'P' },
       { path: 'solicitudes', title: 'Solicitudes', ab: 'So' }, // RF-BOD-01
+      { path: 'ordenes-compra', title: 'Órdenes de compra', ab: 'OC' }, // RF-BOD-04
+      { path: 'movimientos', title: 'Movimientos', ab: 'Mv' }, // RF-BOD-04
       { path: 'stock', title: 'Agregar Stock', ab: 'S' }
     ]
   },

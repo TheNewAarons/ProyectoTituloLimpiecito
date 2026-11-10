@@ -10,3 +10,9 @@
   padding-right: 4px;
   white-space: normal;
 }
+
+/* RF-BOD-04: el formato de entrega debe caber completo a 360 px (el PDF captura lo visible). */
+.formato-compacto th,
+.formato-compacto td {
+  font-size: 0.8rem;
+}

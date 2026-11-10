@@ -1,0 +1,12 @@
+<div class="text-right mt-2" *ngIf="tieneFormato">
+  <button *ngIf="puedeEntregar" mat-raised-button type="button" class="btn btn-success mb-2 mr-1"
+    [disabled]="enviando" matTooltip="Entregar Y Registrar Consumo" (click)="entregar()">
+    <span class="btn-label"><i class="material-icons">done</i></span>
+    Entregar
+  </button>
+  <button mat-raised-button type="button" class="btn btn-danger mb-2"
+    [disabled]="enviando" matTooltip="Formato De Entrega" (click)="verFormato()">
+    <span class="btn-label"><i class="material-icons">picture_as_pdf</i></span>
+    {{ puedeEntregar ? 'Vista Previa Formato' : 'Formato De Entrega' }}
+  </button>
+</div>

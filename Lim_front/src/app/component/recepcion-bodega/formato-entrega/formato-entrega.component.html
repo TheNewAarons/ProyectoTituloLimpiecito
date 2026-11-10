@@ -1,0 +1,85 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12 col-lg-10">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">assignment</i></div>
+            <h4 class="card-title">Formato De Entrega</h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Volver" class="btn btn-rose btn-sm" (click)="volver()">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+              Volver
+            </button>
+            <button *ngIf="formato" mat-raised-button type="button" matTooltip="Descargar PDF" class="btn btn-danger btn-sm" (click)="imprimir()">
+              <span class="btn-label"><i class="material-icons">picture_as_pdf</i></span>
+              PDF
+            </button>
+          </div>
+          <div class="card-body" id="imprimir-entrega">
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div *ngIf="!loading && formato">
+              <h4 class="text-center"><strong>{{ formato.empresa }}</strong></h4>
+              <h5 class="text-center">Entrega De Insumos / EPP — Solicitud N° {{ formato.numero }}</h5>
+              <p class="text-center text-warning" *ngIf="formato.vista_previa">VISTA PREVIA — la solicitud aún no se entrega</p>
+
+              <div class="row">
+                <div class="col-12 col-md-6">
+                  <p><strong>Centro de costo:</strong> CC {{ formato.centro_costo?.numero_cc }}<span *ngIf="formato.centro_costo?.cliente"> · {{ formato.centro_costo.cliente }}</span></p>
+                  <p><strong>Solicitante:</strong> {{ formato.solicitante?.nombre || '—' }} ({{ formato.solicitante?.tipo === 'supervisor' ? 'Supervisor' : 'Usuario' }})</p>
+                </div>
+                <div class="col-12 col-md-6">
+                  <p><strong>Fecha de entrega:</strong> {{ formato.fecha_entrega ? (formato.fecha_entrega | date:'dd/MM/yyyy HH:mm') : '—' }}</p>
+                  <p><strong>Entregado por:</strong> {{ formato.entregado_por || '—' }}</p>
+                </div>
+              </div>
+              <p *ngIf="formato.observacion"><strong>Observación:</strong> {{ formato.observacion }}</p>
+
+              <div class="table-responsive">
+                <table class="table tabla-compacta formato-compacto">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Producto</th>
+                      <th class="text-right">Cantidad</th>
+                      <th class="text-right">Costo Unit.</th>
+                      <th class="text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let i of formato.items">
+                      <td class="text-left">{{ i.producto }}</td>
+                      <td class="text-right">{{ i.cantidad | number:'1.0-0' }}</td>
+                      <td class="text-right">
+                        {{ i.precio_unitario | currency:'CLP':'symbol-narrow':'1.0-0':'es-CL' }}
+                        <span *ngIf="i.costo_estimado" class="text-warning">*</span>
+                        <span *ngIf="i.sin_costo" class="text-danger">**</span>
+                      </td>
+                      <td class="text-right">{{ i.total | currency:'CLP':'symbol-narrow':'1.0-0':'es-CL' }}</td>
+                    </tr>
+                    <tr>
+                      <td colspan="3" class="text-right"><strong>Total consumo centro de costo</strong></td>
+                      <td class="text-right"><strong>{{ formato.total | currency:'CLP':'symbol-narrow':'1.0-0':'es-CL' }}</strong></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p *ngIf="formato.hay_costo_estimado"><small class="text-warning">* Costo estimado: el producto no tiene costo de compra registrado; se usó su precio de lista.</small></p>
+              <p *ngIf="formato.hay_sin_costo"><small class="text-danger">** Sin costo: el producto no tiene costo ni precio registrado.</small></p>
+
+              <div class="row mt-5">
+                <div class="col-6 text-center">
+                  <p>______________________________</p>
+                  <p>Entrega (bodega)</p>
+                </div>
+                <div class="col-6 text-center">
+                  <p>______________________________</p>
+                  <p>Recibe (supervisor)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
