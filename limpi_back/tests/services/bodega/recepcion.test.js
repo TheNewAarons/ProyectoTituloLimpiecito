@@ -162,9 +162,16 @@ describe('orden de locks y concurrencia', () => {
     expect(new Set(aud.map((a) => a.tx)).size).toBe(1);
   });
 
+  // Falla si las transacciones no terminan (deadlock); limpia su temporizador para no dejar handles abiertos.
+  async function sinDeadlock(promesa) {
+    let temporizador;
+    const plazo = new Promise((_, rechazar) => { temporizador = setTimeout(() => rechazar(new Error('DEADLOCK: las transacciones no terminaron')), 2000); });
+    try { return await Promise.race([promesa, plazo]); } finally { clearTimeout(temporizador); }
+  }
+
   // Recepción y anulación de la misma solicitud al mismo tiempo, con el código real de ambos servicios.
   // Si el orden de locks fuera distinto, se bloquearían mutuamente y el test fallaría por tiempo (deadlock).
-  it.each([1, 2, 3, 4, 5])('recepción vs anulación concurrentes (ronda %i): sin deadlock, sin stock negativo, stock = Σ movimientos', async (ronda) => {
+  it.each([['la recepción arranca primero', true], ['la anulación arranca primero', false]])('recepción vs anulación (%s): sin deadlock, sin stock negativo, stock = Σ movimientos', async (_, recepcionPrimero) => {
     escenario({
       solicitudes: [{ id: 1, estado: 'PARCIAL', centro_costo_id: 3, trabajador_id: 4, usuario_id: null }],
       items: [{ id: 1, solicitud_id: 1, producto_id: 1, cantidad_pedida: 5, cantidad_asignada: 0, cantidad_faltante: 5 }],
@@ -172,9 +179,7 @@ describe('orden de locks y concurrencia', () => {
     });
     const recibir = () => recepcion.recibir(10, null, ctx);
     const anular = () => solicitudes.anular(1, 'prueba concurrencia', ADMIN, '::1');
-    const ambas = ronda % 2 ? Promise.all([recibir(), anular()]) : Promise.all([anular(), recibir()]);
-    const plazo = new Promise((_, rechazar) => setTimeout(() => rechazar(new Error('DEADLOCK: las transacciones no terminaron')), 2000));
-    await Promise.race([ambas, plazo]);
+    await sinDeadlock(recepcionPrimero ? Promise.all([recibir(), anular()]) : Promise.all([anular(), recibir()]));
 
     const producto = fila('productos', 1);
     const suma = tabla('movimientos').filter((m) => m.producto_id === 1).reduce((a, m) => a + m.cantidad, 0);
@@ -183,6 +188,28 @@ describe('orden de locks y concurrencia', () => {
     expect(producto.stock).toBe(suma);
     // Lo recibido (5) termina libre en bodega en cualquier orden: o nunca se asignó, o se asignó y la anulación lo repuso.
     expect(producto.stock).toBe(5);
+    expect(bd.locks.size).toBe(0);
+  });
+
+  // Dos recepciones de la misma orden a la vez: el lock de la orden las pone en fila; la segunda ve lo que
+  // dejó la primera y no puede pasarse de lo pedido.
+  it('recepción vs recepción de la misma orden: se serializan y nunca se recibe más de lo pedido', async () => {
+    escenario({
+      solicitudes: [{ id: 1, estado: 'PARCIAL', centro_costo_id: 3, trabajador_id: 4, usuario_id: null }],
+      items: [{ id: 1, solicitud_id: 1, producto_id: 1, cantidad_pedida: 5, cantidad_asignada: 0, cantidad_faltante: 5 }],
+      orden_items: [{ id: 100, orden_id: 10, producto_id: 1, cantidad: 6, cantidad_recibida: 0, costo_unitario: 1000 }]
+    });
+    const r = await sinDeadlock(Promise.allSettled([
+      recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 4 }], ctx),
+      recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 4 }], ctx)
+    ]));
+    // 4 + 4 > 6: una entra y la otra se rechaza por exceder lo pendiente (2).
+    expect(r.filter((x) => x.status === 'fulfilled')).toHaveLength(1);
+    expect(r.filter((x) => x.status === 'rejected')[0].reason).toMatchObject({ code: 'CANTIDAD_EXCEDE_PENDIENTE', details: { pendiente: 2 } });
+    expect(fila('orden_items', 100).cantidad_recibida).toBe(4);
+    expect(tabla('ordenes')[0].estado).toBe('RECIBIDA_PARCIAL');
+    const suma = tabla('movimientos').filter((m) => m.producto_id === 1).reduce((a, m) => a + m.cantidad, 0);
+    expect(fila('productos', 1).stock).toBe(suma);
     expect(bd.locks.size).toBe(0);
   });
 });

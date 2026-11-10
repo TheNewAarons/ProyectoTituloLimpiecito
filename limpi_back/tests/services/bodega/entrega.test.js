@@ -133,6 +133,15 @@ describe('formato de entrega', () => {
     expect(f.items[0].precio_unitario).toBe(900);
   });
 
+  it('ENTREGADA: las líneas salen de linea_insumos aunque falte la auditoría (origen por defecto: costo)', async () => {
+    await entrega.entregar(1, ADMIN);
+    tabla('auditoria').length = 0;
+    const f = await entrega.formatoEntrega(1, ADMIN);
+    expect(f.items.map((i) => [i.producto, i.cantidad, i.precio_unitario])).toEqual([['Guantes', 5, 900], ['Cloro', 3, 800]]);
+    expect(f.hay_costo_estimado).toBe(false);
+    expect(f.entregado_por).toBe('Admin Limpiecito');
+  });
+
   it('en PENDIENTE no hay formato -> 409', async () => {
     fila('solicitudes', 1).estado = 'PENDIENTE';
     await expect(entrega.formatoEntrega(1, ADMIN)).rejects.toMatchObject({ code: 'ESTADO_SIN_FORMATO' });

@@ -108,7 +108,7 @@ async function entregar(id, usuario, ip) {
 
 /**
  * GET /solicitudes/:id/formato-entrega — datos del formato imprimible.
- * ENTREGADA: lo registrado al entregar (precios y origen guardados en la auditoría ENTREGA).
+ * ENTREGADA: lo registrado en el centro de costo (linea_insumos); el origen del costo sale de la auditoría ENTREGA.
  * LISTA_ENTREGA: vista previa con los costos actuales.
  */
 async function formatoEntrega(id, usuario) {
@@ -120,10 +120,21 @@ async function formatoEntrega(id, usuario) {
   let lineas;
   let entregadoPor = null;
   if (s.estado === E.ENTREGADA) {
+    // Fuente: lo registrado en el centro de costo (linea_insumos). La auditoría ENTREGA solo aporta el origen del costo.
+    const listaId = await listaInsumoId(id);
+    const lista = listaId ? await Lista_insumo.findById(listaId, { attributes: ['id', 'usuarioCreaId'] }) : null;
+    const lineasBd = listaId ? await Linea_insumo.findAll({ where: { listaInsumoId: listaId }, order: [['id', 'ASC']] }) : [];
+    const nombres = lineasBd.length
+      ? (await Producto.findAll({ where: { id: { [Op.in]: lineasBd.map((l) => l.productoId) } }, attributes: ['id', 'nombre'] })).reduce((m, p) => { m[p.id] = p.nombre; return m; }, {})
+      : {};
     const registro = await Auditoria.findOne({ where: { entidad: 'solicitudes_bodega', entidad_id: String(id), accion: 'ENTREGA' }, order: [['id', 'DESC']] });
     const despues = registro && registro.valores_despues ? (typeof registro.valores_despues === 'string' ? JSON.parse(registro.valores_despues) : registro.valores_despues) : null;
-    lineas = despues && Array.isArray(despues.lineas) ? despues.lineas : [];
-    const quien = registro && registro.usuario_id ? await Usuario.findById(registro.usuario_id, { attributes: ['nombre', 'apellido'] }) : null;
+    const origenDe = (despues && Array.isArray(despues.lineas) ? despues.lineas : []).reduce((m, l) => { m[l.producto_id] = l.origen; return m; }, {});
+    lineas = lineasBd.map((l) => ({
+      producto_id: l.productoId, producto: nombres[l.productoId] || null, cantidad: Number(l.cantidad), precio: Number(l.precio),
+      total: Number(l.total_linea), origen: origenDe[l.productoId] || ORIGEN.COSTO
+    }));
+    const quien = lista && lista.usuarioCreaId ? await Usuario.findById(lista.usuarioCreaId, { attributes: ['nombre', 'apellido'] }) : null;
     entregadoPor = quien ? [quien.nombre, quien.apellido].filter(Boolean).join(' ') : null;
   } else {
     lineas = await lineasConPrecio(await Item.findAll({ where: { solicitud_id: id }, order: [['id', 'ASC']] }));

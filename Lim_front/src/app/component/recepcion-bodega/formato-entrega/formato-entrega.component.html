@@ -68,12 +68,14 @@
 
               <div class="row mt-5">
                 <div class="col-6 text-center">
-                  <p>______________________________</p>
-                  <p>Entrega (bodega)</p>
+                  <div class="firma-linea"></div>
+                  <p class="mb-0 firma-nombre"><strong>{{ formato.entregado_por }}</strong></p>
+                  <small>Entrega (bodega)</small>
                 </div>
                 <div class="col-6 text-center">
-                  <p>______________________________</p>
-                  <p>Recibe (supervisor)</p>
+                  <div class="firma-linea"></div>
+                  <p class="mb-0 firma-nombre"><strong>{{ formato.solicitante?.tipo === 'supervisor' ? formato.solicitante.nombre : '' }}</strong></p>
+                  <small>Recibe (supervisor)</small>
                 </div>
               </div>
             </div>

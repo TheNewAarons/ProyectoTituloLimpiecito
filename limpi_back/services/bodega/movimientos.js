@@ -17,15 +17,23 @@ function desfaseMinutos(ms) {
   return (Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - ms) / 60000;
 }
 
+// 'YYYY-MM-DD' del instante en Santiago.
+function fechaSantiago(ms) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
+}
+
 /**
- * Instante UTC de las 00:00 en Santiago del día 'YYYY-MM-DD' (+ diasExtra).
- * Dos pasadas para los días de cambio de horario.
+ * Primer instante (UTC) del día 'YYYY-MM-DD' (+ diasExtra) en Santiago. El día que empieza el horario de
+ * verano las 00:00 no existen (el reloj salta a 01:00): se ajusta por horas hasta el primer instante de ese día.
  */
 function inicioDiaSantiago(fecha, diasExtra) {
   const [y, m, d] = fecha.split('-').map(Number);
   const local = Date.UTC(y, m - 1, d + (diasExtra || 0));
+  const objetivo = new Date(local).toISOString().slice(0, 10);
   let ms = local - desfaseMinutos(local) * 60000;
   ms = local - desfaseMinutos(ms) * 60000;
+  while (fechaSantiago(ms) < objetivo) ms += 3600000;
+  while (fechaSantiago(ms - 3600000) >= objetivo) ms -= 3600000;
   return new Date(ms);
 }
 
