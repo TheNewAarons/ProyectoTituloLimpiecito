@@ -140,3 +140,27 @@ El cruce está implementado en `services/bodega/cruceStock.js` (ver `Docs/API_V1
 ## Reversión
 
 `db:migrate:undo` de esta migración elimina las dos tablas **sólo si `solicitudes_bodega` está vacía**; con filas, aborta (decisión humana: respaldar y renombrar).
+
+## RF-BOD-04 · Recepción, entrega y movimientos (Jira SCRUM-11)
+
+Rama `feature/RF-BOD-04-recepcion-bodega-bastian`. Migración `20261110000953-RF-BOD-04-lista-insumo-solicitud`: agrega `solicitudes_bodega.lista_insumo_id` (NULL, FK RESTRICT a `lista_insumos`). Se lee y escribe con SQL parametrizado en `services/bodega/entrega.js`; no se agregó al modelo para no romper consultas en ambientes sin la migración.
+
+### Endpoints (Admin y Operaciones, `middleware/auth-bodega`)
+| Método | Ruta | Qué hace |
+|---|---|---|
+| POST | `/ordenes-compra/:id/recepcion` | Body opcional `{ items:[{ item_id, cantidad_recibida }] }` (sin `items` = todo lo pendiente). Entero ≥ 0; mayor que lo pendiente de la línea → 400 `CANTIDAD_EXCEDE_PENDIENTE`. Sólo órdenes `ENVIADA`/`RECIBIDA_PARCIAL`. |
+| POST | `/solicitudes/:id/entregar` | `LISTA_ENTREGA` → `ENTREGADA`; registra el consumo en el centro de costo. |
+| GET | `/solicitudes/:id/formato-entrega` | Datos del formato imprimible (`LISTA_ENTREGA` = vista previa; `ENTREGADA` = lo registrado). |
+| GET | `/movimientos?producto_id=&tipo=&desde=&hasta=&page=&limit=` | `desde`/`hasta` = días en America/Santiago. |
+
+### Reglas implementadas (decisiones aprobadas por Bastián, 2026-11-09)
+- **Una transacción por recepción**, locks en el mismo orden que crear/anular: orden de compra → solicitudes FIFO (id ASC) → productos (id ASC). `reintentarTransaccion` sólo como respaldo. Tras el lock se re-verifica que la solicitud siga `PARCIAL` (una anulación concurrente pudo cerrarla; la detectó el test de concurrencia).
+- **Recepción:** `stock += recibido` (`ENTRADA_COMPRA`) y `costo_unitario` = **último costo de la orden** (si la línea no trae costo, se conserva el anterior). Luego el stock disponible cubre faltantes FIFO (`SALIDA_SOLICITUD`); las solicitudes sin faltante pasan a `LISTA_ENTREGA`; el excedente queda libre. Orden → `RECIBIDA` si todas las líneas están completas, si no `RECIBIDA_PARCIAL` (admite varias recepciones).
+- **Entrega:** **no mueve stock** (ya se descontó en el cruce o la recepción). Crea `Lista_insumo` (**`estado = 1`**: una lista en 0 impide cerrar el centro) + `Linea_insumo` con los modelos, sin `disminuirCantidadProductoDB`. `usuarioCreaId` = `usuarioApruebaId` = usuario (Admin/Operaciones) que entrega. Precio por línea = `costo_unitario`; si es NULL, `productos.precio` marcado **"costo estimado"**; si tampoco hay, 0 "sin costo". El origen del costo queda en la auditoría `ENTREGA`, de donde lo lee el formato. Centro de costo cerrado → 409.
+- Auditoría: `RECEPCION` (orden), `ASIGNACION_RECEPCION` (cada solicitud completada) y `ENTREGA`.
+
+### Pendientes con Aarón (RF-BOD-04)
+- **Las listas de insumos no suman a `total_costos` del centro.** La pantalla del centro (`ver-centro.component.ts#obtenerTotalCostos`) suma sólo liquidaciones y egresos; las listas aparecen como dato informativo. El consumo entregado queda registrado como el sistema actual, pero no impacta la utilidad del centro. ¿Debe sumar? (es cálculo de finanzas).
+- **`Docs/DECISIONES.md` y `Docs/API_V1.md` no existen en el repo**, aunque se citan (D-052…D-064 en `cruceStock.js` y en este documento).
+- **Eliminar una lista de insumos repone stock (legacy):** `DELETE /detalle/eliminar-lista/:id` (sin autenticación) hace `aumentarCantidadProductoDB` por línea. Las listas de bodega nacen en `estado = 1` y la UI sólo ofrece eliminar las de estado 0, pero por API una eliminación inflaría el stock. La FK RESTRICT evita dejar la solicitud huérfana, pero el legacy repone stock antes de fallar (sin transacción).
+- **`anular` no limpia `cantidad_faltante`** (D-063): la recepción lo compensa re-verificando el estado tras el lock; cualquier otro proceso que lea faltantes debe filtrar por estado.
