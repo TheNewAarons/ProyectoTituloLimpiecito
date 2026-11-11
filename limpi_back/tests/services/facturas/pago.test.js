@@ -17,7 +17,7 @@ jest.mock('../../../modelos/sistema_base/CcIngreso', () => ({
 // pago.js requiere services/caja/cierre (reintentarTransaccion), que a su vez requiere los
 // modelos reales (db.sequelize.define) y services/caja/saldo: se mockean para no ejecutar esos
 // archivos sin BD (mismo set que tests/services/liquidaciones/pago.test.js).
-jest.mock('../../../modelos/sistema_base/Caja', () => ({}));
+jest.mock('../../../modelos/sistema_base/Caja', () => ({ findById: jest.fn() }));
 jest.mock('../../../modelos/sistema_base/Centro_costo', () => ({}));
 jest.mock('../../../services/caja/saldo', () => ({
   calcularSaldo: jest.fn(),
@@ -33,6 +33,7 @@ jest.mock('../../../services/caja/periodo', () => ({
 const db = require('../../../database/database');
 const Egreso = require('../../../modelos/sistema_base/Egreso');
 const CcIngreso = require('../../../modelos/sistema_base/CcIngreso');
+const Caja = require('../../../modelos/sistema_base/Caja');
 const { auditar } = require('../../../services/auditoria');
 const { buscarCajaPorPeriodo } = require('../../../services/caja/periodo');
 const fecha = require('../../../libs/fecha');
@@ -183,11 +184,11 @@ describe('services/facturas/pago', () => {
       await expect(anular(CONFIG_EGRESOS, 1, { motivo: 'x', usuario })).rejects.toMatchObject({ code: 'ESTADO_PAGO_INVALIDO' });
     });
 
-    it('anula un egreso PAGADA si la caja de fecha_pago esta cerrada -> MES_CERRADO', async () => {
+    it('anula un egreso PAGADA si su caja real esta cerrada -> MES_CERRADO', async () => {
       fakeTransaction();
-      const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15' });
+      const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15', cajaId: 1 });
       Egreso.findById.mockResolvedValue(egreso);
-      buscarCajaPorPeriodo.mockResolvedValue(instancia({ id: 1, estado: 0 })); // cerrada
+      Caja.findById.mockResolvedValue(instancia({ id: 1, estado: 0, periodo: '2026-01' })); // cerrada
 
       await expect(anular(CONFIG_EGRESOS, 1, { motivo: 'documento duplicado', usuario })).rejects.toMatchObject({ code: 'MES_CERRADO' });
       expect(egreso.update).not.toHaveBeenCalled();
@@ -200,15 +201,15 @@ describe('services/facturas/pago', () => {
 
       await anular(CONFIG_EGRESOS, 1, { motivo: 'documento erroneo', usuario });
 
-      expect(buscarCajaPorPeriodo).not.toHaveBeenCalled();
+      expect(Caja.findById).not.toHaveBeenCalled();
       expect(egreso.estado_pago).toBe('ANULADA');
     });
 
     it('conserva el registro: nunca llama destroy/delete, solo marca ANULADA y audita', async () => {
       fakeTransaction();
-      const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15', monto: 5000 });
+      const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15', monto: 5000, cajaId: 1 });
       Egreso.findById.mockResolvedValue(egreso);
-      buscarCajaPorPeriodo.mockResolvedValue(instancia({ id: 1, estado: 1 }));
+      Caja.findById.mockResolvedValue(instancia({ id: 1, estado: 1, periodo: '2026-01' }));
 
       const resultado = await anular(CONFIG_EGRESOS, 1, { motivo: 'documento anulado por proveedor', usuario });
 
@@ -219,9 +220,9 @@ describe('services/facturas/pago', () => {
 
     it('un registro anulado sigue siendo consultable (findById sigue devolviendo la fila, no null)', async () => {
       fakeTransaction();
-      const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15' });
+      const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15', cajaId: 1 });
       Egreso.findById.mockResolvedValue(egreso);
-      buscarCajaPorPeriodo.mockResolvedValue(instancia({ id: 1, estado: 1 }));
+      Caja.findById.mockResolvedValue(instancia({ id: 1, estado: 1, periodo: '2026-01' }));
 
       await anular(CONFIG_EGRESOS, 1, { motivo: 'anulacion de prueba', usuario });
 
@@ -245,9 +246,9 @@ describe('services/facturas/pago', () => {
 
     it('rechaza revertir si la caja del pago esta cerrada (MES_CERRADO)', async () => {
       fakeTransaction();
-      const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15' });
+      const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15', cajaId: 1 });
       Egreso.findById.mockResolvedValue(egreso);
-      buscarCajaPorPeriodo.mockResolvedValue(instancia({ id: 1, estado: 0 }));
+      Caja.findById.mockResolvedValue(instancia({ id: 1, estado: 0, periodo: '2026-01' }));
       await expect(revertir(CONFIG_EGRESOS, 1, { motivo: 'correccion', usuario: usuarioAdmin })).rejects.toMatchObject({ code: 'MES_CERRADO' });
     });
 
@@ -255,7 +256,7 @@ describe('services/facturas/pago', () => {
       fakeTransaction();
       const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15', cajaId: 7 });
       Egreso.findById.mockResolvedValue(egreso);
-      buscarCajaPorPeriodo.mockResolvedValue(instancia({ id: 7, estado: 1 }));
+      Caja.findById.mockResolvedValue(instancia({ id: 7, estado: 1, periodo: '2026-01' }));
 
       const resultado = await revertir(CONFIG_EGRESOS, 1, { motivo: 'pago registrado por error', usuario: usuarioAdmin });
 
@@ -263,6 +264,56 @@ describe('services/facturas/pago', () => {
       expect(resultado.estado_pago).toBe('PENDIENTE');
       expect(resultado.fecha_pago).toBeNull();
       expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ entidad: 'egresos', accion: 'REVERSION_PAGO', motivo: 'pago registrado por error' }));
+    });
+  });
+
+  describe('bloqueo de caja real (anular y revertir)', () => {
+    const casos = [
+      ['anular', anular],
+      ['revertir', revertir]
+    ];
+
+    casos.forEach(function (caso) {
+      const nombre = caso[0];
+      const fn = caso[1];
+
+      it(nombre + ': caja ABIERTA pasa y usa Caja.findById con lock SHARE', async () => {
+        const t = fakeTransaction();
+        const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15', cajaId: 9 });
+        Egreso.findById.mockResolvedValue(egreso);
+        Caja.findById.mockResolvedValue(instancia({ id: 9, estado: 1, periodo: '2026-01' }));
+
+        await fn(CONFIG_EGRESOS, 1, { motivo: 'x', usuario });
+
+        expect(Caja.findById).toHaveBeenCalledWith(9, expect.objectContaining({ lock: t.LOCK.SHARE }));
+      });
+
+      it(nombre + ': caja CERRADA responde 409 MES_CERRADO', async () => {
+        fakeTransaction();
+        const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15', cajaId: 9 });
+        Egreso.findById.mockResolvedValue(egreso);
+        Caja.findById.mockResolvedValue(instancia({ id: 9, estado: 0, periodo: '2026-01' }));
+
+        await expect(fn(CONFIG_EGRESOS, 1, { motivo: 'x', usuario })).rejects.toMatchObject({ code: 'MES_CERRADO' });
+      });
+
+      it(nombre + ': fila.cajaId null responde 409 CAJA_NO_ASIGNADA', async () => {
+        fakeTransaction();
+        const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15', cajaId: null });
+        Egreso.findById.mockResolvedValue(egreso);
+
+        await expect(fn(CONFIG_EGRESOS, 1, { motivo: 'x', usuario })).rejects.toMatchObject({ code: 'CAJA_NO_ASIGNADA' });
+        expect(Caja.findById).not.toHaveBeenCalled();
+      });
+
+      it(nombre + ': caja inexistente (findById null) responde 404 CAJA_NO_EXISTE', async () => {
+        fakeTransaction();
+        const egreso = instancia({ id: 1, estado_pago: 'PAGADA', fecha_pago: '2026-01-15', cajaId: 9 });
+        Egreso.findById.mockResolvedValue(egreso);
+        Caja.findById.mockResolvedValue(null);
+
+        await expect(fn(CONFIG_EGRESOS, 1, { motivo: 'x', usuario })).rejects.toMatchObject({ code: 'CAJA_NO_EXISTE' });
+      });
     });
   });
 });

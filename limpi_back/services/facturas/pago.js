@@ -10,6 +10,7 @@ const db = require('../../database/database');
 const Sequelize = require('sequelize');
 const AppError = require('../../libs/app-error');
 const fecha = require('../../libs/fecha');
+const Caja = require('../../modelos/sistema_base/Caja');
 const { auditar } = require('../auditoria');
 const { buscarCajaPorPeriodo } = require('../caja/periodo');
 const { reintentarTransaccion } = require('../caja/cierre');
@@ -46,6 +47,33 @@ async function cajaAbiertaDeFechaPago(fechaPago, t) {
     throw new AppError('MES_CERRADO', 'la caja de ' + periodo + ' esta cerrada, reabrir primero', 409, { periodo: periodo });
   }
   return caja;
+}
+
+/**
+ * Bloquea (SHARE) la caja REAL asignada al egreso (`fila.cajaId`, la que fija `pagar()`), no la
+ * derivada del periodo de `fecha_pago`. Devuelve el `cajaId` bloqueado para verificar que no cambió
+ * tras bloquear la fila. Debe llamarse ANTES de bloquear la fila (orden global de locks:
+ * cajas -> egresos).
+ * @param {object} fila lectura sin lock del egreso
+ * @param {number} id
+ * @param {object} t transacción activa
+ * @returns {Promise<number>} cajaId bloqueado
+ */
+async function bloquearCajaRealDelEgreso(fila, id, t) {
+  if (fila.cajaId === null || fila.cajaId === undefined) {
+    throw new AppError('CAJA_NO_ASIGNADA', 'el registro ' + id + ' no tiene caja asignada', 409, { id: id });
+  }
+  if (fila.fecha_pago === null || fila.fecha_pago === undefined) {
+    throw new AppError('FECHA_PAGO_INVALIDA', 'el registro ' + id + ' no tiene fecha_pago registrada', 409, { id: id });
+  }
+  const caja = await Caja.findById(fila.cajaId, { transaction: t, lock: t.LOCK.SHARE });
+  if (!caja) {
+    throw new AppError('CAJA_NO_EXISTE', 'no existe la caja ' + fila.cajaId + ' asignada al registro ' + id, 404, { cajaId: fila.cajaId });
+  }
+  if (caja.estado !== CAJA_ABIERTA) {
+    throw new AppError('MES_CERRADO', 'la caja de ' + caja.periodo + ' esta cerrada, reabrir primero', 409, { periodo: caja.periodo });
+  }
+  return fila.cajaId;
 }
 
 /**
@@ -106,6 +134,18 @@ async function anular(config, id, datos) {
   }
   return reintentarTransaccion(function () {
     return db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async function (t) {
+      // Lectura sin lock para decidir si hay que bloquear caja (orden global: cajas -> egresos).
+      const filaSinLock = await config.modelo.findById(id, { transaction: t });
+      if (!filaSinLock) {
+        throw new AppError('REGISTRO_NO_EXISTE', 'no existe el registro ' + id + ' en ' + config.entidad, 404, { id: id });
+      }
+      if (filaSinLock.estado_pago === 'ANULADA') {
+        throw new AppError('ESTADO_PAGO_INVALIDO', 'el registro ' + id + ' ya esta ANULADA', 409, { id: id });
+      }
+      let cajaIdBloqueada = null;
+      if (config.impactaCaja && filaSinLock.estado_pago === 'PAGADA') {
+        cajaIdBloqueada = await bloquearCajaRealDelEgreso(filaSinLock, id, t);
+      }
       const fila = await config.modelo.findById(id, { transaction: t, lock: t.LOCK.UPDATE });
       if (!fila) {
         throw new AppError('REGISTRO_NO_EXISTE', 'no existe el registro ' + id + ' en ' + config.entidad, 404, { id: id });
@@ -113,12 +153,8 @@ async function anular(config, id, datos) {
       if (fila.estado_pago === 'ANULADA') {
         throw new AppError('ESTADO_PAGO_INVALIDO', 'el registro ' + id + ' ya esta ANULADA', 409, { id: id });
       }
-      if (config.impactaCaja && fila.estado_pago === 'PAGADA') {
-        const periodo = String(fila.fecha_pago).slice(0, 7);
-        const caja = await buscarCajaPorPeriodo(periodo, { transaction: t, lock: t.LOCK.SHARE });
-        if (caja && caja.estado !== CAJA_ABIERTA) {
-          throw new AppError('MES_CERRADO', 'la caja de ' + periodo + ' esta cerrada, reabrir primero', 409, { periodo: periodo });
-        }
+      if (cajaIdBloqueada !== null && fila.cajaId !== cajaIdBloqueada) {
+        throw new AppError('CAJA_CAMBIO_CONCURRENTE', 'la caja del registro cambio durante la operacion, reintentar', 409, { id: id });
       }
       const antes = fila.get({ plain: true });
       await fila.update({ estado_pago: 'ANULADA' }, { transaction: t });
@@ -151,6 +187,21 @@ async function revertir(config, id, datos) {
   }
   return reintentarTransaccion(function () {
     return db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async function (t) {
+      // Lectura sin lock para decidir si hay que bloquear caja (orden global: cajas -> egresos).
+      const filaSinLock = await config.modelo.findById(id, { transaction: t });
+      if (!filaSinLock) {
+        throw new AppError('REGISTRO_NO_EXISTE', 'no existe el registro ' + id + ' en ' + config.entidad, 404, { id: id });
+      }
+      if (filaSinLock.estado_pago !== 'PAGADA') {
+        throw new AppError('ESTADO_PAGO_INVALIDO', 'el registro ' + id + ' no esta PAGADA', 409, {
+          id: id,
+          estado_pago: filaSinLock.estado_pago
+        });
+      }
+      let cajaIdBloqueada = null;
+      if (config.impactaCaja) {
+        cajaIdBloqueada = await bloquearCajaRealDelEgreso(filaSinLock, id, t);
+      }
       const fila = await config.modelo.findById(id, { transaction: t, lock: t.LOCK.UPDATE });
       if (!fila) {
         throw new AppError('REGISTRO_NO_EXISTE', 'no existe el registro ' + id + ' en ' + config.entidad, 404, { id: id });
@@ -161,12 +212,8 @@ async function revertir(config, id, datos) {
           estado_pago: fila.estado_pago
         });
       }
-      if (config.impactaCaja) {
-        const periodo = String(fila.fecha_pago).slice(0, 7);
-        const caja = await buscarCajaPorPeriodo(periodo, { transaction: t, lock: t.LOCK.SHARE });
-        if (caja && caja.estado !== CAJA_ABIERTA) {
-          throw new AppError('MES_CERRADO', 'la caja de ' + periodo + ' esta cerrada, reabrir primero', 409, { periodo: periodo });
-        }
+      if (cajaIdBloqueada !== null && fila.cajaId !== cajaIdBloqueada) {
+        throw new AppError('CAJA_CAMBIO_CONCURRENTE', 'la caja del registro cambio durante la operacion, reintentar', 409, { id: id });
       }
       const antes = fila.get({ plain: true });
       await fila.update({ estado_pago: 'PENDIENTE', fecha_pago: null }, { transaction: t });
