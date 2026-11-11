@@ -161,7 +161,8 @@ async function calcularSaldo(periodo, opciones) {
   const egresosGenerales = sumEnteroCLP(
     await Egreso.sum('monto', {
       // NULL-safe: egresos legacy pueden tener estado NULL (`<> -1` los excluiria).
-      where: { cajaId: caja.id, [Op.or]: [{ estado: null }, { estado: { [Op.ne]: EGRESO_ANULADO } }] },
+      // RF-FAC-01: solo PAGADA impacta caja (default PAGADA preserva el comportamiento historico).
+      where: { cajaId: caja.id, estado_pago: 'PAGADA', [Op.or]: [{ estado: null }, { estado: { [Op.ne]: EGRESO_ANULADO } }] },
       transaction: o.transaction
     })
   );
@@ -170,7 +171,8 @@ async function calcularSaldo(periodo, opciones) {
   const egresosCentros = centroIds.length
     ? sumEnteroCLP(
         await CcEgreso.sum('monto', {
-          where: { centroCostoId: { [Op.in]: centroIds } },
+          // RF-FAC-01: solo PAGADA impacta caja (default PAGADA preserva el comportamiento historico).
+          where: { centroCostoId: { [Op.in]: centroIds }, estado_pago: 'PAGADA' },
           transaction: o.transaction
         })
       )

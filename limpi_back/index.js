@@ -307,6 +307,10 @@ app.use(process.env.PREFIJO + '/api/v1/cajas', CajasV1);
 const BodegaV1 = require('./api/v1/bodega/routes');
 app.use(process.env.PREFIJO + '/api/v1/bodega', BodegaV1);
 
+// RF-FAC-01: estado de pago de ingresos/egresos (facturas), SOLO bajo /api/v1 (solo Admin).
+const FacturasV1 = require('./api/v1/facturas/routes');
+app.use(process.env.PREFIJO + '/api/v1', FacturasV1);
+
 app.use(process.env.PREFIJO + '/api/v1', require('./middleware/errores').noEncontrado); // RNF-API-02: 404 JSON solo en /api/v1
 app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas
 
