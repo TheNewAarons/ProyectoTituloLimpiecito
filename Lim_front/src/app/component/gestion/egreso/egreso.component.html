@@ -69,14 +69,14 @@
                     <td>{{ egreso.tipo_documento || '-' }} {{ egreso.numero_documento }}</td>
                     <td>{{ egreso.monto | currency: "USD":"symbol":"1.0" }}</td>
                     <td>{{ egreso.fecha | date: "dd/MM/yyyy HH:mm:ss" }}</td>
-                    <td>{{ egreso.fecha_vencimiento || '-' }}</td>
+                    <td>{{ egreso.fecha_vencimiento ? (egreso.fecha_vencimiento | date:'dd/MM/yyyy') : '-' }}</td>
                     <td>
                       <span [class]="claseBadgeEstadoPago(egreso)">{{ textoBadgeEstadoPago(egreso) }}</span>
                     </td>
                     <td class="td-actions text-right">
                       <ng-container *ngIf="egreso.tipo_documento === 'FACTURA'; else accionesLegacy">
                         <button
-                          *ngIf="egreso.estado_pago === 'PENDIENTE'"
+                          *ngIf="egreso.estado_pago === 'PENDIENTE' && esAdmin"
                           mat-raised-button
                           type="button"
                           title="Marcar Pagado"
@@ -96,7 +96,7 @@
                           <i class="material-icons">undo</i>
                         </button>
                         <button
-                          *ngIf="egreso.estado_pago !== 'ANULADA'"
+                          *ngIf="egreso.estado_pago !== 'ANULADA' && esAdmin"
                           mat-raised-button
                           type="button"
                           title="Anular Egreso"

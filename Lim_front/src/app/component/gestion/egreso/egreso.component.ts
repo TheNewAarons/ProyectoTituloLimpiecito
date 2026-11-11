@@ -30,12 +30,21 @@ export class EgresoComponent implements OnInit {
   //RF-FAC-01: estado de pago (facturas)
   public esAdmin = false;
   public resumenFacturas: ResumenFacturas;
-  public hoy: string = new Date().toISOString().substring(0, 10);
+  public hoy: string = EgresoComponent.hoySantiago();
 
   constructor(
     private egresoService:EgresoService,private cajaService:CajaService,
     private alertaService:AlertasService, private loginService: LoginService
   ) { }
+
+  //RF-FAC-01: fecha de hoy en America/Santiago (no UTC, evita desincronizar "vencida" hasta 1 dia)
+  private static hoySantiago(): string {
+    const partes = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+    const anio = partes.filter(p => p.type === 'year')[0].value;
+    const mes = partes.filter(p => p.type === 'month')[0].value;
+    const dia = partes.filter(p => p.type === 'day')[0].value;
+    return anio + '-' + mes + '-' + dia;
+  }
 
   ngOnInit() {
     //cambiar estito pe
@@ -45,7 +54,9 @@ export class EgresoComponent implements OnInit {
     this.obtenerCaja();
     this.egreso = new Egreso(1,'0',"",null,1,null,1,null,null,null,null,null,'PAGADA',null);
     this.obtenerEgresos();
-    this.obtenerResumenFacturas();
+    if (this.esAdmin) {
+      this.obtenerResumenFacturas();
+    }
   }
 
   //RESUMEN DE FACTURAS POR COBRAR/POR PAGAR (INFORMATIVO)
@@ -62,22 +73,22 @@ export class EgresoComponent implements OnInit {
   }
 
   //UN EGRESO ESTA VENCIDO SI ESTA PENDIENTE Y SU FECHA DE VENCIMIENTO YA PASO
-  estaVencido(egreso): boolean {
+  estaVencido(egreso: Egreso): boolean {
     return egreso.estado_pago === 'PENDIENTE' && !!egreso.fecha_vencimiento && egreso.fecha_vencimiento < this.hoy;
   }
 
   //CLASE DEL BADGE SEGUN EL ESTADO DE PAGO
-  claseBadgeEstadoPago(egreso): string {
+  claseBadgeEstadoPago(egreso: Egreso): string {
     if (egreso.estado_pago === 'PAGADA') { return 'badge badge-success'; }
     if (egreso.estado_pago === 'ANULADA') { return 'badge badge-danger'; }
     return this.estaVencido(egreso) ? 'badge badge-danger' : 'badge badge-warning';
   }
 
   //TEXTO DEL BADGE SEGUN EL ESTADO DE PAGO
-  textoBadgeEstadoPago(egreso): string {
-    if (egreso.estado_pago === 'PAGADA') { return '✅ Pagada'; }
+  textoBadgeEstadoPago(egreso: Egreso): string {
+    if (egreso.estado_pago === 'PAGADA') { return 'Pagada'; }
     if (egreso.estado_pago === 'ANULADA') { return 'Anulada'; }
-    return this.estaVencido(egreso) ? '⚠ Vencida' : '🕐 Pendiente';
+    return this.estaVencido(egreso) ? 'Vencida' : 'Pendiente';
   }
 
   //MOSTRAR EL ERROR ENTREGADO POR EL BACKEND (spec §2.6)
@@ -90,7 +101,7 @@ export class EgresoComponent implements OnInit {
   }
 
   //MARCAR UN EGRESO (FACTURA) COMO PAGADO
-  marcarComoPagado(egreso): void {
+  marcarComoPagado(egreso: Egreso): void {
     swal.fire({
       title: 'Marcar como pagado',
       html: '<label>Fecha de pago</label>' +
@@ -127,7 +138,7 @@ export class EgresoComponent implements OnInit {
   }
 
   //ANULAR UN EGRESO (FACTURA): REEMPLAZA ELIMINAR, NUNCA SE BORRA EL REGISTRO
-  anularEgreso(egreso): void {
+  anularEgreso(egreso: Egreso): void {
     swal.fire({
       title: 'Anular egreso',
       text: 'Ingresa el motivo de la anulación.',
@@ -158,7 +169,7 @@ export class EgresoComponent implements OnInit {
   }
 
   //REVERTIR EL PAGO DE UN EGRESO (SOLO ADMIN)
-  revertirPagoEgreso(egreso): void {
+  revertirPagoEgreso(egreso: Egreso): void {
     swal.fire({
       title: 'Revertir pago',
       text: 'Ingresa el motivo de la reversión.',
@@ -236,7 +247,7 @@ export class EgresoComponent implements OnInit {
     )
   }
   //ELIMINAR EGRESO
-  eliminarEgreso(id){
+  eliminarEgreso(id: number): void {
     swal.fire({
       title: '¿Estas seguro?',
       text: "Vas a eliminar el Egreso agregado",
