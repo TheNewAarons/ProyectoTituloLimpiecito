@@ -19,6 +19,31 @@ module.exports = db.sequelize.define(
         comentario:{
             type: Sequelize.STRING
         },
+        tipo_documento:{
+            type: Sequelize.ENUM('FACTURA', 'BOLETA', 'OTRO'),
+            allowNull: true
+        },
+        numero_documento:{
+            type: Sequelize.STRING(30),
+            allowNull: true
+        },
+        fecha_emision:{
+            type: Sequelize.DATEONLY,
+            allowNull: true
+        },
+        fecha_vencimiento:{
+            type: Sequelize.DATEONLY,
+            allowNull: true
+        },
+        estado_pago:{
+            type: Sequelize.ENUM('PENDIENTE', 'PAGADA', 'ANULADA'),
+            allowNull: false,
+            defaultValue: 'PAGADA'
+        },
+        fecha_pago:{
+            type: Sequelize.DATEONLY,
+            allowNull: true
+        },
         centroCostoId:{
             type: Sequelize.INTEGER,
             references:{
