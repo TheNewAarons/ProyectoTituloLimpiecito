@@ -34,7 +34,7 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 | RF-BOD-03 | Envío automático de orden de compra al proveedor | Bodega | 🔴 Alta | M | Feature nueva | 2 | BOD-02 | Implementado – pendiente verificación/PR |
 | RF-BOD-04 | Recepción y actualización automática de bodega | Bodega | 🔴 Alta | M | Feature nueva | 3 | BOD-03 | Sin empezar |
 | RF-BOD-05 | Dashboard/Home de bodega (solicitudes, lista de compra, stock) | Bodega | 🟠 Media-Alta | M | Feature nueva | 3 | BOD-01..04 | Sin empezar |
-| RF-FAC-01 | Estado de pago en facturas (ingresos y egresos) | Facturación | 🟡 Media | S | Mejora | 3 | — | Sin empezar |
+| RF-FAC-01 | Estado de pago en facturas (ingresos y egresos) | Facturación | 🟡 Media | S | Mejora | 3 | — | Implementado – pendiente verificación/PR |
 | RF-WEB-01 | Catálogo de productos publicable a la web | Web | 🟡 Media | L | Feature nueva | 4 | — | Sin empezar |
 | RF-WEB-02 | Portal de PDFs descargables (políticas, reglamento) | Web | 🟡 Media | S | Feature nueva | 4 | — | Sin empezar |
 | RF-WEB-03 | Publicaciones y anuncios desde el sistema | Web | 🟢 Baja | S | Feature nueva | 4 | — | Sin empezar |
@@ -295,10 +295,10 @@ ingresos / egresos (existentes) + columnas:
 | GET | `/api/v1/facturas/resumen?periodo=` | Totales por cobrar / por pagar |
 
 **Criterios de aceptación:**
-- [ ] Una factura de ingreso pendiente no aparece en el saldo de caja hasta marcarse pagada.
-- [ ] Ya no se necesita crear un egreso compensatorio.
-- [ ] Anular reemplaza a eliminar para facturas; el registro permanece consultable.
-- [ ] La caja recalcula correctamente según RF-CAJA-01 al pagar en un mes distinto al de emisión.
+- [ ] Una factura de ingreso pendiente no aparece en el saldo de caja hasta marcarse pagada. (`cc_ingresos` nunca impacta el saldo, D-067; `tests/services/caja/saldo.estado-pago.test.js` solo cubre `egresos`/`cc_egresos` PENDIENTE, no `cc_ingresos`.)
+- [ ] Ya no se necesita crear un egreso compensatorio. (cambio de flujo/UI, sin test automatizado.)
+- [x] Anular reemplaza a eliminar para facturas; el registro permanece consultable. (`tests/services/facturas/pago.test.js` "conserva el registro: nunca llama destroy/delete..." y "un registro anulado sigue siendo consultable...")
+- [x] La caja recalcula correctamente según RF-CAJA-01 al pagar en un mes distinto al de emisión. (`tests/services/facturas/pago.test.js` "pagar en un mes distinto al de emision reasigna cajaId a la caja de fecha_pago...")
 
 ---
 
