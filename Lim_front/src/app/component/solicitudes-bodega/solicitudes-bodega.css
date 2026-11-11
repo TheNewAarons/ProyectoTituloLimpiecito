@@ -10,3 +10,21 @@
   padding-right: 4px;
   white-space: normal;
 }
+
+/* RF-BOD-04: el formato de entrega debe caber completo a 360 px (el PDF captura lo visible). */
+.formato-compacto th,
+.formato-compacto td {
+  font-size: 0.8rem;
+}
+
+/* RF-BOD-04: línea de firma dibujada (los "____" de texto se cortan al exportar a PDF). */
+.firma-linea {
+  height: 48px;
+  border-bottom: 1px solid currentColor;
+  margin: 0 8px 6px;
+}
+
+/* Reserva el alto del nombre aunque esté vacío (se firma a mano). */
+.firma-nombre {
+  min-height: 1.5em;
+}

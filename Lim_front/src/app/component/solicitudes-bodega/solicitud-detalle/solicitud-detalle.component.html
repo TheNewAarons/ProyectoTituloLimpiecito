@@ -53,6 +53,7 @@
                 </table>
               </div>
               <small class="text-muted">"Descontado" y "A Comprar" los completa el cruce con stock (RF-BOD-02).</small>
+              <app-entrega-solicitud [solicitud]="solicitud" (entregada)="cargar()"></app-entrega-solicitud>
             </div>
           </div>
           <div class="card-footer" *ngIf="!loading && solicitud && acciones.puede_anular">

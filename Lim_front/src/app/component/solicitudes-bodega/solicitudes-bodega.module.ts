@@ -7,6 +7,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
 
 import { MaterialModule } from '../../app.module';
 import { LoadingModule } from 'src/app/loading/loading.module';
+import { EntregaSolicitudModule } from '../entrega-solicitud/entrega-solicitud.module';
 
 import { SolicitudesBodegaRoutes } from './solicitudes-bodega.routing';
 import { SolicitudesListaComponent } from './solicitudes-lista/solicitudes-lista.component';
@@ -22,6 +23,7 @@ import { SolicitudNuevaComponent } from './solicitud-nueva/solicitud-nueva.compo
     NgbModule,
     NgSelectModule,
     MaterialModule,
+    EntregaSolicitudModule, // RF-BOD-04
     LoadingModule
   ],
   declarations: [SolicitudesListaComponent, SolicitudDetalleComponent, SolicitudNuevaComponent]

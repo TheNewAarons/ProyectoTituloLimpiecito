@@ -1,0 +1,81 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">local_shipping</i></div>
+            <h4 class="card-title">Orden De Compra N° {{ orden?.id }}</h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Volver" class="btn btn-rose btn-sm" (click)="volver()">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div *ngIf="!loading && orden">
+              <p>
+                <strong>Proveedor:</strong> {{ orden.proveedor || '—' }} ·
+                <strong>Estado:</strong> <span [class]="badge[orden.estado]">{{ etiqueta[orden.estado] }}</span>
+              </p>
+              <p class="text-warning" *ngIf="!orden.recibible">Solo se puede recibir una orden Enviada o Recibida parcial.</p>
+
+              <div class="table-responsive">
+                <table class="table tabla-compacta">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Producto</th>
+                      <th class="text-right">Pedido</th>
+                      <th class="text-right">Recibido</th>
+                      <th class="text-right">Recibir Ahora</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let l of orden.items">
+                      <td class="text-left">{{ l.producto || ('Producto ' + l.producto_id) }}</td>
+                      <td class="text-right">{{ l.cantidad | number:'1.0-0' }}</td>
+                      <td class="text-right">{{ l.cantidad_recibida | number:'1.0-0' }}</td>
+                      <td class="text-right">
+                        <span *ngIf="l.pendiente === 0 || !orden.recibible" class="text-success">{{ l.pendiente === 0 ? 'Completo' : '—' }}</span>
+                        <div *ngIf="l.pendiente > 0 && orden.recibible">
+                          <mat-form-field class="example-full-width">
+                            <input matInput type="number" inputmode="numeric" pattern="[0-9]*" min="0" [max]="l.pendiente" step="1"
+                              [placeholder]="'Pendiente ' + l.pendiente" [name]="'cantidad' + l.item_id" [(ngModel)]="cantidades[l.item_id]">
+                          </mat-form-field>
+                          <small class="text-danger" *ngIf="errorLinea(l.item_id, l.pendiente)">{{ errorLinea(l.item_id, l.pendiente) }}</small>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div *ngIf="resultado" class="mt-3">
+                <h5>Resultado De La Última Recepción</h5>
+                <p *ngIf="resultado.asignaciones.length === 0">Lo recibido quedó como stock libre (no había faltantes pendientes).</p>
+                <ul *ngIf="resultado.asignaciones.length">
+                  <li *ngFor="let a of resultado.asignaciones">
+                    {{ a.cantidad }} unidad(es) asignadas a la solicitud
+                    <a href="javascript:void(0)" (click)="verSolicitud(a.solicitud_id)">N° {{ a.solicitud_id }}</a>
+                    <span *ngIf="resultado.solicitudes_listas.indexOf(a.solicitud_id) !== -1" class="text-success"> — lista para entrega</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer" *ngIf="!loading && orden && orden.recibible">
+            <div class="row w-100">
+              <div class="col-12 text-right">
+                <button mat-raised-button type="button" class="btn btn-success mb-2" [disabled]="!puedeConfirmar()" (click)="confirmar()">
+                  <span class="btn-label"><i class="material-icons">done</i></span>
+                  Confirmar Recepción ({{ totalARecibir }})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

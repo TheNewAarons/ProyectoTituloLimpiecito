@@ -1,0 +1,77 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">swap_vert</i></div>
+            <h4 class="card-title">Movimientos De Bodega</h4>
+          </div>
+          <div class="card-body">
+            <div class="row align-items-end">
+              <div class="col-12 col-md-4">
+                <ng-select [items]="productos" bindLabel="nombre" bindValue="id" name="producto" [(ngModel)]="productoId"
+                  placeholder="Todos los productos" notFoundText="Sin resultados" [clearable]="true" (change)="filtrar()"></ng-select>
+              </div>
+              <div class="col-12 col-md-3">
+                <mat-form-field class="example-full-width">
+                  <mat-select placeholder="Tipo" name="tipo" [(ngModel)]="tipo" (selectionChange)="filtrar()">
+                    <mat-option *ngFor="let t of tipos" [value]="t.valor">{{ t.nombre }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col-6 col-md-2">
+                <mat-form-field class="example-full-width">
+                  <input matInput type="date" placeholder="Desde" name="desde" [(ngModel)]="desde" (change)="filtrar()">
+                </mat-form-field>
+              </div>
+              <div class="col-6 col-md-2">
+                <mat-form-field class="example-full-width">
+                  <input matInput type="date" placeholder="Hasta" name="hasta" [(ngModel)]="hasta" (change)="filtrar()">
+                </mat-form-field>
+              </div>
+              <div class="col-12 col-md-1 text-right">
+                <button mat-raised-button type="button" matTooltip="Limpiar Filtros" class="btn btn-link btn-sm" (click)="limpiar()">
+                  <i class="material-icons">close</i>
+                </button>
+              </div>
+              <div class="col-12"><small class="text-danger" *ngIf="errorFechas">{{ errorFechas }}</small></div>
+            </div>
+
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div class="table-responsive" *ngIf="!loading">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-left">Fecha</th>
+                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th class="text-right">Cantidad</th>
+                    <th>Referencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="movimientos.length === 0">
+                    <td colspan="5" class="text-center">Sin registros</td>
+                  </tr>
+                  <tr *ngFor="let m of movimientos">
+                    <td class="text-left">{{ m.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ m.producto || ('Producto ' + m.producto_id) }}</td>
+                    <td>{{ nombreTipo(m.tipo) }}</td>
+                    <td class="text-right" [class.text-success]="m.cantidad > 0" [class.text-danger]="m.cantidad < 0">
+                      {{ m.cantidad > 0 ? '+' : '' }}{{ m.cantidad | number:'1.0-0' }}
+                    </td>
+                    <td>{{ referencia(m) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card-footer" *ngIf="total > pageSize">
+            <ngb-pagination [(page)]="page" [pageSize]="pageSize" [collectionSize]="total" [maxSize]="5" [boundaryLinks]="true" (pageChange)="cargar()"></ngb-pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
