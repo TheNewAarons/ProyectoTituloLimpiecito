@@ -66,6 +66,12 @@ export const AppRoutes: Routes = [
         canActivate: [ArchivoGuardService,LvlAppGuardService],
         loadChildren: './component/solicitudes-bodega/solicitudes-bodega.module#SolicitudesBodegaModule'
       },
+      // RF-BOD-04: recepción de órdenes, movimientos y formato de entrega (mismos guards que Bodega)
+      {
+        path: '',
+        canActivate: [ArchivoGuardService,LvlAppGuardService],
+        loadChildren: './component/recepcion-bodega/recepcion-bodega.module#RecepcionBodegaModule'
+      },
       {
         path: '',
         canActivate:[LvlAppGuardService],
