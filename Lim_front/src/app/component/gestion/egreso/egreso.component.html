@@ -29,6 +29,17 @@
             </div>
           </div>
           <div class="card-body">
+            <!-- RF-FAC-01: resumen informativo de facturas por cobrar/por pagar (fuera del saldo de caja) -->
+            <div class="row" *ngIf="resumenFacturas">
+              <div class="col-md-6">
+                <p>Por cobrar (facturas pendientes): <b>{{ resumenFacturas.por_cobrar.cantidad }}</b> /
+                  {{ resumenFacturas.por_cobrar.monto_total | currency: "USD":"symbol":"1.0" }}</p>
+              </div>
+              <div class="col-md-6">
+                <p>Por pagar (facturas pendientes): <b>{{ resumenFacturas.por_pagar.cantidad }}</b> /
+                  {{ resumenFacturas.por_pagar.monto_total | currency: "USD":"symbol":"1.0" }}</p>
+              </div>
+            </div>
             <div class="table-responsive">
               <!-- TABLE RESPONSIVE -->
               <table class="table">
@@ -36,8 +47,11 @@
                   <tr>
                     <th>Usuario</th>
                     <th>Descripcion</th>
+                    <th>Documento</th>
                     <th>Cantidad Dinero</th>
                     <th>Fecha</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
                     <th class="text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -52,18 +66,57 @@
                   >
                     <td>{{ egreso.usuario.nombre }}</td>
                     <td>{{ egreso.comentario }}</td>
+                    <td>{{ egreso.tipo_documento || '-' }} {{ egreso.numero_documento }}</td>
                     <td>{{ egreso.monto | currency: "USD":"symbol":"1.0" }}</td>
                     <td>{{ egreso.fecha | date: "dd/MM/yyyy HH:mm:ss" }}</td>
+                    <td>{{ egreso.fecha_vencimiento ? (egreso.fecha_vencimiento | date:'dd/MM/yyyy') : '-' }}</td>
+                    <td>
+                      <span [class]="claseBadgeEstadoPago(egreso)">{{ textoBadgeEstadoPago(egreso) }}</span>
+                    </td>
                     <td class="td-actions text-right">
-                      <button
-                        mat-raised-button
-                        type="button"
-                        title="Eliminar Egreso"
-                        class="btn btn-danger btn-round"
-                        (click)="eliminarEgreso(egreso.id)"
-                      >
-                        <i class="material-icons">close</i>
-                      </button>
+                      <ng-container *ngIf="egreso.tipo_documento === 'FACTURA'; else accionesLegacy">
+                        <button
+                          *ngIf="egreso.estado_pago === 'PENDIENTE' && esAdmin"
+                          mat-raised-button
+                          type="button"
+                          title="Marcar Pagado"
+                          class="btn btn-success btn-round"
+                          (click)="marcarComoPagado(egreso)"
+                        >
+                          <i class="material-icons">attach_money</i>
+                        </button>
+                        <button
+                          *ngIf="egreso.estado_pago === 'PAGADA' && esAdmin"
+                          mat-raised-button
+                          type="button"
+                          title="Revertir Pago"
+                          class="btn btn-warning btn-round"
+                          (click)="revertirPagoEgreso(egreso)"
+                        >
+                          <i class="material-icons">undo</i>
+                        </button>
+                        <button
+                          *ngIf="egreso.estado_pago !== 'ANULADA' && esAdmin"
+                          mat-raised-button
+                          type="button"
+                          title="Anular Egreso"
+                          class="btn btn-danger btn-round"
+                          (click)="anularEgreso(egreso)"
+                        >
+                          <i class="material-icons">close</i>
+                        </button>
+                      </ng-container>
+                      <ng-template #accionesLegacy>
+                        <button
+                          mat-raised-button
+                          type="button"
+                          title="Eliminar Egreso"
+                          class="btn btn-danger btn-round"
+                          (click)="eliminarEgreso(egreso.id)"
+                        >
+                          <i class="material-icons">close</i>
+                        </button>
+                      </ng-template>
                     </td>
                   </tr>
                 </tbody>
@@ -137,6 +190,46 @@
               #comentario="ngModel"
               [(ngModel)]="egreso.comentario"
               type="text"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width">
+            <mat-select
+              placeholder="Tipo de documento"
+              name="tipo_documento"
+              [(ngModel)]="egreso.tipo_documento"
+              (selectionChange)="cambioTipoDocumento()"
+            >
+              <mat-option [value]="null">Sin documento</mat-option>
+              <mat-option value="FACTURA">Factura</mat-option>
+              <mat-option value="BOLETA">Boleta</mat-option>
+              <mat-option value="OTRO">Otro</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field class="example-full-width" *ngIf="egreso.tipo_documento">
+            <input
+              matInput
+              placeholder="N° de documento"
+              name="numero_documento"
+              [(ngModel)]="egreso.numero_documento"
+              type="text"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width" *ngIf="egreso.tipo_documento">
+            <input
+              matInput
+              placeholder="Fecha de emisión"
+              name="fecha_emision"
+              [(ngModel)]="egreso.fecha_emision"
+              type="date"
+            />
+          </mat-form-field>
+          <mat-form-field class="example-full-width" *ngIf="egreso.tipo_documento === 'FACTURA'">
+            <input
+              matInput
+              placeholder="Fecha de vencimiento"
+              name="fecha_vencimiento"
+              [(ngModel)]="egreso.fecha_vencimiento"
+              type="date"
             />
           </mat-form-field>
           <div class="modal-footer justify-content-center">
