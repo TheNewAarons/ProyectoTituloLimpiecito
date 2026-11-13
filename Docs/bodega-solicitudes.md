@@ -171,3 +171,40 @@ Rama `feature/RF-BOD-04-recepcion-bodega-bastian`. Migración `20261110000953-RF
 - **`Docs/DECISIONES.md` y `Docs/API_V1.md` no existen en el repo**, aunque se citan (D-052…D-064 en `cruceStock.js` y en este documento).
 - **Eliminar una lista de insumos repone stock (legacy):** `DELETE /detalle/eliminar-lista/:id` (sin autenticación) hace `aumentarCantidadProductoDB` por línea. Las listas de bodega nacen en `estado = 1` y la UI sólo ofrece eliminar las de estado 0, pero por API una eliminación inflaría el stock. La FK RESTRICT evita dejar la solicitud huérfana, pero el legacy repone stock antes de fallar (sin transacción).
 - **`anular` no limpia `cantidad_faltante`** (D-063): la recepción lo compensa re-verificando el estado tras el lock; cualquier otro proceso que lea faltantes debe filtrar por estado.
+
+## RF-BOD-05 · Dashboard / home de bodega (Jira SCRUM-12)
+
+Rama `feature/RF-BOD-05-dashboard-bodega-bastian`. Migración `20261113162840-RF-BOD-05-stock-minimo`: agrega `productos.stock_minimo INT NOT NULL DEFAULT 0` (con 0 nada entra en alerta: el comportamiento no cambia). La reversión aborta si algún producto tiene `stock_minimo > 0`.
+
+> ⚠️ **Orden de despliegue: aplicar la migración `20261113162840` ANTES de desplegar el backend.** Con `stock_minimo` en el modelo `Producto`, todas las consultas de productos (incluidas las pantallas legacy de bodega, que usan `findAll`/`findOne` sin `attributes`) piden esa columna: si el código llega antes que la migración, fallan con "Unknown column".
+
+### Regla de alerta de stock
+**Un producto está bajo el mínimo si `stock_minimo > 0` y `stock <= stock_minimo`** (stock NULL cuenta como 0). Llegar justo al mínimo ya es momento de reponer; con mínimo 0 nunca se alerta. La misma regla se usa en SQL (contador) y en el servicio (marca de cada fila): `services/bodega/dashboard.js` (`SQL_BAJO_MINIMO` / `bajoMinimo`).
+
+### Endpoints (Admin y Operaciones, spec §2.3)
+| Método | Ruta | Qué hace |
+|---|---|---|
+| GET | `/dashboard` | Los 4 bloques en una llamada (`meta.duracion_ms`, `meta.topes`). |
+| PATCH | `/productos/:id/stock-minimo` | Body `{ stock_minimo }`: entero de 0 a 1.000.000 (número JSON). Transacción con lock y auditoría `STOCK_MINIMO` (antes/después). Producto inactivo → 409 `PRODUCTO_INACTIVO`; si el valor no cambia, no escribe ni audita. |
+
+### Bloques y topes
+Los **contadores salen siempre de COUNT/GROUP BY** en SQL; las listas se recortan aparte y los topes no afectan a los contadores.
+| Bloque | Contadores | Lista (tope) |
+|---|---|---|
+| Solicitudes activas | por estado `PENDIENTE`/`PARCIAL`/`LISTA_ENTREGA` y total | 5 más antiguas en `PENDIENTE`/`PARCIAL` |
+| Lista de compra | productos, unidades y sin proveedor (calculados sobre la lista completa de `cruceStock.listaCompra`, que es un neto por producto) | 10 con más unidades por comprar |
+| Stock actual | activos y bajo mínimo | hasta 500 activos, **bajo mínimo siempre primero** (`truncado` si hay más) |
+| Órdenes en tránsito | total y por estado `ENVIADA`/`RECIBIDA_PARCIAL` | 10 más recientes |
+
+En la BD local había 1 producto activo; los topes se fijaron para el peor caso. En pantalla la tabla de stock se pagina en el cliente (10 por página) manteniendo los bajo mínimo primero.
+
+**Lista de compra:** se muestra cada faltante con su cantidad y el nombre del proveedor (o "Sin proveedor"). La acción "Generar/enviar órdenes" de la spec **no tiene pantalla todavía**: RF-BOD-03 (Aarón) dejó solo los endpoints (`POST /ordenes-compra/desde-lista`, `POST /ordenes-compra/:id/enviar`). Pendiente de definir quién hace esa pantalla.
+
+### Rendimiento (RNF-BI-01, < 2 s)
+Medido el endpoint HTTP completo (con autenticación) contra una BD desechable con el mismo esquema y volumen sintético realista (450 productos, 5000 solicitudes, 15 000 ítems, 600 órdenes, 3000 líneas de orden): **primera llamada 74 ms; 20 llamadas p50 25 ms, p95 33 ms, máx. 35 ms.** Contadores verificados contra lo sembrado.
+
+### Página de entrada del módulo
+"Bodega" en el menú es un grupo que solo se despliega (no navega). Para no cambiar ese comportamiento existente, se agregó **"Inicio Bodega" como primer ítem** del submenú y `/bodega` redirige a `/bodega/inicio`. El listado completo de productos sigue en "Producto EPP" (pestaña secundaria). Si se quiere que el clic en "Bodega" abra el home directamente, hay que modificar el sidebar existente (requiere autorización): queda a decisión de Aarón.
+
+### Hallazgo para RNF-SEC-01
+El login de usuarios (`api/apartado_base/usuario/controlador.js#login`) hace **`console.log(token)`**: cada JWT de administrador queda en el log del servidor. Igual que el `console.log(credenciales)` del login laboral, se corrige en RNF-SEC-01 C2 con autorización.
