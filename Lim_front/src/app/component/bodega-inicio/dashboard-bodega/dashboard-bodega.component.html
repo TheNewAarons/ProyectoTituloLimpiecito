@@ -1,0 +1,171 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="text-center" *ngIf="loading && !datos"><app-loading></app-loading></div>
+
+    <div class="card" *ngIf="error && !loading">
+      <div class="card-body text-center">
+        <p>No se pudo cargar el inicio de bodega.</p>
+        <button mat-raised-button type="button" class="btn btn-warning" (click)="cargar()">
+          <span class="btn-label"><i class="material-icons">refresh</i></span>
+          Reintentar
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="datos">
+      <!-- Resumen: los contadores vienen de COUNT en el backend -->
+      <div class="row">
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="card card-stats">
+            <div class="card-header card-header-warning card-header-icon">
+              <div class="card-icon"><i class="material-icons">list_alt</i></div>
+              <p class="card-category">Solicitudes Activas</p>
+              <h3 class="card-title">{{ datos.solicitudes.total_activas }}</h3>
+            </div>
+            <div class="card-footer">
+              <div class="stats">
+                Pend. {{ datos.solicitudes.por_estado.PENDIENTE }} · En proceso {{ datos.solicitudes.por_estado.PARCIAL + datos.solicitudes.por_estado.LISTA_ENTREGA }}
+              </div>
+              <a href="javascript:void(0)" (click)="ir('/bodega/solicitudes')">Ver</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="card card-stats">
+            <div class="card-header card-header-info card-header-icon">
+              <div class="card-icon"><i class="material-icons">shopping_cart</i></div>
+              <p class="card-category">Lista De Compra</p>
+              <h3 class="card-title">{{ datos.lista_compra.total_productos }}</h3>
+            </div>
+            <div class="card-footer">
+              <div class="stats">{{ datos.lista_compra.total_unidades | number:'1.0-0':'es-CL' }} unidades por comprar</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="card card-stats">
+            <div class="card-header card-header-icon" [class.card-header-rose]="datos.stock.total_bajo_minimo > 0" [class.card-header-success]="datos.stock.total_bajo_minimo === 0">
+              <div class="card-icon"><i class="material-icons">inventory_2</i></div>
+              <p class="card-category">Bajo Stock Mínimo</p>
+              <h3 class="card-title">{{ datos.stock.total_bajo_minimo }}</h3>
+            </div>
+            <div class="card-footer">
+              <div class="stats">de {{ datos.stock.total_activos }} productos activos</div>
+              <a href="javascript:void(0)" (click)="ir('/bodega/movimientos')">Movimientos</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="card card-stats">
+            <div class="card-header card-header-success card-header-icon">
+              <div class="card-icon"><i class="material-icons">local_shipping</i></div>
+              <p class="card-category">Órdenes En Tránsito</p>
+              <h3 class="card-title">{{ datos.ordenes_transito.total }}</h3>
+            </div>
+            <div class="card-footer">
+              <div class="stats">Parciales: {{ datos.ordenes_transito.por_estado.RECIBIDA_PARCIAL }}</div>
+              <a href="javascript:void(0)" (click)="ir('/bodega/ordenes-compra')">Recibir</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Stock actual con alertas -->
+        <div class="col-12 col-lg-6">
+          <div class="card">
+            <div class="card-header card-header-rose card-header-icon">
+              <div class="card-icon"><i class="material-icons">inventory_2</i></div>
+              <h4 class="card-title">Stock Actual</h4>
+            </div>
+            <div class="card-body">
+              <p class="text-muted"><small>Alerta (en rojo) cuando el stock es igual o menor al mínimo. Mínimo 0 = sin alerta.</small></p>
+              <div class="table-responsive">
+                <table class="table tabla-compacta">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Producto</th>
+                      <th class="text-right">Stock</th>
+                      <th class="text-right">Mínimo</th>
+                      <th class="text-right"><span class="sr-only">Acciones</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="datos.stock.productos.length === 0"><td colspan="4" class="text-center">Sin registros</td></tr>
+                    <tr *ngFor="let p of datos.stock.productos | slice: (page - 1) * pageSize : (page - 1) * pageSize + pageSize" [class.text-danger]="p.bajo_minimo">
+                      <td class="text-left">
+                        <i *ngIf="p.bajo_minimo" class="material-icons text-danger" matTooltip="Bajo stock mínimo">warning</i>
+                        {{ p.nombre }}
+                      </td>
+                      <td class="text-right">{{ p.stock | number:'1.0-0':'es-CL' }}</td>
+                      <td class="text-right">{{ p.stock_minimo | number:'1.0-0':'es-CL' }}</td>
+                      <td class="td-actions text-right">
+                        <button mat-raised-button type="button" matTooltip="Editar Stock Mínimo" class="btn btn-warning btn-round" (click)="editarMinimo(p)">
+                          <i class="material-icons">edit</i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <ngb-pagination *ngIf="datos.stock.productos.length > pageSize" [(page)]="page" [pageSize]="pageSize" [collectionSize]="datos.stock.productos.length" [maxSize]="3" [boundaryLinks]="true"></ngb-pagination>
+              <small class="text-muted" *ngIf="datos.stock.truncado">Se muestran {{ datos.stock.productos.length }} de {{ datos.stock.total_activos }} (los bajo mínimo siempre primero).</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+          <!-- Solicitudes que esperan bodega -->
+          <div class="card">
+            <div class="card-header card-header-rose card-header-icon">
+              <div class="card-icon"><i class="material-icons">list_alt</i></div>
+              <h4 class="card-title">Solicitudes Más Antiguas</h4>
+            </div>
+            <div class="card-body">
+              <p *ngIf="datos.solicitudes.mas_antiguas.length === 0" class="text-center">Sin solicitudes pendientes</p>
+              <div *ngFor="let s of datos.solicitudes.mas_antiguas" class="d-flex justify-content-between align-items-center border-bottom py-2">
+                <a href="javascript:void(0)" (click)="ir('/bodega/solicitudes', s.id)">N° {{ s.id }} · CC {{ s.numero_cc }}</a>
+                <span><small class="text-muted mr-2">{{ s.created_at | date:'dd/MM/yyyy' }}</small><span [class]="badgeSolicitud[s.estado]">{{ s.etiqueta_estado }}</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lista de compra -->
+          <div class="card">
+            <div class="card-header card-header-rose card-header-icon">
+              <div class="card-icon"><i class="material-icons">shopping_cart</i></div>
+              <h4 class="card-title">Por Comprar</h4>
+            </div>
+            <div class="card-body">
+              <p *ngIf="datos.lista_compra.productos.length === 0" class="text-center">No hay faltantes</p>
+              <div *ngFor="let f of datos.lista_compra.productos" class="d-flex justify-content-between border-bottom py-2">
+                <span>
+                  {{ f.producto }}
+                  <br /><small [class.text-warning]="f.proveedor_id === null" [class.text-muted]="f.proveedor_id !== null">{{ f.proveedor_id === null ? 'Sin proveedor' : (f.proveedor || 'Proveedor ' + f.proveedor_id) }}</small>
+                </span>
+                <strong>{{ f.cantidad_a_comprar | number:'1.0-0':'es-CL' }}</strong>
+              </div>
+              <small class="text-warning" *ngIf="datos.lista_compra.sin_proveedor > 0">{{ datos.lista_compra.sin_proveedor }} producto(s) sin proveedor: no se pueden enviar a compra.</small>
+            </div>
+          </div>
+
+          <!-- Órdenes en tránsito -->
+          <div class="card">
+            <div class="card-header card-header-rose card-header-icon">
+              <div class="card-icon"><i class="material-icons">local_shipping</i></div>
+              <h4 class="card-title">Órdenes En Tránsito</h4>
+            </div>
+            <div class="card-body">
+              <p *ngIf="datos.ordenes_transito.ordenes.length === 0" class="text-center">Sin órdenes por recibir</p>
+              <div *ngFor="let o of datos.ordenes_transito.ordenes" class="d-flex justify-content-between align-items-center border-bottom py-2">
+                <a href="javascript:void(0)" (click)="ir('/bodega/ordenes-compra', o.id)">N° {{ o.id }} · {{ o.proveedor || '—' }}</a>
+                <span><small class="text-muted mr-2">{{ o.unidades_pendientes }} pend.</small><span [class]="badgeOrden[o.estado]">{{ etiquetaOrden[o.estado] }}</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="text-right text-muted" *ngIf="duracionMs !== null"><small>Generado en {{ duracionMs }} ms</small></p>
+    </div>
+  </div>
+</div>

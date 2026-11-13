@@ -50,6 +50,7 @@ export const ROUTES: RouteInfo[] = [
     icontype: 'store',
     collapse: 'bodega',
     children: [
+      { path: 'inicio', title: 'Inicio Bodega', ab: 'IB' }, // RF-BOD-05: entrada del módulo
       { path: 'producto', title: 'Producto EPP ', ab: 'P' },
       { path: 'solicitudes', title: 'Solicitudes', ab: 'So' }, // RF-BOD-01
       { path: 'ordenes-compra', title: 'Órdenes De Compra', ab: 'OC' }, // RF-BOD-04
