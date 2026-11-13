@@ -15,7 +15,7 @@ describe('modelo solicitudes_bodega', () => {
   it('usa la tabla y columnas de la migración', () => {
     expect(Solicitud.getTableName()).toBe('solicitudes_bodega');
     expect(Object.keys(Solicitud.rawAttributes).sort()).toEqual([
-      'anulada_at', 'centro_costo_id', 'created_at', 'entregada_at', 'estado', 'id',
+      'anulada_at', 'centro_costo_id', 'created_at', 'entregada_at', 'estado', 'id', 'lista_insumo_id',
       'observacion', 'trabajador_id', 'updated_at', 'usuario_id'
     ]);
   });
