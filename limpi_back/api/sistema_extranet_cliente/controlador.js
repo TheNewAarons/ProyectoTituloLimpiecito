@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const atob = require('atob')
 const nodemailer = require('nodemailer');
 const { registrarLogin } = require('../../services/auditoria/login');
+const { expiraEn } = require('../../config/auth');
 
 const inicioSesion = async(req,res) => {
     const acceso = req.body
@@ -13,7 +14,7 @@ const inicioSesion = async(req,res) => {
             if(bcrypt.compareSync(acceso.password,existe.password)){
                 delete existe.dataValues.password
                 let token = jwt.sign(existe.dataValues, process.env.SECRET_KEY,{
-                    expiresIn:'7d'
+                    expiresIn:expiraEn
                 })
                 await registrarLogin({ contexto: 'acceso_clientes', entidad: 'acceso_clientes', usuarioId: existe.id, correo: acceso.correo, ok: true, ip: req.ip });
                 return res.status(200).json({error:false,token,mensaje:'Acceso Correcto'})

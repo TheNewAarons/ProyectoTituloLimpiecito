@@ -33,6 +33,10 @@ npm install
 npm run dev             # levanta con nodemon en el puerto definido en .env (por defecto 3000)
 ```
 
+**Obligatorio desde RNF-SEC-01 (AUT-005):** el `.env` debe tener `SECRET_KEY` (clave propia, aleatoria) y `JWT_EXPIRES_IN=8h`;
+sin `SECRET_KEY` el backend no arranca. Si tu `.env` ya existía, agrégalas a mano. Cómo generar la clave:
+[variables-de-entorno.md](variables-de-entorno.md#generar-secret_key-obligatoria-desde-aut-005).
+
 Probar que responde:
 
 ```bash

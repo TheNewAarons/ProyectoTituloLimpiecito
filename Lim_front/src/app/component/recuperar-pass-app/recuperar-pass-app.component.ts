@@ -91,7 +91,7 @@ export class RecuperarPassAppComponent implements OnInit {
 
   //CAMBIAR CONTRASEÑA
   cambiarPassword(){
-    this.loginService.cambiarPasApp(this.usuario.id,this.usuario.correo,this.usuario.password,this.encriptar(this.new_password)).subscribe(
+    this.loginService.cambiarPasApp(this.token,this.encriptar(this.new_password)).subscribe(
       (response:any)=>{
         if(response.filas > 0){
           alert(response.mensaje)

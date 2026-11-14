@@ -8,6 +8,7 @@ const atob = require('atob');
 
 const Usuario = require('../../modelos/sist_app/Usuario_app');
 const { registrarLogin } = require('../../services/auditoria/login');
+const { expiraEn } = require('../../config/auth');
 
 //LOGIN
 usuarios.post('/login', (req, res) => {
@@ -31,7 +32,7 @@ usuarios.post('/login', (req, res) => {
           celular: usuario.dataValues.celular
         };
         if (bcrypt.compareSync(usuario1.password, usuario.password)) {
-          let token = jwt.sign(usuarioToken, process.env.SECRET_KEY);
+          let token = jwt.sign(usuarioToken, process.env.SECRET_KEY, { expiresIn: expiraEn });
           await registrarLogin({ contexto: 'usuario_apps', entidad: 'usuario_apps', usuarioId: usuario.id, correo: usuario1.correo, ok: true, ip: req.ip });
           res.json({ usuarioToken, token: token });
         } else {
