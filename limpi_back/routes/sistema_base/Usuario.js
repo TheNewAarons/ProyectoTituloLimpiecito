@@ -14,8 +14,6 @@ const atob = require('atob');
 
 Usuario.belongsTo(Rol, { as: 'role' });
 
-process.env.SECRET_KEY = 'secret';
-
 //REGISTRAR USUARIO
 usuarios.post('/registro', (req, res) => {
   const usuario = JSON.parse(req.body.usuario);

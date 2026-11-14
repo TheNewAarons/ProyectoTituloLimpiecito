@@ -24,9 +24,9 @@ const actualizarAccesoLaboralDB = async (id, accesoLaboral) => {
             },{where:{id}})
         return respuesta
     }else{
+        // Sin contraseña nueva se conserva la actual (antes la dejaba vacía y el trabajador no podía entrar).
         let respuesta = await AccesosLaborales.update({
             correo:accesoLaboral.correo,
-            password:accesoLaboral.password,
             tipo:accesoLaboral.tipo
             },{where:{id}})
         return respuesta

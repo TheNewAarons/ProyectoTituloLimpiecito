@@ -36,8 +36,8 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 | RF-BOD-05 | Dashboard/Home de bodega (solicitudes, lista de compra, stock) | Bodega | 🟠 Media-Alta | M | Feature nueva | 3 | BOD-01..04 | Sin empezar |
 | RF-FAC-01 | Estado de pago en facturas (ingresos y egresos) | Facturación | 🟡 Media | S | Mejora | 3 | — | Implementado – pendiente verificación/PR |
 | RF-WEB-01 | Catálogo de productos publicable a la web | Web | 🟡 Media | L | Feature nueva | 4 | — | Sin empezar |
-| RF-WEB-02 | Portal de PDFs descargables (políticas, reglamento) | Web | 🟡 Media | S | Feature nueva | 4 | — | Sin empezar |
-| RF-WEB-03 | Publicaciones y anuncios desde el sistema | Web | 🟢 Baja | S | Feature nueva | 4 | — | Sin empezar |
+| RF-WEB-02 | Portal de PDFs descargables (políticas, reglamento) | Web | 🟡 Media | S | Feature nueva | 4 | — | Implementado – pendiente verificación/PR |
+| RF-WEB-03 | Publicaciones y anuncios desde el sistema | Web | 🟢 Baja | S | Feature nueva | 4 | — | Implementado – pendiente verificación/PR |
 | RF-PEV-01 | Asignación masiva de actividades PEV | PEV/Cronograma | 🟠 Media-Alta | L | Mejora | 5 | Reunión técnica | 🔒 Bloqueado |
 | RF-PEV-02 | Escalabilidad de tareas PEV (1 tarea → N trabajadores) | PEV/Cronograma | 🟠 Media-Alta | XL | Refactor | 5 | Reunión técnica | 🔒 Bloqueado |
 | RF-BI-01 | Dashboard financiero (utilidad, tendencias, proyección) | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-01/02, FAC-01 | Sin empezar |
@@ -535,7 +535,9 @@ Implementar la lógica en un servicio (`services/bodega/cruceStock.js`) con test
 
 **Endpoints:** `PATCH /api/v1/archivos/:id/publicar` · `GET /api/v1/public/documentos` · `GET /api/v1/public/documentos/:id/descargar`.
 
-**Criterios:** [ ] Al menos 3 documentos publicables (meta del indicador). [ ] Un documento no público no es descargable aunque se conozca su id.
+**Criterios:**
+- [x] Al menos 3 documentos publicables (meta del indicador). (`tests/api/documentos-publicos.v1.test.js` "flujo completo: publicar 3 documentos, listarlos y descargar uno" + smoke local contra servidor real: 3 PDFs publicados, listados y descargados).
+- [x] Un documento no público no es descargable aunque se conozca su id, en el endpoint nuevo (`tests/api/documentos-publicos.v1.test.js` "responde 404 con el mismo cuerpo que un id inexistente, aunque el PDF sea valido"). **Nota:** sigue descargable por las rutas legacy sin auth (`/documento/descargar-pdf/:id`, estático `/uploads`); riesgo preexistente documentado en D-089, fix propuesto en rama aparte.
 
 ### RF-WEB-03 · Publicaciones y anuncios desde el sistema
 **Prioridad:** 🟢 Baja · **Esfuerzo:** S (1 pt) · **Sprint:** 4
@@ -546,7 +548,9 @@ Implementar la lógica en un servicio (`services/bodega/cruceStock.js`) con test
 
 **Endpoints:** `CRUD /api/v1/web/publicaciones` · `GET /api/v1/public/publicaciones`.
 
-**Criterios:** [ ] Un anuncio aparece al llegar su fecha y desaparece al expirar. [ ] HTML malicioso en el cuerpo se sanitiza.
+**Criterios:** [x] Un anuncio aparece al llegar su fecha y desaparece al expirar — `tests/api/publicaciones-vigencia-xss.v1.test.js` (vigencia evaluando el `where` real con reloj fijo) + smoke local contra MySQL (una publicación con expiración en 5 s aparece y desaparece del listado público). [x] HTML malicioso en el cuerpo se sanitiza — 8 vectores XSS más el título en el mismo test + smoke local (`script`, `onclick`, `javascript:` y protocol-relative eliminados).
+
+> **Nota de alcance:** los datos de contacto complementarios NO se implementaron (ver `Docs/DECISIONES.md` D-098) y la administración es solo por API (sin UI de frontend, ver D-099).
 
 **Complementario del alcance (sin código de backlog):** exponer en el portal los datos de contacto de la empresa gestionables desde el sistema. Implementar sólo si no agrega más de 1 pt; si no, registrar en `docs/DECISIONES.md`.
 

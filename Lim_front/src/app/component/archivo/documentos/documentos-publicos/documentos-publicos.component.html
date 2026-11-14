@@ -1,0 +1,45 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">picture_as_pdf</i>
+            </div>
+            <h4 class="card-title">Documentos Públicos</h4>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-left">Titulo</th>
+                    <th>Fecha publicacion</th>
+                    <th class="text-right">Publico</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let documento of documentos">
+                    <td>{{ documento.nombre }}</td>
+                    <td>{{ documento.fecha_publicacion | date: 'dd/MM/yyyy' }}</td>
+                    <td class="text-right">
+                      <mat-slide-toggle
+                        [checked]="documento.publico"
+                        [disabled]="publicando[documento.id]"
+                        (change)="cambiarPublico(documento)"
+                      ></mat-slide-toggle>
+                    </td>
+                  </tr>
+                  <tr *ngIf="documentos.length === 0">
+                    <td colspan="3">Sin registros</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

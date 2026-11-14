@@ -10,6 +10,7 @@ import { CrearCategoriaComponent } from './categorias/crear-categoria/crear-cate
 import { VistaDocumentosComponent } from './documentos/vista-documentos/vista-documentos.component';
 import { VerDocumentoComponent } from './documentos/ver-documento/ver-documento.component';
 import { CrearDocumentoComponent } from './documentos/crear-documento/crear-documento.component';
+import { DocumentosPublicosComponent } from './documentos/documentos-publicos/documentos-publicos.component';
 import { VistaAsociacionesComponent } from './asociacion/vista-asociaciones/vista-asociaciones.component';
 import { CrearAsociacionComponent } from './asociacion/crear-asociacion/crear-asociacion.component';
 import { VistaDescargasComponent } from './descargas/vista-descargas/vista-descargas.component';
@@ -45,6 +46,7 @@ import { SafePipe } from '../../pipe/safe.pipe';
     VistaDocumentosComponent,
     VerDocumentoComponent,
     CrearDocumentoComponent,
+    DocumentosPublicosComponent,
     VistaAsociacionesComponent,
     CrearAsociacionComponent,
     VistaDescargasComponent,

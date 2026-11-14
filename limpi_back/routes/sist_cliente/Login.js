@@ -10,7 +10,7 @@ const Acceso_trabajador = require('../../modelos/sistema_base/Acceso_trabajador'
 const Trabajador = require('../../modelos/sistema_base/Trabajadore');
 const { registrarLogin } = require('../../services/auditoria/login');
 
-process.env.SECRET_KEY = '89434abc3444limpi904384dsadDASdasdsa';
+const { expiraEn } = require('../../config/auth');
 
 //INICIO SESION SISTEMA CLIENTE-TRABAJADOR
 login.post('/inicio_sesion', async (req, res) => {
@@ -28,7 +28,7 @@ login.post('/inicio_sesion', async (req, res) => {
           if (acceso.estado) {
             if (bcrypt.compareSync(pass, acceso.password)) {
               let token = jwt.sign(acceso.dataValues, process.env.SECRET_KEY, {
-                expiresIn: '1d'
+                expiresIn: expiraEn
               });
               await registrarLogin({ contexto: 'acceso_clientes', entidad: 'acceso_clientes', usuarioId: acceso.id, correo: login.correo, ok: true, ip: req.ip });
               return res.json({ token });
@@ -66,7 +66,7 @@ login.post('/inicio_sesion', async (req, res) => {
                     trabajadoreId: trabajador.id
                   };
                   let token = jwt.sign(payload, process.env.SECRET_KEY, {
-                    expiresIn: '1d'
+                    expiresIn: expiraEn
                   });
                   await registrarLogin({ contexto: 'acceso_trabajadores', entidad: 'acceso_trabajadores', usuarioId: acceso.id, correo: login.correo, ok: true, ip: req.ip });
                   res.json({ token: token });

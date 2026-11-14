@@ -3,7 +3,15 @@ const Schema = require('./schema');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { registrarLogin } = require('../../../services/auditoria/login');
-process.env.SECRET_KEY = 'secret';
+const { expiraEn } = require('../../../config/auth');
+
+// Las respuestas nunca devuelven el hash de la contraseña del acceso laboral.
+const sinPassword = (acceso) => {
+    if (!acceso) return acceso;
+    const datos = typeof acceso.toJSON === 'function' ? acceso.toJSON() : Object.assign({}, acceso);
+    delete datos.password;
+    return datos;
+};
 
 const crearAccesoLaboral = async(req,res) => {
     let acceso_laboral = req.body.acceso_laboral
@@ -18,7 +26,7 @@ const crearAccesoLaboral = async(req,res) => {
     try{
         let respuesta = await logicaDB.crearAccesoLaboralDB(acceso_laboral)
         return res.status(200).json({
-            'acceso_laboral':respuesta
+            'acceso_laboral':sinPassword(respuesta)
         })
     }catch(error){
         console.log(error)
@@ -50,7 +58,7 @@ const obtenerAccesoLaboralPorIdTrabajador = async(req,res) => {
     try{
         let respuesta = await logicaDB.obtenerAccesoLaboralPorIdTrabajadorDB(id_trabajador)
         return res.status(200).json({
-            'acceso_laboral':respuesta
+            'acceso_laboral':sinPassword(respuesta)
         })
     }catch(error){
         console.log(error)
@@ -82,7 +90,6 @@ const login = async(req,res) => {
         let respuesta_trabajador;
         let respuesta = await logicaDB.loginDB(credenciales.correo);
         if(respuesta){
-            console.log(credenciales)
             // let acceso = await bcrypt.compare(credenciales.password, respuesta.password)
             if(bcrypt.compareSync(credenciales.password, respuesta.password)){
                 respuesta_trabajador = await logicaDB.obtenerTrabajadorPorIdDB(respuesta.trabajadoreId);
@@ -97,12 +104,12 @@ const login = async(req,res) => {
                         n_empleado:respuesta_trabajador.dataValues.n_empleado
                     }
                     let token = jwt.sign(datos_token, process.env.SECRET_KEY,{
-                        expiresIn:'1d'
+                        expiresIn:expiraEn
                     })
                     await registrarLogin({ contexto: 'acceso_trabajadores', entidad: 'accesos_laborales', usuarioId: respuesta.id, correo: credenciales.correo, ok: true, ip: req.ip });
                     let mensaje = "Bienvenido "+respuesta_trabajador.nombre+respuesta_trabajador.apellido
                     return res.status(200).json({
-                        'acceso_laboral':respuesta,
+                        'acceso_laboral':sinPassword(respuesta),
                         'token': token,
                         mensaje,
                         'estado': true
@@ -110,7 +117,7 @@ const login = async(req,res) => {
                 }else{
                     await registrarLogin({ contexto: 'acceso_trabajadores', entidad: 'accesos_laborales', usuarioId: respuesta.id, correo: credenciales.correo, ok: false, motivo: 'CUENTA_DESHABILITADA', ip: req.ip });
                     return res.status(200).json({
-                        'acceso_laboral':respuesta,
+                        'acceso_laboral':sinPassword(respuesta),
                         'mensaje': 'Trabajador No adminito',
                         'estado': false
                     })
@@ -118,7 +125,7 @@ const login = async(req,res) => {
             }else{
                 await registrarLogin({ contexto: 'acceso_trabajadores', entidad: 'accesos_laborales', usuarioId: respuesta.id, correo: credenciales.correo, ok: false, motivo: 'PASSWORD_INCORRECTA', ip: req.ip });
                 return res.status(200).json({
-                    'acceso_laboral':respuesta,
+                    'acceso_laboral':sinPassword(respuesta),
                     'mensaje': 'Contraseña invalida o usuario bloqueado',
                     'estado': false
                 })
@@ -145,7 +152,7 @@ const existeAccesoLaboral = async(req,res) => {
         let respuesta = await logicaDB.existeAccesoLaboralDB(id_trabajador)
         if(respuesta){
             return res.status(200).json({
-                'acceso_laboral':respuesta,
+                'acceso_laboral':sinPassword(respuesta),
                 'estado':true
             })
         }else{
