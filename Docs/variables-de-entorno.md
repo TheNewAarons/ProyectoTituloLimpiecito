@@ -30,6 +30,26 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `TRANSBANK_ENV` | `integration` (credenciales públicas de pruebas de Transbank) | `production` |
 | `TRANSBANK_COMMERCE_CODE`, `TRANSBANK_API_KEY` | Los de integración | Los reales, solo en el servidor |
 
+## Generar `SECRET_KEY` (obligatoria desde AUT-005)
+
+Sin `SECRET_KEY` el backend **no arranca** (`Falta la variable de entorno SECRET_KEY`). Cada ambiente (cada integrante y
+producción) genera **su propia** clave en su terminal, fuera de cualquier chat:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Pegar el resultado en `limpi_back/.env` junto con la duración de las sesiones:
+
+```
+SECRET_KEY=<los 64 caracteres generados>
+JWT_EXPIRES_IN=8h
+```
+
+- **Si ya tienes un `.env`:** `cp .env.example .env` no se vuelve a ejecutar, así que agrega estas dos líneas a mano.
+- **Cambiar la clave** cierra todas las sesiones (los tokens firmados con la anterior dejan de valer): en local no importa;
+  en producción hacerlo en una ventana de mantenimiento.
+
 ## Reglas
 
 - Nunca poner valores reales en `.env.example`, en commits, PR, logs ni chat.
