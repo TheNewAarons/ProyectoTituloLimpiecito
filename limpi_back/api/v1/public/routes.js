@@ -12,5 +12,6 @@ router.use(crearLimitePorIp());
 
 router.get('/documentos', asyncHandler(controlador.listar));
 router.get('/documentos/:id/descargar', asyncHandler(controlador.descargar));
+router.get('/publicaciones', asyncHandler(controlador.listarPublicaciones));
 
 module.exports = router;
