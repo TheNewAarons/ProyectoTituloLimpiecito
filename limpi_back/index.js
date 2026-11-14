@@ -311,6 +311,10 @@ app.use(process.env.PREFIJO + '/api/v1/bodega', BodegaV1);
 const FacturasV1 = require('./api/v1/facturas/routes');
 app.use(process.env.PREFIJO + '/api/v1', FacturasV1);
 
+// RNF-SEC-02: consulta de auditoría (solo lectura, solo Admin).
+const AuditoriaV1 = require('./api/v1/auditoria/routes');
+app.use(process.env.PREFIJO + '/api/v1/auditoria', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), AuditoriaV1);
+
 app.use(process.env.PREFIJO + '/api/v1', require('./middleware/errores').noEncontrado); // RNF-API-02: 404 JSON solo en /api/v1
 app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas
 

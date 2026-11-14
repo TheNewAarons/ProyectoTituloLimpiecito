@@ -2,6 +2,7 @@ const logicaDB = require('./logica')
 const Schema = require('./schema');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { registrarLogin } = require('../../../services/auditoria/login');
 process.env.SECRET_KEY = 'secret';
 
 const crearAccesoLaboral = async(req,res) => {
@@ -98,6 +99,7 @@ const login = async(req,res) => {
                     let token = jwt.sign(datos_token, process.env.SECRET_KEY,{
                         expiresIn:'1d'
                     })
+                    await registrarLogin({ contexto: 'acceso_trabajadores', entidad: 'accesos_laborales', usuarioId: respuesta.id, correo: credenciales.correo, ok: true, ip: req.ip });
                     let mensaje = "Bienvenido "+respuesta_trabajador.nombre+respuesta_trabajador.apellido
                     return res.status(200).json({
                         'acceso_laboral':respuesta,
@@ -106,6 +108,7 @@ const login = async(req,res) => {
                         'estado': true
                     })
                 }else{
+                    await registrarLogin({ contexto: 'acceso_trabajadores', entidad: 'accesos_laborales', usuarioId: respuesta.id, correo: credenciales.correo, ok: false, motivo: 'CUENTA_DESHABILITADA', ip: req.ip });
                     return res.status(200).json({
                         'acceso_laboral':respuesta,
                         'mensaje': 'Trabajador No adminito',
@@ -113,6 +116,7 @@ const login = async(req,res) => {
                     })
                 }
             }else{
+                await registrarLogin({ contexto: 'acceso_trabajadores', entidad: 'accesos_laborales', usuarioId: respuesta.id, correo: credenciales.correo, ok: false, motivo: 'PASSWORD_INCORRECTA', ip: req.ip });
                 return res.status(200).json({
                     'acceso_laboral':respuesta,
                     'mensaje': 'Contraseña invalida o usuario bloqueado',
@@ -121,6 +125,8 @@ const login = async(req,res) => {
             }
 
         }else{
+            // loginDB filtra estado:1, así que acceso deshabilitado también cae aquí (no distinguible de inexistente)
+            await registrarLogin({ contexto: 'acceso_trabajadores', entidad: 'accesos_laborales', usuarioId: null, correo: credenciales.correo, ok: false, motivo: 'USUARIO_NO_EXISTE', ip: req.ip });
             return res.status(200).json({
                 //'acceso_laboral':respuesta,
                 'mensaje': 'Credenciales invalidas',

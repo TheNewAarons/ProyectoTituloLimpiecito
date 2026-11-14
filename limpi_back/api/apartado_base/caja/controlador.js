@@ -1,6 +1,7 @@
 const logicaDB = require('./logica');
 const cajaService = require('../../../services/caja');
 const AppError = require('../../../libs/app-error');
+const { actorDeRequest } = require('../../../services/auditoria/actor');
 
 const crearCaja = async (req, res) => {
   const caja = JSON.parse(req.body.caja);
@@ -16,7 +17,7 @@ const crearCaja = async (req, res) => {
     usuarioId: caja.usuarioId
   };
   try {
-    let nueva_caja = await logicaDB.crearCajaDB(cajaData);
+    let nueva_caja = await logicaDB.crearCajaDB(cajaData, actorDeRequest(req));
     return res.json({ caja: nueva_caja });
   } catch (error) {
     return res.send('error' + error);
@@ -39,7 +40,7 @@ const editarCaja = async (req, res) => {
   try {
     let caja = await logicaDB.obtenerCajaIdDB(req.params.id);
     if (caja) {
-      let filas_update = await logicaDB.editarCajaDB(req.params.id, cajaData);
+      let filas_update = await logicaDB.editarCajaDB(req.params.id, cajaData, actorDeRequest(req));
       return res.json({ filas: filas_update });
     } else {
       return res.send('error: ' + error);
@@ -65,7 +66,7 @@ const editarCierraCaja = async (req, res) => {
   try {
     let caja = await logicaDB.obtenerCajaIdDB(req.params.id);
     if (caja) {
-      let filas_update = await logicaDB.editarCajaDB(req.params.id, cajaData);
+      let filas_update = await logicaDB.editarCajaDB(req.params.id, cajaData, actorDeRequest(req));
       return res.json({ filas: filas_update });
     } else {
       return res.send('error: ' + error);
