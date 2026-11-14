@@ -51,7 +51,7 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 | RNF-API-02 | Manejo centralizado de errores en backend | Transversal | 🟠 Media-Alta | M | Refactor | 8 | — | Sin empezar |
 | RNF-UX-01 | Usabilidad móvil en dashboard de bodega y BI | Transversal | 🟡 Media | M | Mejora | 8 | BOD-05, BI-01 | Sin empezar |
 | RNF-BI-01 | Rendimiento de dashboards BI < 2 s de carga inicial | Transversal | 🟡 Media | M | Mejora | 8 | BI-01..03 | Sin empezar |
-| RNF-SEC-02 | Trazabilidad/auditoría de cambios en caja y bodega | Transversal | 🟠 Media-Alta | M | Feature nueva | 8 | — | Sin empezar |
+| RNF-SEC-02 | Trazabilidad/auditoría de cambios en caja y bodega | Transversal | 🟠 Media-Alta | M | Feature nueva | 8 | — | Implementado – pendiente verificación/PR |
 
 > El orden de **implementación técnica** recomendado (sección 4) adelanta una base mínima de RNF-API-01, RNF-API-02 y RNF-SEC-01, porque todos los endpoints nuevos dependen de ella. Esto no altera el cronograma académico de sprints; sólo evita tener que migrar dos veces el código nuevo.
 
@@ -704,6 +704,14 @@ Primero verificar en Fase 0 cuántos datos históricos tiene `reservas`; si son 
 4. Endpoint de consulta sólo Admin: `GET /api/v1/auditoria?entidad=&entidad_id=&usuario_id=&desde=&hasta=` paginado.
 5. La auditoría no se puede editar ni borrar desde la aplicación.
 **Criterios:** [ ] Es posible responder "quién cambió qué y cuándo" para cualquier movimiento de caja o bodega. [ ] Un fallo de auditoría hace rollback de la operación.
+
+**Estado (2026-11-13, rama `refactor/RNF-SEC-02-auditoria-completa-aaron`, sin commit ni PR):**
+- [x] Punto 4: `GET /api/v1/auditoria` y `/:id`, solo Admin, paginado, filtros `entidad`/`entidad_id`/`usuario_id`/`contexto_usuario`/`accion`/`desde`/`hasta` (ver `Docs/API_V1.md`).
+- [x] Punto 5: la app no expone verbos de escritura sobre `auditoria` (solo 2 `GET`; el modelo rechaza `update`/`destroy`).
+- [x] Punto 3 (lo agregado en esta rama; el resto ya estaba auditado por RF-CAJA-01/02, RF-FAC-01 y RF-BOD-01..04): inicios de sesión exitosos y fallidos en los 6 logins; legacy de caja, egresos, liquidaciones, `cc_ingresos`/`cc_egresos`, listas de insumo y `stock_rapido` auditados dentro de la transacción de la operación (matriz en `TASK_PLAN.md`; "arqueo" no existe, D-072).
+- [ ] Criterio 1 ("quién cambió qué y cuándo"): cubierto por tests automatizados con mocks (`npm test`: 553 verdes); pendiente verificarlo en pruebas con datos reales.
+- [ ] Criterio 2 (rollback ante fallo de auditoría): cubierto por tests con mocks de `sequelize.transaction`; **pendiente** verificación local contra MySQL real (D-085).
+- Fuera de alcance, no corregido: H-SEC-07 (solo auditado) y H-SEC-08 (`console.log(token)`, RNF-SEC-01). Sin migración nueva.
 
 ### RNF-BI-01 · Rendimiento de dashboards < 2 s
 **Prioridad:** 🟡 Media · **Esfuerzo:** M (2 pts)
