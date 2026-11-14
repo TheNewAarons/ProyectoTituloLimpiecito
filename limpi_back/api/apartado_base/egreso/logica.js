@@ -10,9 +10,24 @@ const Egreso = require('../../../modelos/sistema_base/Egreso')
 Egreso.belongsTo(Caja);
 Egreso.belongsTo(Usuario);
 
-const crearEgresoDB = async(egreso) => {
-    let respuesta = await Egreso.create(egreso)
-    return respuesta
+const crearEgresoDB = async(egreso, ctx) => {
+    const contexto = ctx || {}
+    const usuario = contexto.usuario || { id: null, contexto: 'sistema' }
+    const motivo = contexto.motivoSinToken || null
+    return db.sequelize.transaction(async (t) => {
+        const creado = await Egreso.create(egreso, { transaction: t })
+        await auditar({
+            transaction: t,
+            usuario,
+            entidad: 'egresos',
+            entidad_id: creado.id,
+            accion: 'CREAR',
+            despues: creado,
+            motivo,
+            ip: contexto.ip
+        })
+        return creado
+    })
 }
 
 // RF-CAJA-01 (E5): los egresos no se borran fisicamente; se anulan (estado -1) en una transaccion con

@@ -63,4 +63,9 @@ router.get('/movimientos', admin, asyncHandler(recepcionBodega.listarMovimientos
 router.get('/ordenes-compra', admin, asyncHandler(recepcionBodega.listarOrdenes));
 router.get('/ordenes-compra/:id/recepcion', admin, asyncHandler(recepcionBodega.detalleRecepcion));
 
+// RF-BOD-05: dashboard de bodega y stock mínimo (Admin y Operaciones).
+const dashboardBodega = require('./dashboard-controlador');
+router.get('/dashboard', admin, asyncHandler(dashboardBodega.obtener));
+router.patch('/productos/:id/stock-minimo', admin, asyncHandler(dashboardBodega.actualizarStockMinimo));
+
 module.exports = router;

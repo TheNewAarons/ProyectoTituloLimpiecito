@@ -9,6 +9,8 @@ const Cliente = require('../../../modelos/sistema_base/Cliente');
 const CentroCostoTrabajador = require('../../../modelos/sistema_base/Centro_costo_trabajadore');
 
 const { Op } = require('sequelize');
+const db = require('../../../database/database');
+const { auditar } = require('../../../services/auditoria');
 
 /** RELACIONES   */
 CentroCostoTrabajador.belongsTo(Liquidacion);
@@ -19,24 +21,84 @@ CentroCostoTrabajador.belongsTo(Centro, { as: 'centro_costo' });
 CentroCostoTrabajador.belongsTo(Trabajador);
 Centro.belongsTo(Cliente);
 
-const crearLiquidacionDB = async (liquidacion) => {
-  let respuesta = await Liquidacion.create(liquidacion);
-  return respuesta;
+const crearLiquidacionDB = async (liquidacion, idCentroTrabajador, ctx) => {
+  const contexto = ctx || {};
+  const usuario = contexto.usuario || { id: null, contexto: 'sistema' };
+  const motivo = contexto.motivoSinToken || null;
+  return db.sequelize.transaction(async (t) => {
+    const creada = await Liquidacion.create(liquidacion, { transaction: t });
+    await editarCentroTrabajadorDB(creada.id, idCentroTrabajador, t);
+    await auditar({
+      transaction: t,
+      usuario,
+      entidad: 'liquidaciones',
+      entidad_id: creada.id,
+      accion: 'CREAR',
+      despues: creada,
+      motivo,
+      ip: contexto.ip
+    });
+    return creada;
+  });
 };
 
-const editarCentroTrabajadorDB = async(id_liquidacion,idCentroTrabajador) => {
-  let respuesta = await CentroCostoTrabajador.update({ liquidacioneId: id_liquidacion }, { where: { id:idCentroTrabajador } });
+const editarCentroTrabajadorDB = async(id_liquidacion,idCentroTrabajador, t) => {
+  let respuesta = await CentroCostoTrabajador.update({ liquidacioneId: id_liquidacion }, { where: { id:idCentroTrabajador }, transaction: t });
   return respuesta
 }
 
-const editarLiquidacionDB = async (id, liquidacion) => {
-  let respuesta = await Liquidacion.update(liquidacion, { where: { id } });
-  return respuesta;
+const editarLiquidacionDB = async (id, liquidacion, ctx) => {
+  const contexto = ctx || {};
+  const usuario = contexto.usuario || { id: null, contexto: 'sistema' };
+  const motivo = contexto.motivoSinToken || null;
+  return db.sequelize.transaction(async (t) => {
+    const existente = await Liquidacion.findById(id, { transaction: t, lock: t.LOCK.UPDATE });
+    if (!existente) {
+      return Liquidacion.update(liquidacion, { where: { id }, transaction: t });
+    }
+    const antes = existente.get({ plain: true });
+    const actualizadas = await Liquidacion.update(liquidacion, { where: { id }, transaction: t });
+    const despues = await Liquidacion.findById(id, { transaction: t });
+    await auditar({
+      transaction: t,
+      usuario,
+      entidad: 'liquidaciones',
+      entidad_id: id,
+      accion: 'EDITAR',
+      antes,
+      despues,
+      motivo,
+      ip: contexto.ip
+    });
+    return actualizadas;
+  });
 };
 
-const cerrarLiquidacionDB = async (id) => {
-  let respuesta = await Liquidacion.update({ estado: 0 }, { where: { id } });
-  return respuesta;
+const cerrarLiquidacionDB = async (id, ctx) => {
+  const contexto = ctx || {};
+  const usuario = contexto.usuario || { id: null, contexto: 'sistema' };
+  const motivo = ['CIERRE_LIQUIDACION_LEGACY', contexto.motivoSinToken].filter(Boolean).join(' ') || null;
+  return db.sequelize.transaction(async (t) => {
+    const existente = await Liquidacion.findById(id, { transaction: t, lock: t.LOCK.UPDATE });
+    if (!existente) {
+      return Liquidacion.update({ estado: 0 }, { where: { id }, transaction: t });
+    }
+    const antes = existente.get({ plain: true });
+    const actualizadas = await Liquidacion.update({ estado: 0 }, { where: { id }, transaction: t });
+    const despues = await Liquidacion.findById(id, { transaction: t });
+    await auditar({
+      transaction: t,
+      usuario,
+      entidad: 'liquidaciones',
+      entidad_id: id,
+      accion: 'EDITAR',
+      antes,
+      despues,
+      motivo,
+      ip: contexto.ip
+    });
+    return actualizadas;
+  });
 };
 
 const obtenerLiquidacionIdDB = async (id_liquidacion) => {

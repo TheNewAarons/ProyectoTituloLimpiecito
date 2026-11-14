@@ -21,7 +21,8 @@ jest.mock('../../database/database', () => ({
   sequelize: {
     where: jest.fn((a, b) => ({ __where: true, a, b })),
     fn: jest.fn((name, col) => ({ __fn: name, col })),
-    col: jest.fn((c) => ({ __col: c }))
+    col: jest.fn((c) => ({ __col: c })),
+    define: jest.fn(() => ({}))
   }
 }));
 jest.mock('../../services/liquidaciones/pago', () => ({

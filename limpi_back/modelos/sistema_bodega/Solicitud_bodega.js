@@ -51,6 +51,11 @@ module.exports = db.sequelize.define(
             type: Sequelize.DATE,
             allowNull: true
         },
+        // RF-BOD-04: lista_insumos que registró el consumo al entregar (migración 20261110000953)
+        lista_insumo_id:{
+            type: Sequelize.INTEGER,
+            allowNull: true
+        },
         anulada_at:{
             type: Sequelize.DATE,
             allowNull: true

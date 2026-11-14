@@ -4,7 +4,7 @@
  */
 jest.mock('../../api/apartado_base/caja/logica', () => ({ obtenerCajaIdDB: jest.fn() }));
 jest.mock('../../services/caja', () => ({ cerrarMes: jest.fn() }));
-jest.mock('../../middleware/auth', () => ({ autenticar: function autenticar() {}, requerirRol: function requerirRol() { return function rol() {}; } }));
+jest.mock('../../middleware/auth', () => ({ autenticar: function autenticar() {}, requerirRol: function requerirRol() { return function rol() {}; }, identificarOpcional: function identificarOpcional() {} }));
 
 const logicaDB = require('../../api/apartado_base/caja/logica');
 const cajaService = require('../../services/caja');

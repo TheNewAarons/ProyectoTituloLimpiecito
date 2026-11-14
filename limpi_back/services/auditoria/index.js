@@ -7,22 +7,63 @@ const Auditoria = require('../../modelos/sistema_base/Auditoria');
 const AppError = require('../../libs/app-error');
 
 const CONTEXTOS_VALIDOS = ['usuarios', 'acceso_clientes', 'acceso_trabajadores', 'usuario_apps', 'sistema'];
-const CLAVES_SENSIBLES = ['password', 'contrasena', 'contrasenia', 'token', 'pass'];
+
+// D-077: detección por SEGMENTO de clave (no coincidencia exacta de primer nivel). Antes de probar
+// se separa camelCase (passwordHash -> password_Hash) y se normalizan guiones/espacios como '_'
+// (x-access-token -> x_access_token). El límite derecho también admite dígitos para cubrir
+// password1/resetToken2; por eso 'password1' y 'tokens2' quedan protegidos.
+const PATRON_SENSIBLE = /(^|_)(pass|password|passwd|pwd|contrasena|contrasenia|contraseña|token|tokens|secret|clave|hash|authorization|jwt|apikey|key|resettoken)(_|[0-9]|$)/i;
 
 /**
- * Quita claves sensibles de un objeto plano (no recursivo: suficiente para los modelos usados aquí).
- * @param {object|null} objeto
- * @returns {object|null}
+ * Inserta `_` entre segmentos camelCase para que el patrón por segmento detecte claves compuestas
+ * (passwordHash -> password_Hash, resetToken -> reset_Token, HTTPToken -> HTTP_Token).
+ * @param {string} clave
+ * @returns {string}
  */
-function limpiarSensibles(objeto) {
-  if (!objeto || typeof objeto !== 'object') return objeto;
-  const limpio = {};
-  Object.keys(objeto).forEach(function (clave) {
-    if (CLAVES_SENSIBLES.indexOf(clave.toLowerCase()) === -1) {
-      limpio[clave] = objeto[clave];
-    }
-  });
-  return limpio;
+function separarCamelCase(clave) {
+  return String(clave)
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1_$2');
+}
+
+/**
+ * @param {string} clave
+ * @returns {boolean} true si la clave (por segmento) es sensible
+ */
+function claveSensible(clave) {
+  return PATRON_SENSIBLE.test(separarCamelCase(clave).replace(/[-\s]/g, '_'));
+}
+
+/**
+ * Quita claves sensibles de un objeto/array en CUALQUIER profundidad (D-077). Detecta ciclos
+ * (reemplaza por '[Circular]', sin lanzar), conserva Date y tipos no-objeto, aplana instancias
+ * Sequelize anidadas con `.get({ plain: true })` y tolera null/undefined.
+ * @param {*} valor
+ * @param {Set} [enCamino] objetos ya visitados en el camino actual (detección de ciclos)
+ * @returns {*}
+ */
+function limpiarSensibles(valor, enCamino) {
+  if (valor === null || valor === undefined) return valor;
+  if (typeof valor !== 'object') return valor;
+  if (valor instanceof Date) return valor;
+  if (typeof valor.get === 'function') {
+    valor = valor.get({ plain: true });
+    if (valor === null || valor === undefined) return valor;
+    if (typeof valor !== 'object') return valor;
+  }
+  enCamino = enCamino || new Set();
+  if (enCamino.has(valor)) return '[Circular]';
+  enCamino.add(valor);
+
+  const resultado = Array.isArray(valor)
+    ? valor.map(function (item) { return limpiarSensibles(item, enCamino); })
+    : Object.keys(valor).reduce(function (acc, clave) {
+        if (!claveSensible(clave)) acc[clave] = limpiarSensibles(valor[clave], enCamino);
+        return acc;
+      }, {});
+
+  enCamino.delete(valor);
+  return resultado;
 }
 
 /**
@@ -44,7 +85,12 @@ function aPlanoLimpio(valor) {
  * @param {{id: (number|null), contexto: string}} params.usuario usuario que ejecuta la acción (id null = sistema/cron)
  * @param {string} params.entidad nombre real de la tabla afectada (ej. 'cajas', 'liquidaciones')
  * @param {string|number} [params.entidad_id] id o periodo de la fila afectada
- * @param {string} params.accion 'CREAR' | 'EDITAR' | 'PAGO' | 'REVERSION_PAGO' | 'ANULAR' | 'CIERRE' | 'REAPERTURA' | 'RECALCULO' | 'LOGIN_OK' | 'LOGIN_FALLIDO' | 'ENVIAR' | 'REENVIAR' | 'ENVIAR_FALLIDO' (RF-BOD-03)
+ * @param {string} params.accion acción registrada. Conjunto usado hoy por el código:
+ *   'CREAR' | 'EDITAR' | 'ANULAR' | 'PAGO' | 'REVERSION_PAGO' | 'CIERRE' | 'REAPERTURA' |
+ *   'RECALCULO' | 'RECALCULO_CASCADA' | 'CRUCE_STOCK' | 'REVERSA_STOCK' | 'RECEPCION' |
+ *   'ASIGNACION_RECEPCION' | 'ENTREGA' | 'ENVIAR' | 'REENVIAR' | 'ENVIAR_FALLIDO' | 'AJUSTE'.
+ *   De auth (services/auditoria/login.js): 'LOGIN_OK' | 'LOGIN_FALLIDO'.
+ *   (No hay validación de valor: la lista es solo documentación de convención.)
  * @param {object|null} [params.antes] instancia u objeto plano previo al cambio
  * @param {object|null} [params.despues] instancia u objeto plano posterior al cambio
  * @param {string} [params.motivo]
@@ -94,5 +140,7 @@ async function auditar(params) {
 }
 
 module.exports = {
-  auditar: auditar
+  auditar: auditar,
+  limpiarSensibles: limpiarSensibles,
+  CONTEXTOS_VALIDOS: CONTEXTOS_VALIDOS
 };

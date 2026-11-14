@@ -1,5 +1,7 @@
 const Op = require('sequelize').Op;
 const { EGRESO_ANULADO } = require('../../../services/constantes');
+const db = require('../../../database/database');
+const { auditar } = require('../../../services/auditoria');
 const Caja = require('../../../modelos/sistema_base/Caja');
 const Centro = require('../../../modelos/sistema_base/Centro_costo');
 const Cliente = require('../../../modelos/sistema_base/Cliente');
@@ -23,14 +25,51 @@ Centro.hasMany(Ccegreso);
 Lista_insumo.hasMany(Linea_insumo);
 Linea_insumo.belongsTo(Producto);
 
-const crearCajaDB = async(caja) => {
-    let respuesta = await Caja.create(caja)
-    return respuesta
+const crearCajaDB = async(caja, ctx) => {
+    const contexto = ctx || {}
+    const usuario = contexto.usuario || { id: null, contexto: 'sistema' }
+    const motivo = contexto.motivoSinToken || null
+    return db.sequelize.transaction(async (t) => {
+        const creada = await Caja.create(caja, { transaction: t })
+        await auditar({
+            transaction: t,
+            usuario,
+            entidad: 'cajas',
+            entidad_id: creada.id,
+            accion: 'CREAR',
+            despues: creada,
+            motivo,
+            ip: contexto.ip
+        })
+        return creada
+    })
 }
 
-const editarCajaDB = async(id, caja) => {
-    let respuesta = await Caja.update(caja, { where: { id } })
-    return respuesta
+const editarCajaDB = async(id, caja, ctx) => {
+    const contexto = ctx || {}
+    const usuario = contexto.usuario || { id: null, contexto: 'sistema' }
+    const motivo = contexto.motivoSinToken || null
+    return db.sequelize.transaction(async (t) => {
+        const existente = await Caja.findById(id, { transaction: t, lock: t.LOCK.UPDATE })
+        if (!existente) {
+            return Caja.update(caja, { where: { id }, transaction: t })
+        }
+        const antes = existente.get({ plain: true })
+        const actualizadas = await Caja.update(caja, { where: { id }, transaction: t })
+        const despues = await Caja.findById(id, { transaction: t })
+        await auditar({
+            transaction: t,
+            usuario,
+            entidad: 'cajas',
+            entidad_id: id,
+            accion: 'EDITAR',
+            antes,
+            despues,
+            motivo,
+            ip: contexto.ip
+        })
+        return actualizadas
+    })
 }
 
 const obtenerTodasCajasdetalleDB = async() => {
