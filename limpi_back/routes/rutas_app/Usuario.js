@@ -9,6 +9,7 @@ const Op = Sequelize.Op;
 const atob = require('atob');
 
 const Usuario = require('../../modelos/sist_app/Usuario_app');
+const { expiraEn } = require('../../config/auth');
 
 //REGISTRAR USUARIO 
 usuarios.post('/registro', (req, res) => {
@@ -22,7 +23,6 @@ usuarios.post('/registro', (req, res) => {
     celular: usuario.celular,
     estado: usuario.estado
   };
-  console.log(usuario);
   Usuario.findOne({
     where: {
       correo: usuario.correo
@@ -42,7 +42,7 @@ usuarios.post('/registro', (req, res) => {
               direccion_op: usuario.dataValues.direccion_op,
               celular: usuario.dataValues.celular
             };
-            let token = jwt.sign(usuarioToken, process.env.SECRET_KEY);
+            let token = jwt.sign(usuarioToken, process.env.SECRET_KEY, { expiresIn: expiraEn });
             res.json({
               usuarioToken: usuarioToken,
               token: token

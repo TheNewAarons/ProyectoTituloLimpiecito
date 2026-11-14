@@ -100,13 +100,13 @@ export class LoginService {
     return this.http.post(this.url_backend+"/recuperar/recuperar-password",{correo});
   }
 
-  cambiarPass(id, correo, pass, newPass){
-    return this.http.post(this.url_backend+"/recuperar/cambiar-password",{id,correo,pass,newPass})
-  } 
+  cambiarPass(token, newPass){
+    return this.http.post(this.url_backend+"/recuperar/cambiar-password",{token,newPass})
+  }
 
   /** RECUPERAR CONTRASEÑA USUARIO APP */
-  cambiarPasApp(id,correo, pass, newPass){
-    return this.http.post(this.url_backend_app+"/app_lim/recuperar/cambiar-password",{id,correo,pass,newPass})
+  cambiarPasApp(token, newPass){
+    return this.http.post(this.url_backend_app+"/app_lim/recuperar/cambiar-password",{token,newPass})
   }
 
 

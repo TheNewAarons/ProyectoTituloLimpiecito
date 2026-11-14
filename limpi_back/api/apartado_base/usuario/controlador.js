@@ -4,7 +4,7 @@ const { registrarLogin } = require('../../../services/auditoria/login');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const atob = require('atob');
-process.env.SECRET_KEY = 'secret';
+const { expiraEn } = require('../../../config/auth');
 
 const crearUsuario = async (req, res) => {
   const usuario = JSON.parse(req.body.usuario);
@@ -92,10 +92,12 @@ const login = async (req, res) => {
     if(usuario){
         if (bcrypt.compareSync(usuario1.password, usuario.password)) {
             await registrarLogin({ contexto: 'usuarios', entidad: 'usuarios', usuarioId: usuario.id, correo: usuario1.correo, ok: true, ip: req.ip });
-            let token = jwt.sign(usuario.dataValues, process.env.SECRET_KEY, {
-              expiresIn: '1d'
+            // El token se puede leer sin la clave: lleva todo lo que usa el front (id, role, ...) menos el hash.
+            const datosToken = Object.assign({}, usuario.dataValues);
+            delete datosToken.password;
+            let token = jwt.sign(datosToken, process.env.SECRET_KEY, {
+              expiresIn: expiraEn
             });
-            console.log(token)
             return res.json({ token });
           } else {
             await registrarLogin({ contexto: 'usuarios', entidad: 'usuarios', usuarioId: usuario.id, correo: usuario1.correo, ok: false, motivo: 'PASSWORD_INCORRECTA', ip: req.ip });

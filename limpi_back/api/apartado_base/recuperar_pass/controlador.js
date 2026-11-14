@@ -4,15 +4,15 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 const atob = require('atob');
+const recuperacion = require('../../../services/seguridad/recuperacion');
+const Usuario = require('../../../modelos/sistema_base/Usuario');
 
 const recuperarPassword = async (req, res) => {
   let correo = req.body.correo;
   try {
     let usuario = await logicaDB.buscarUsuarioCorreoDB(correo);
     if (usuario) {
-      let token = jwt.sign(usuario.dataValues, process.env.SECRET_KEY, {
-        expiresIn: '1h'
-      });
+      let token = recuperacion.firmar(usuario, recuperacion.PROPOSITO.USUARIO);
       // let url = "http://localhost:4200/#/sistema/recuperar-password/"+token
       let url = 'https://www.minda.aseolimpiecito.cl/#/sistema/recuperar-password/' + token;
       const transporter = nodemailer.createTransport({
@@ -45,22 +45,21 @@ const recuperarPassword = async (req, res) => {
 };
 
 const cambiarPassword = async (req, res) => {
-  let correo = req.body.correo;
-  let id = req.body.id;
-  let pass = req.body.pass;
-  let newPass = atob(req.body.newPass);
+  // Solo vale el token del correo; id/correo/pass del body se ignoran (antes permitían cambiar la de otro usuario).
+  let newPass = typeof req.body.newPass === 'string' ? atob(req.body.newPass) : '';
+  if (!newPass) return res.json({ mensaje: 'Debes ingresar la nueva contraseña' });
   try {
-    let usuario = await logicaDB.buscarUsuarioCorreoPassDB(correo, pass);
+    let usuario = await recuperacion.verificar(req.body.token, recuperacion.PROPOSITO.USUARIO, Usuario);
     if (usuario) {
       const hash = bcrypt.hashSync(newPass, 10);
-      const filas = await logicaDB.cambiarPassUsuarioDB(id, hash);
+      const filas = await logicaDB.cambiarPassUsuarioDB(usuario.id, hash);
       if (filas > 0) {
         return res.json({ filas, mensaje: 'Contraseña editada correctamente' });
       } else {
         return res.json({ mensaje: 'Ha ocurrido un problema' });
       }
     } else {
-      return res.json({ mensaje: 'Ha ocurrido un problema con la edición' });
+      return res.json({ mensaje: 'El enlace no es válido, ya se usó o expiró. Solicita uno nuevo.' });
     }
   } catch (error) {
     return res.send('error: ' + error);
