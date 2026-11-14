@@ -3,8 +3,8 @@
  * Entregar NO mueve stock (ya se descontó en el cruce o en la recepción): registra el consumo en el
  * centro de costo con los modelos Lista_insumo/Linea_insumo, sin disminuirCantidadProductoDB del legacy.
  * La lista nace aprobada (estado 1): una lista en 0 impide cerrar el centro de costo (ver-centro.verificarCierre).
- * `solicitudes_bodega.lista_insumo_id` se lee/escribe con SQL parametrizado: no está en el modelo para no
- * romper consultas en ambientes sin la migración 20261110000953 (ni el test del modelo).
+ * `solicitudes_bodega.lista_insumo_id` se lee/escribe con el modelo Solicitud_bodega (AUT-002); requiere
+ * la migración 20261110000953 aplicada antes de desplegar el código.
  */
 
 const Sequelize = require('sequelize');
@@ -53,9 +53,8 @@ async function lineasConPrecio(items, transaction) {
 }
 
 async function listaInsumoId(id, transaction) {
-  const filas = await db.sequelize.query('SELECT lista_insumo_id FROM solicitudes_bodega WHERE id = :id',
-    { replacements: { id: id }, type: Sequelize.QueryTypes.SELECT, transaction: transaction });
-  return filas.length ? filas[0].lista_insumo_id : null;
+  const solicitud = await Solicitud.findById(id, { attributes: ['id', 'lista_insumo_id'], transaction: transaction });
+  return solicitud ? solicitud.lista_insumo_id : null;
 }
 
 /**
@@ -74,7 +73,8 @@ async function entregar(id, usuario, ip) {
     if (s.estado !== E.LISTA_ENTREGA) {
       throw new AppError('ESTADO_NO_PERMITE_ENTREGA', 'solo se entrega una solicitud LISTA_ENTREGA (esta en ' + s.estado + ')', 409, { estado: s.estado });
     }
-    if (await listaInsumoId(s.id, t)) {
+    // Anti doble entrega dentro de la transacción: `s` ya está bloqueada (FOR UPDATE).
+    if (s.lista_insumo_id) {
       throw new AppError('YA_ENTREGADA', 'la solicitud ya tiene su consumo registrado', 409, { id: s.id });
     }
     const centro = await Centro.findById(s.centro_costo_id, { attributes: ['id', 'estado'], transaction: t, lock: t.LOCK.SHARE });
@@ -95,9 +95,7 @@ async function entregar(id, usuario, ip) {
     }
 
     const antes = s.get({ plain: true });
-    await s.update({ estado: E.ENTREGADA, entregada_at: ahora }, { transaction: t });
-    await db.sequelize.query('UPDATE solicitudes_bodega SET lista_insumo_id = :lista WHERE id = :id',
-      { replacements: { lista: lista.id, id: s.id }, transaction: t });
+    await s.update({ estado: E.ENTREGADA, entregada_at: ahora, lista_insumo_id: lista.id }, { transaction: t });
     await auditar({
       transaction: t, usuario: usuario, entidad: 'solicitudes_bodega', entidad_id: s.id, accion: 'ENTREGA',
       antes: antes, despues: { estado: E.ENTREGADA, entregada_at: ahora, lista_insumo_id: lista.id, total: total, lineas: lineas }, ip: ip
