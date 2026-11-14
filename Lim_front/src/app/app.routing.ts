@@ -72,6 +72,12 @@ export const AppRoutes: Routes = [
         canActivate: [ArchivoGuardService,LvlAppGuardService],
         loadChildren: './component/recepcion-bodega/recepcion-bodega.module#RecepcionBodegaModule'
       },
+      // RF-BOD-05: home de bodega ('/bodega' redirige a '/bodega/inicio'; mismos guards que Bodega)
+      {
+        path: '',
+        canActivate: [ArchivoGuardService,LvlAppGuardService],
+        loadChildren: './component/bodega-inicio/bodega-inicio.module#BodegaInicioModule'
+      },
       {
         path: '',
         canActivate:[LvlAppGuardService],

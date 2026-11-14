@@ -26,6 +26,12 @@ const Producto = db.sequelize.define(
         stock:{
             type: Sequelize.INTEGER
         },
+        // RF-BOD-05: alerta del dashboard si stock_minimo > 0 y stock <= stock_minimo (migración 20261113162840)
+        stock_minimo:{
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            defaultValue: 0
+        },
         precio:{
             type: Sequelize.INTEGER
         },
