@@ -1,5 +1,6 @@
 const logicaDB = require('./logica')
 const AppError = require('../../../libs/app-error')
+const { actorDeRequest } = require('../../../services/auditoria/actor')
 
 const crearEgreso = async (req, res) => {
     const egreso = JSON.parse(req.body.egreso);
@@ -13,7 +14,7 @@ const crearEgreso = async (req, res) => {
         cajaId: egreso.cajaId
     };
     try {
-        let egreso = await logicaDB.crearEgresoDB(egresoData)
+        let egreso = await logicaDB.crearEgresoDB(egresoData, actorDeRequest(req))
         return res.json({mensaje:'Listo'})
 
     } catch (error) {

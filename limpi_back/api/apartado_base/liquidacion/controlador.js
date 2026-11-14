@@ -1,4 +1,5 @@
 const logicaDB = require('./logica')
+const { actorDeRequest } = require('../../../services/auditoria/actor')
 
 const crearLiquidacion = async (req, res) => {
     const liquidacion = JSON.parse(req.body.liquidacion);
@@ -46,9 +47,8 @@ const crearLiquidacion = async (req, res) => {
         //centroCostoTrabajadoreId: liquidacion.centroCostoTrabajadoreId,
     };
     try {
-        let liquidacion_creado = await logicaDB.crearLiquidacionDB(liquidacionData)
+        let liquidacion_creado = await logicaDB.crearLiquidacionDB(liquidacionData, req.params.idCentroTrabajador, actorDeRequest(req))
         // console.log(liquidacion)
-        await logicaDB.editarCentroTrabajadorDB(liquidacion_creado.id,req.params.idCentroTrabajador)
         return res.json({ liquidacion })
 
     } catch (error) {
@@ -101,7 +101,7 @@ const editarLiquidacion = async (req, res) => {
         //centroCostoTrabajadoreId: liquidacion.centroCostoTrabajadoreId,
     };
     try {
-        let filas = await logicaDB.editarLiquidacionDB(req.params.id, liquidacionData)
+        let filas = await logicaDB.editarLiquidacionDB(req.params.id, liquidacionData, actorDeRequest(req))
         return res.json({ filas })
     } catch (error) {
         return res.send('error')
@@ -110,7 +110,7 @@ const editarLiquidacion = async (req, res) => {
 
 const cerrarLiquidacion = async(req,res) => {
     try {
-        let filas = await logicaDB.cerrarLiquidacionDB(req.params.id)
+        let filas = await logicaDB.cerrarLiquidacionDB(req.params.id, actorDeRequest(req))
         return res.json({ filas })
     } catch (error) {
         return res.send('error')

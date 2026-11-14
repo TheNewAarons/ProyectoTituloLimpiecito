@@ -6,34 +6,36 @@ Stock.belongsTo(Producto, { as: 'producto' });
 
 /** PERTENECE A PRODUCTO */
 
-const aumentarCantidadProductoDB = async(id,cantidad) => {
+const aumentarCantidadProductoDB = async(id,cantidad,t) => {
     let respuesta = await Producto.increment('stock', {
         by:cantidad,
-        where: {id}
+        where: {id},
+        transaction: t
       });
     return respuesta
 }
 
-const disminuirCantidadProductoDB = async(id,cantidad) => {
+const disminuirCantidadProductoDB = async(id,cantidad,t) => {
     let respuesta = await Producto.decrement('stock', {
         by:cantidad,
-        where: {id}
+        where: {id},
+        transaction: t
       });
     return respuesta
 }
 
-const crearStockDB = async(stock) => {
-    let respuesta = await Stock.create(stock)
+const crearStockDB = async(stock,t) => {
+    let respuesta = await Stock.create(stock, { transaction: t })
     return respuesta
 }
 
-const buscarStockIdDB = async(id) => {
-    let respuesta = await Stock.findById(id)
+const buscarStockIdDB = async(id,t) => {
+    let respuesta = await Stock.findById(id, { transaction: t })
     return respuesta
 }
 
-const eliminarStockDB = async(id) => {
-    let respuesta = await Stock.destroy({ where: { id } })
+const eliminarStockDB = async(id,t) => {
+    let respuesta = await Stock.destroy({ where: { id }, transaction: t })
     return respuesta
 }
 
