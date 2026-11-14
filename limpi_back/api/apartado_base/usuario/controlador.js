@@ -1,4 +1,5 @@
 const logicaDB = require('./logica');
+const { registrarLogin } = require('../../../services/auditoria/login');
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -90,15 +91,19 @@ const login = async (req, res) => {
     let usuario = await logicaDB.buscarUsuarioCorreoTrueDB(usuario1.correo)
     if(usuario){
         if (bcrypt.compareSync(usuario1.password, usuario.password)) {
+            await registrarLogin({ contexto: 'usuarios', entidad: 'usuarios', usuarioId: usuario.id, correo: usuario1.correo, ok: true, ip: req.ip });
             let token = jwt.sign(usuario.dataValues, process.env.SECRET_KEY, {
               expiresIn: '1d'
             });
             console.log(token)
             return res.json({ token });
           } else {
+            await registrarLogin({ contexto: 'usuarios', entidad: 'usuarios', usuarioId: usuario.id, correo: usuario1.correo, ok: false, motivo: 'PASSWORD_INCORRECTA', ip: req.ip });
             return res.send('Contraseña Incorrecta!');
           }
     }else{
+        // estado != true también cae aquí (buscarUsuarioCorreoTrueDB filtra estado:true), no distinguible de inexistente
+        await registrarLogin({ contexto: 'usuarios', entidad: 'usuarios', usuarioId: null, correo: usuario1.correo, ok: false, motivo: 'USUARIO_NO_EXISTE', ip: req.ip });
         return res.send('Usuario no existe!');
     }
   } catch (error) {

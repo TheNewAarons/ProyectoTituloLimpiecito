@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const atob = require('atob')
 const nodemailer = require('nodemailer');
+const { registrarLogin } = require('../../services/auditoria/login');
 
 const inicioSesion = async(req,res) => {
     const acceso = req.body
@@ -14,11 +15,14 @@ const inicioSesion = async(req,res) => {
                 let token = jwt.sign(existe.dataValues, process.env.SECRET_KEY,{
                     expiresIn:'7d'
                 })
+                await registrarLogin({ contexto: 'acceso_clientes', entidad: 'acceso_clientes', usuarioId: existe.id, correo: acceso.correo, ok: true, ip: req.ip });
                 return res.status(200).json({error:false,token,mensaje:'Acceso Correcto'})
             }else{
+                await registrarLogin({ contexto: 'acceso_clientes', entidad: 'acceso_clientes', usuarioId: existe.id, correo: acceso.correo, ok: false, motivo: 'PASSWORD_INCORRECTA', ip: req.ip });
                 return res.status(200).json({error:true,mensaje:'Contraseña Incorrecta'})
             }
         }else{
+            await registrarLogin({ contexto: 'acceso_clientes', entidad: 'acceso_clientes', usuarioId: null, correo: acceso.correo, ok: false, motivo: 'USUARIO_NO_EXISTE', ip: req.ip });
             return res.status(200).json({error:true,mensaje:'No existe este Acceso Cliente'})
         }
     }catch(error){
