@@ -4,8 +4,10 @@
 
 const Documento = require('../../../modelos/sistema_base/Documento');
 const Categoria = require('../../../modelos/sistema_base/Categoria');
+const Publicacion = require('../../../modelos/sistema_web/Publicacion');
 const AppError = require('../../../libs/app-error');
 const { validarPdf, resolverRutaSegura, nombreDescarga } = require('../../../services/archivo/documento-publico');
+const publicacionServicio = require('../../../services/web/publicacion');
 
 // Mismo error para id inválido, documento inexistente/no público y archivo inválido: no revela el motivo.
 const noEncontrado = () => new AppError('NOT_FOUND', 'Documento no encontrado', 404);
@@ -54,4 +56,12 @@ const descargar = async (req, res, next) => {
   });
 };
 
-module.exports = { listar: listar, descargar: descargar };
+const listarPublicaciones = async (req, res) => {
+  const filas = await Publicacion.findAll({
+    where: publicacionServicio.filtroVigentes(new Date()),
+    order: [['fecha_publicacion', 'DESC']]
+  });
+  return res.json({ ok: true, data: filas.map(publicacionServicio.aPublico), meta: { total: filas.length } });
+};
+
+module.exports = { listar: listar, descargar: descargar, listarPublicaciones: listarPublicaciones };

@@ -21,7 +21,10 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 app.use('/web-limpiecito/uploads', express.static(path.resolve('uploads')));
-app.use('/web-limpiecito/uploads_limpiecitoweb', express.static(path.resolve('uploads_limpiecitoweb')));
+// RF-WEB-03: nosniff para que una imagen con contenido HTML no se interprete como documento.
+app.use('/web-limpiecito/uploads_limpiecitoweb', express.static(path.resolve('uploads_limpiecitoweb'), {
+  setHeaders: function (res) { res.set('X-Content-Type-Options', 'nosniff'); }
+}));
 
 // app.use('/api-aseo/uploads', express.static(path.resolve('uploads')));
 // app.use('/api-aseo/uploads_limpiecitoweb', express.static(path.resolve('uploads_limpiecitoweb')));
@@ -325,6 +328,10 @@ app.use(process.env.PREFIJO + '/api/v1/archivos', autenticar, requerirRol.apply(
 // RF-WEB-02: portal público de PDFs (sin auth, con rate limit por IP dentro del router).
 const PublicV1 = require('./api/v1/public/routes');
 app.use(process.env.PREFIJO + '/api/v1/public', PublicV1);
+
+// RF-WEB-03: publicaciones del sitio (solo Admin).
+const PublicacionesV1 = require('./api/v1/web/publicaciones/routes');
+app.use(process.env.PREFIJO + '/api/v1/web/publicaciones', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), PublicacionesV1);
 
 app.use(process.env.PREFIJO + '/api/v1', require('./middleware/errores').noEncontrado); // RNF-API-02: 404 JSON solo en /api/v1
 app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas
