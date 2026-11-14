@@ -3,7 +3,7 @@ const Schema = require('./schema');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { registrarLogin } = require('../../../services/auditoria/login');
-process.env.SECRET_KEY = 'secret';
+const { expiraEn } = require('../../../config/auth');
 
 const crearAccesoLaboral = async(req,res) => {
     let acceso_laboral = req.body.acceso_laboral
@@ -97,7 +97,7 @@ const login = async(req,res) => {
                         n_empleado:respuesta_trabajador.dataValues.n_empleado
                     }
                     let token = jwt.sign(datos_token, process.env.SECRET_KEY,{
-                        expiresIn:'1d'
+                        expiresIn:expiraEn
                     })
                     await registrarLogin({ contexto: 'acceso_trabajadores', entidad: 'accesos_laborales', usuarioId: respuesta.id, correo: credenciales.correo, ok: true, ip: req.ip });
                     let mensaje = "Bienvenido "+respuesta_trabajador.nombre+respuesta_trabajador.apellido

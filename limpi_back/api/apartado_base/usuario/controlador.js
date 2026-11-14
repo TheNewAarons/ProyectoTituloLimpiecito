@@ -4,7 +4,7 @@ const { registrarLogin } = require('../../../services/auditoria/login');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const atob = require('atob');
-process.env.SECRET_KEY = 'secret';
+const { expiraEn } = require('../../../config/auth');
 
 const crearUsuario = async (req, res) => {
   const usuario = JSON.parse(req.body.usuario);
@@ -93,7 +93,7 @@ const login = async (req, res) => {
         if (bcrypt.compareSync(usuario1.password, usuario.password)) {
             await registrarLogin({ contexto: 'usuarios', entidad: 'usuarios', usuarioId: usuario.id, correo: usuario1.correo, ok: true, ip: req.ip });
             let token = jwt.sign(usuario.dataValues, process.env.SECRET_KEY, {
-              expiresIn: '1d'
+              expiresIn: expiraEn
             });
             console.log(token)
             return res.json({ token });

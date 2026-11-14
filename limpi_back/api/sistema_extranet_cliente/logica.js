@@ -15,8 +15,6 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
 
-process.env.SECRET_KEY = '89434abc3444limpi904384dsadDASdasdsa';
-
 const obtenerAccesoClientePorCorreoDB = async(correo) => {
     let respuesta = await Acceso_cliente.findOne({where:{correo}})
     return respuesta

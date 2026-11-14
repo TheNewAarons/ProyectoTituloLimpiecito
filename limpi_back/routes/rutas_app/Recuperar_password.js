@@ -11,8 +11,6 @@ const atob = require('atob')
 const Usuario = require('../../modelos/sist_app/Usuario_app')
 const recuperacion = require('../../services/seguridad/recuperacion')
 
-process.env.SECRET_KEY = 'secretazoAdmin1234'
-
 //RECUPERAR PASSWORD APP
 
 //RECUPERAR CONTRASEÑA
