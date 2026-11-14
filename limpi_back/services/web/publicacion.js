@@ -18,6 +18,8 @@ const OPCIONES_CUERPO = {
   allowedTags: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ul', 'ol', 'li', 'a', 'h2', 'h3', 'h4', 'blockquote'],
   allowedAttributes: { a: ['href', 'rel', 'target'] },
   allowedSchemes: ['http', 'https', 'mailto'],
+  // `//evil` y `\\evil` (el navegador lo normaliza a //) quedarían como enlaces sin esquema.
+  allowProtocolRelative: false,
   disallowedTagsMode: 'discard',
   // script/style/iframe se eliminan junto con su contenido (se conserva textarea/option del default).
   nonTextTags: ['script', 'style', 'iframe', 'textarea', 'option'],
@@ -44,18 +46,24 @@ function sanitizarCuerpo(html) {
 }
 
 /**
- * Sanea un título: elimina todo HTML y recorta.
+ * Sanea un título: elimina todo HTML y recorta. Se guarda como texto plano (la vista escapa):
+ * se revierte `&amp;` para no mostrar `&amp;amp;` ni inflar el largo; `&lt;`/`&gt;` se mantienen.
  * @param {string} txt
  * @returns {string}
  */
 function sanitizarTitulo(txt) {
   if (txt === null || txt === undefined) return '';
-  return sanitizeHtml(String(txt), { allowedTags: [], allowedAttributes: {}, disallowedTagsMode: 'discard' }).trim();
+  return sanitizeHtml(String(txt), { allowedTags: [], allowedAttributes: {}, disallowedTagsMode: 'discard' })
+    .replace(/&amp;/g, '&')
+    .trim();
 }
+
+// Offset explícito obligatorio: sin él, `new Date()` usaría la zona del proceso (EC2 en UTC ≠ America/Santiago).
+const ISO_CON_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/i;
 
 function esFechaValida(v) {
   if (v instanceof Date) return !isNaN(v.getTime());
-  if (typeof v === 'string' && v.trim() !== '') return !isNaN(new Date(v).getTime());
+  if (typeof v === 'string') return ISO_CON_OFFSET.test(v.trim()) && !isNaN(new Date(v).getTime());
   return false;
 }
 
@@ -87,9 +95,12 @@ function validarPayload(body, opciones) {
   }
 
   if (presente(fuente, 'cuerpo') || !parcial) {
-    const cuerpo = sanitizarCuerpo(fuente.cuerpo);
+    // Tope bruto antes de sanear: evita pasar MBs por sanitize-html (express.json acepta 50mb).
+    const bruto = fuente.cuerpo === null || fuente.cuerpo === undefined ? '' : String(fuente.cuerpo);
+    const cuerpo = bruto.length > LIMITE_CUERPO * 5 ? null : sanitizarCuerpo(bruto);
     // Vacío = sin texto visible; "<p></p>" no cuenta como contenido.
-    if (!sanitizarTitulo(cuerpo)) errores.cuerpo = 'cuerpo no puede quedar vacío';
+    if (cuerpo === null) errores.cuerpo = 'cuerpo supera 20000 caracteres';
+    else if (!sanitizarTitulo(cuerpo)) errores.cuerpo = 'cuerpo no puede quedar vacío';
     else if (cuerpo.length > LIMITE_CUERPO) errores.cuerpo = 'cuerpo supera 20000 caracteres';
     else limpio.cuerpo = cuerpo;
   }
@@ -97,7 +108,7 @@ function validarPayload(body, opciones) {
   let publicacionFinal = existente ? existente.fecha_publicacion : null;
   if (presente(fuente, 'fecha_publicacion') || !parcial) {
     if (!esFechaValida(fuente.fecha_publicacion)) {
-      errores.fecha_publicacion = 'fecha_publicacion debe ser una fecha ISO válida';
+      errores.fecha_publicacion = 'fecha_publicacion debe ser ISO 8601 con zona (Z o ±hh:mm)';
     } else {
       publicacionFinal = new Date(fuente.fecha_publicacion);
       limpio.fecha_publicacion = publicacionFinal;
@@ -109,7 +120,7 @@ function validarPayload(body, opciones) {
     if (v === null || v === '') {
       limpio.fecha_expiracion = null;
     } else if (!esFechaValida(v)) {
-      errores.fecha_expiracion = 'fecha_expiracion debe ser una fecha ISO válida';
+      errores.fecha_expiracion = 'fecha_expiracion debe ser ISO 8601 con zona (Z o ±hh:mm)';
     } else {
       const expiracion = new Date(v);
       if (publicacionFinal && expiracion.getTime() <= new Date(publicacionFinal).getTime()) {

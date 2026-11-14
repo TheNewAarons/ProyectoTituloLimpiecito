@@ -38,14 +38,24 @@ function fileFilter(req, file, cb) {
   cb(null, true);
 }
 
-const upload = multer({ storage: storage, fileFilter: fileFilter, limits: { fileSize: MAX_BYTES, files: 1 } });
+// Campos de texto acotados: el cuerpo admite 20000 caracteres, 128 KB deja margen al HTML.
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: MAX_BYTES, files: 1, fields: 10, fieldSize: 128 * 1024, parts: 11 }
+});
 
 function mapearErrorMulter(err) {
   if (err instanceof AppError) return err;
-  if (err && err.code === 'LIMIT_FILE_SIZE') {
+  // Errores de disco (ENOSPC, EACCES, mkdir) son del servidor: siguen al 500 del manejador central.
+  if (!err || err.name !== 'MulterError') return err;
+  if (err.code === 'LIMIT_FILE_SIZE') {
     return new AppError('IMAGEN_DEMASIADO_GRANDE', 'la imagen supera los 5 MB', 422);
   }
-  // LIMIT_UNEXPECTED_FILE / LIMIT_FILE_COUNT / filtro de archivo: misma respuesta, sin detalle.
+  if (err.code === 'LIMIT_FIELD_VALUE' || err.code === 'LIMIT_FIELD_COUNT' || err.code === 'LIMIT_PART_COUNT') {
+    return new AppError('VALIDATION_ERROR', 'formulario demasiado grande', 400);
+  }
+  // LIMIT_UNEXPECTED_FILE / LIMIT_FILE_COUNT: misma respuesta, sin detalle.
   return new AppError('IMAGEN_INVALIDA', 'la imagen es inválida', 422);
 }
 
@@ -92,7 +102,7 @@ function validarMagicBytes(ruta) {
  * @param {string} nombre
  */
 function borrarImagen(nombre) {
-  if (!nombre) return;
+  if (!nombre || path.basename(nombre) !== nombre) return;
   fs.unlink(path.join(DIR, nombre), function () {});
 }
 

@@ -20,7 +20,10 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 app.use('/web-limpiecito/uploads', express.static(path.resolve('uploads')));
-app.use('/web-limpiecito/uploads_limpiecitoweb', express.static(path.resolve('uploads_limpiecitoweb')));
+// RF-WEB-03: nosniff para que una imagen con contenido HTML no se interprete como documento.
+app.use('/web-limpiecito/uploads_limpiecitoweb', express.static(path.resolve('uploads_limpiecitoweb'), {
+  setHeaders: function (res) { res.set('X-Content-Type-Options', 'nosniff'); }
+}));
 
 // app.use('/api-aseo/uploads', express.static(path.resolve('uploads')));
 // app.use('/api-aseo/uploads_limpiecitoweb', express.static(path.resolve('uploads_limpiecitoweb')));

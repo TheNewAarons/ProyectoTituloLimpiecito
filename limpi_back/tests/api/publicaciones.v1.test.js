@@ -124,7 +124,7 @@ describe('POST /api/v1/web/publicaciones (admin)', () => {
     const res = await request(buildAppAdmin())
       .post('/api/v1/web/publicaciones')
       .set('x-access-token', TOKEN_ADMIN)
-      .send({ titulo: 'Nueva', cuerpo: '<p>cuerpo</p>', fecha_publicacion: '2026-03-01' });
+      .send({ titulo: 'Nueva', cuerpo: '<p>cuerpo</p>', fecha_publicacion: '2026-03-01T00:00:00Z' });
     expect(res.status).toBe(201);
     expect(res.body.data).toMatchObject({ id: 9, publicado: false });
     expect(Publicacion.create).toHaveBeenCalledWith(expect.objectContaining({ publicado: false }));
@@ -134,7 +134,7 @@ describe('POST /api/v1/web/publicaciones (admin)', () => {
     const res = await request(buildAppAdmin())
       .post('/api/v1/web/publicaciones')
       .set('x-access-token', TOKEN_ADMIN)
-      .send({ titulo: 'Nueva', cuerpo: '<script>x</script>', fecha_publicacion: '2026-03-01' });
+      .send({ titulo: 'Nueva', cuerpo: '<script>x</script>', fecha_publicacion: '2026-03-01T00:00:00Z' });
     expect(res.status).toBe(400);
     expect(res.body).toMatchObject({ ok: false, error: { code: 'VALIDATION_ERROR' } });
     expect(Publicacion.create).not.toHaveBeenCalled();
