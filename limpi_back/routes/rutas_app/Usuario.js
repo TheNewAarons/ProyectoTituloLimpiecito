@@ -23,7 +23,6 @@ usuarios.post('/registro', (req, res) => {
     celular: usuario.celular,
     estado: usuario.estado
   };
-  console.log(usuario);
   Usuario.findOne({
     where: {
       correo: usuario.correo
