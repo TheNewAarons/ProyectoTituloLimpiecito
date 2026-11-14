@@ -11,8 +11,8 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `DATABASE_NAME`, `DATABASE_SERVER`, `DATABASE_USER`, `DATABASE_USER_PASSWORD` | Conexión a la BD | Sí |
 | `PORT`, `PREFIJO` | Puerto y prefijo de las rutas (`/web-limpiecito`) | Sí |
 | `NODE_ENV` | `development` o `production` | **Sí**: el middleware de errores (RNF-API-02) oculta stack y detalles internos si vale `production` |
-| `SECRET_KEY` | Clave de firma de los JWT | **No**: 9 archivos la asignan con un literal al cargarse y pisan lo que diga el `.env` |
-| `JWT_SEED` | Clave que espera `services/jwt.js` | **No**: ese archivo no se usa en ningún sitio |
+| `SECRET_KEY` | Clave de firma de los JWT (sesiones de los 4 contextos y enlaces de recuperación) | **Sí**, y es **obligatoria**: sin ella el servidor no arranca (`config/auth.js`, AUT-005) |
+| `JWT_EXPIRES_IN` | Duración de las sesiones JWT | **Sí** (`config/auth.js`); por defecto `8h` |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | Correo saliente (Nodemailer) | **Parcial**: el módulo RF-BOD-03 (`services/bodega/correoOrdenCompra.js`) ya las lee del entorno y responde `SMTP_NO_CONFIGURADO` 503 si falta alguna; el resto de controladores legacy sigue con la configuración escrita en el código (D-050) |
 | `EMPRESA_NOMBRE`, `EMPRESA_RUT` | Datos de la empresa en la plantilla de orden de compra (RF-BOD-03) | **Sí** (`renderizarOrden`); tienen default en el código si faltan |
 | `TRANSBANK_ENV`, `TRANSBANK_COMMERCE_CODE`, `TRANSBANK_API_KEY` | Pagos Webpay Plus | **No**: están escritos en `routes/rutas_app/Reserva.js` |
@@ -24,6 +24,7 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `NODE_ENV` | `development` (o vacío): los errores incluyen `stack` | `production`: sin `stack` ni mensajes internos en los 500 |
 | `DATABASE_*` | BD local (`localhost`) | RDS; credenciales solo en el servidor |
 | `SECRET_KEY` | Valor propio, aleatorio y distinto al de producción | Valor aleatorio largo, **rotado** y solo en el servidor |
+| `JWT_EXPIRES_IN` | `8h` | `8h` |
 | `SMTP_*` | Cuenta de pruebas o vacío (RF-BOD-03 responde `SMTP_NO_CONFIGURADO` 503 si faltan; el envío de orden de compra falla sin tocar la BD). **No usar el SMTP real** con una BD que tenga correos de clientes: el cron de las 18:00 envía correos de verdad | Cuenta real, **rotada** |
 | `EMPRESA_NOMBRE`, `EMPRESA_RUT` | Opcionales: el código usa defaults si faltan | Datos reales de la empresa |
 | `TRANSBANK_ENV` | `integration` (credenciales públicas de pruebas de Transbank) | `production` |
@@ -39,4 +40,4 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 
 1. Cargar las variables en el servidor de producción.
 2. Rotar las credenciales que estuvieron en el código y en el historial de git: JWT (`SECRET_KEY`), SMTP, BD y Transbank.
-3. Confirmar el efecto de rotar `SECRET_KEY`: en el backend solo se firman tokens (no se encontró ningún `jwt.verify` en uso), así que rotarla no invalida sesiones ahí. Una vez que algo los verifique, los tokens firmados con la clave anterior dejarán de valer.
+3. Efecto de rotar `SECRET_KEY`: los middlewares `auth.js` y `auth-bodega.js` verifican los tokens, así que al rotarla **todas las sesiones se cierran** y los enlaces de recuperación pendientes dejan de valer (deseable: los tokens antiguos contienen el hash de la contraseña).

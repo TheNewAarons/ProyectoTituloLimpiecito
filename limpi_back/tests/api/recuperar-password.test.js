@@ -3,6 +3,8 @@
  * El cambio solo lo autoriza el token del correo, cambia solo al dueño del token,
  * sirve una vez y no acepta tokens de sesión, de la app en el sistema ni el cuerpo antiguo (id/correo/hash).
  */
+process.env.SECRET_KEY = process.env.SECRET_KEY || 'clave-test-recuperacion';
+
 const mockTabla = () => {
   const filas = [];
   return {

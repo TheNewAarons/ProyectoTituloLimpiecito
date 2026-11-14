@@ -1,7 +1,5 @@
 const Usuario = require('../../../modelos/sistema_base/Usuario')
 
-process.env.SECRET_KEY = 'secretazoAdmin1234'
-
 const buscarUsuarioCorreoDB = async(correo) => {
     let respuesta = await Usuario.findOne({where:{correo}});
     return respuesta

@@ -8,8 +8,6 @@ const atob = require('atob')
 
 const Usuario = require('../../modelos/sistema_base/Usuario')
 
-process.env.SECRET_KEY = 'secretazoAdmin1234'
-
 //RECUPERAR CONTRASEÑA
 recuperar_pass.post("/recuperar-password", async (req, res) => {
     let correo = req.body.correo;
