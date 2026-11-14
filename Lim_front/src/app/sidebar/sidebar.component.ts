@@ -102,7 +102,8 @@ export const ROUTES: RouteInfo[] = [
     collapse: 'archivo',
     children: [
       { path: 'categorias', title: 'Categorias Documentos', ab: 'CD' },
-      { path: 'documentos', title: 'Documentos', ab: 'DC' }
+      { path: 'documentos', title: 'Documentos', ab: 'DC' },
+      { path: 'documentos-publicos', title: 'Documentos Públicos', ab: 'DP' }
       // { path: 'asociaciones', title: 'Asociaciones', ab: 'AS' },
       // { path: 'descargas', title: 'Descargas', ab: 'DW' }
     ]

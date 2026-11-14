@@ -6,6 +6,8 @@ require('./config/auth').exigirSecreto(); // RNF-SEC-01: sin SECRET_KEY en el en
 const path = require('path');
 
 const app = express();
+// RF-WEB-02: req.ip real detrás del proxy local (rate limit de /api/v1/public y auditoría). Nunca `true`: XFF falsificable.
+app.set('trust proxy', 'loopback');
 const cron = require('node-cron');
 
 //app.use(express.json());
@@ -315,6 +317,14 @@ app.use(process.env.PREFIJO + '/api/v1', FacturasV1);
 // RNF-SEC-02: consulta de auditoría (solo lectura, solo Admin).
 const AuditoriaV1 = require('./api/v1/auditoria/routes');
 app.use(process.env.PREFIJO + '/api/v1/auditoria', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), AuditoriaV1);
+
+// RF-WEB-02: publicar/despublicar documentos como PDF descargables (solo Admin).
+const ArchivosV1 = require('./api/v1/archivos/routes');
+app.use(process.env.PREFIJO + '/api/v1/archivos', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), ArchivosV1);
+
+// RF-WEB-02: portal público de PDFs (sin auth, con rate limit por IP dentro del router).
+const PublicV1 = require('./api/v1/public/routes');
+app.use(process.env.PREFIJO + '/api/v1/public', PublicV1);
 
 app.use(process.env.PREFIJO + '/api/v1', require('./middleware/errores').noEncontrado); // RNF-API-02: 404 JSON solo en /api/v1
 app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas

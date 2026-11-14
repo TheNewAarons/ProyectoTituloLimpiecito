@@ -23,6 +23,14 @@ module.exports = db.sequelize.define(
     estado: {
       type: Sequelize.BOOLEAN
     },
+    publico: {
+      type: Sequelize.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    fecha_publicacion: {
+      type: Sequelize.DATE
+    },
     categoriaDocumentoId: {
       type: Sequelize.INTEGER,
       references: {
