@@ -23,6 +23,10 @@ module.exports = db.sequelize.define(
         model: Areas,
         key: 'id'
       }
+    },
+    actividadId: {
+      type: Sequelize.INTEGER,
+      allowNull: true
     }
   },
   {
