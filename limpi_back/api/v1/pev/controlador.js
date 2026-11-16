@@ -181,6 +181,9 @@ const cerrarAsignacion = async (req, res) => {
     fecha_hasta: body.fecha_hasta === undefined || body.fecha_hasta === '' ? undefined : validarFecha(body.fecha_hasta, 'fecha_hasta'),
     motivo: typeof body.motivo === 'string' && body.motivo.trim() ? body.motivo.trim() : undefined
   };
+  if (datos.motivo && datos.motivo.length > 500) {
+    throw invalido('motivo admite hasta 500 caracteres', { campo: 'motivo' });
+  }
 
   const data = await asignaciones.cerrar(id, datos, { usuario: usuarioDesdeRequest(req), ip: req.ip });
   return res.json({ ok: true, data: serializarAsignacion(data) });

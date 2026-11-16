@@ -192,14 +192,38 @@ module.exports = {
     await asegurarFk(queryInterface, Sequelize, T_ASIG, 'turno_id', 'turnos', 'fk_asig_turno_id');
     await asegurarFk(queryInterface, Sequelize, T_ASIG, 'tarea_id', 'tareas', 'fk_asig_tarea_id');
 
-    // 5. Columnas puente NULL en tablas legacy (sin UPDATE: comportamiento histórico intacto)
+    // 5. Columnas puente NULL en tablas legacy (sin UPDATE: comportamiento histórico intacto).
+    // Un solo ALTER por tabla (una sola espera de metadata lock). foreign_key_checks=0 permite INPLACE
+    // en vez de COPY; es seguro porque la columna es nueva y todo NULL (no puede violar la FK).
     for (const c of COLUMNAS_LEGACY) {
       const columnas = await queryInterface.describeTable(c.tabla);
-      if (!columnas[c.columna]) {
-        await queryInterface.addColumn(c.tabla, c.columna, { type: Sequelize.INTEGER, allowNull: true });
+      const clausulas = [];
+      // Identificadores fijos de COLUMNAS_LEGACY (no entrada de usuario)
+      if (!columnas[c.columna]) clausulas.push('ADD COLUMN `' + c.columna + '` INT NULL');
+      if (!(await indiceExiste(queryInterface, c.tabla, c.idx))) {
+        clausulas.push('ADD INDEX `' + c.idx + '` (`' + c.columna + '`)');
       }
-      await asegurarIndice(queryInterface, c.tabla, [c.columna], c.idx);
-      await asegurarFk(queryInterface, Sequelize, c.tabla, c.columna, c.ref, c.fk);
+      if (!(await constraintExiste(queryInterface, Sequelize, c.tabla, c.fk))) {
+        clausulas.push('ADD CONSTRAINT `' + c.fk + '` FOREIGN KEY (`' + c.columna + '`) REFERENCES `' + c.ref +
+          '` (`id`) ON DELETE ' + REGLA_FK.onDelete + ' ON UPDATE ' + REGLA_FK.onUpdate);
+      }
+      if (!clausulas.length) continue;
+      // La transacción solo fija una conexión del pool (SET SESSION y ALTER en la misma); el DDL hace autocommit
+      await queryInterface.sequelize.transaction(async transaction => {
+        const q = sql => queryInterface.sequelize.query(sql, { transaction: transaction });
+        const previo = (await queryInterface.sequelize.query(
+          'SELECT @@SESSION.foreign_key_checks AS fkc, @@SESSION.lock_wait_timeout AS lwt',
+          { transaction: transaction, type: Sequelize.QueryTypes.SELECT }
+        ))[0];
+        try {
+          await q('SET SESSION lock_wait_timeout = 10'); // falla rápido en vez de encolar consultas tras un MDL
+          await q('SET SESSION foreign_key_checks = 0');
+          await q('ALTER TABLE `' + c.tabla + '` ' + clausulas.join(', ') + ', ALGORITHM=INPLACE, LOCK=NONE');
+        } finally {
+          await q('SET SESSION foreign_key_checks = ' + Number(previo.fkc));
+          await q('SET SESSION lock_wait_timeout = ' + Number(previo.lwt));
+        }
+      });
     }
   },
 

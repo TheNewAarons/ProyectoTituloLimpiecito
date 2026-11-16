@@ -48,8 +48,11 @@ function queryInterface(o) {
       return cols;
     }),
     sequelize: {
+      transaction: jest.fn(async (fn) => fn({})),
       query: jest.fn(async (sql, opts) => {
         const rep = (opts && opts.replacements) || {};
+        if (/@@SESSION/.test(sql)) return [{ fkc: 1, lwt: 50 }];
+        if (/^(SET SESSION|ALTER TABLE)/.test(sql)) return [];
         if (/information_schema\.TABLES/.test(sql)) {
           return rep.tablas.filter((t) => existentes.has(t)).map((t) => ({ tabla: t, motor: 'InnoDB' }));
         }
@@ -95,10 +98,20 @@ describe('up', () => {
     expect(qi.addIndex).toHaveBeenCalledWith('actividades', ['cliente_id', 'nombre'],
       { name: 'uq_actividades_cliente_nombre', unique: true });
 
-    // Columnas puente NULL en tablas legacy (sin backfill).
-    expect(qi.addColumn).toHaveBeenCalledWith('tareas', 'actividadId', { type: 'INTEGER', allowNull: true });
-    expect(qi.addColumn).toHaveBeenCalledWith('linea_lista_pev_trabajadores', 'asignacionId', { type: 'INTEGER', allowNull: true });
-    expect(qi.addColumn).toHaveBeenCalledWith('linea_lista_super_trabajadores', 'asignacionId', { type: 'INTEGER', allowNull: true });
+    // Columnas puente NULL en tablas legacy (sin backfill): un ALTER INPLACE por tabla con FK checks off.
+    const sqls = qi.sequelize.query.mock.calls.map((c) => c[0]);
+    const alters = sqls.filter((s) => /^ALTER TABLE/.test(s));
+    expect(alters.length).toBe(3);
+    [['tareas', 'actividadId'], ['linea_lista_pev_trabajadores', 'asignacionId'],
+      ['linea_lista_super_trabajadores', 'asignacionId']].forEach(([tabla, col]) => {
+      const alter = alters.find((s) => s.indexOf('ALTER TABLE `' + tabla + '`') === 0);
+      expect(alter).toContain('ADD COLUMN `' + col + '` INT NULL');
+      expect(alter).toContain('FOREIGN KEY (`' + col + '`)');
+      expect(alter).toMatch(/ALGORITHM=INPLACE, LOCK=NONE$/);
+    });
+    expect(sqls).toContain('SET SESSION foreign_key_checks = 0');
+    expect(sqls).toContain('SET SESSION foreign_key_checks = 1'); // restaura el valor previo
+    expect(qi.addColumn).not.toHaveBeenCalled();
 
     // FKs con RESTRICT/CASCADE (D-107).
     const fk = qi.addConstraint.mock.calls.filter((c) => c[0] === 'actividad_asignaciones');

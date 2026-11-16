@@ -117,10 +117,25 @@ async function resolverTareaPuente(actividad, area, turnoId, usuario, ip, t, tar
       order: [['id', 'ASC']],
       transaction: t
     });
+    // (b') D-105: reutilizar tarea legacy del área con el mismo nombre y sin actividad.
+    const legacy = existente ? null : await Tarea.findOne({
+      where: { areaId: area.id, nombre: actividad.nombre, actividadId: null },
+      order: [['id', 'ASC']],
+      lock: t.LOCK.UPDATE,
+      transaction: t
+    });
     if (existente) {
       tareaId = existente.id;
+    } else if (legacy) {
+      const antes = legacy.get({ plain: true });
+      await legacy.update({ actividadId: actividad.id }, { transaction: t });
+      await auditar({
+        transaction: t, usuario: usuario, entidad: 'tareas', entidad_id: legacy.id, accion: 'EDITAR',
+        antes: antes, despues: legacy, ip: ip
+      });
+      tareaId = legacy.id;
     } else {
-      // (c) crear tarea puente con el nombre de la actividad. Sin emparejamiento automático por nombre.
+      // (c) crear tarea puente con el nombre de la actividad.
       const nueva = await Tarea.create(
         { nombre: actividad.nombre, estado: 1, areaId: area.id, actividadId: actividad.id },
         { transaction: t }

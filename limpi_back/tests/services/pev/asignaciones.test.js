@@ -212,6 +212,17 @@ describe('crear asignación', () => {
     expect(Tarea.create).not.toHaveBeenCalled();
     expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ entidad: 'tareas', entidad_id: 60, accion: 'EDITAR' }));
   });
+
+  it("D-105 (b'): sin tarea_id reutiliza la tarea legacy del área con el mismo nombre y la vincula", async () => {
+    mem.tareas.push({ id: 70, nombre: 'Pulido de pisos', areaId: 2, actividadId: null, estado: 1 });
+    mem.tareas.push({ id: 71, nombre: 'Pulido de pisos', areaId: 999, actividadId: null, estado: 1 });
+    const creada = await servicio.crear(BASE, CTX);
+    expect(creada.tarea_id).toBe(70);
+    expect(mem.tareas.find((x) => x.id === 70).actividadId).toBe(1);
+    expect(mem.tareas.find((x) => x.id === 71).actividadId).toBeNull();
+    expect(Tarea.create).not.toHaveBeenCalled();
+    expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ entidad: 'tareas', entidad_id: 70, accion: 'EDITAR' }));
+  });
 });
 
 describe('cerrar asignación (sin borrado físico)', () => {
