@@ -1,6 +1,7 @@
 const express = require('express');
 const contactanos_web = express.Router();
 const nodemailer = require('nodemailer');
+const { crearTransporte } = require('../../services/correo/transporte');
 
 
 
@@ -8,31 +9,7 @@ contactanos_web.post('/contactanos', async (req, res) => {
 
     const contacto = req.body;
 
-        var transporter = nodemailer.createTransport({
-            /*service: 'gmail',
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true, // use SSL
-            auth: {
-                user: 'waliexcorreos@gmail.com',
-                pass: 'waliex12345'
-            }*/
-            //host: 'mail.waliex.cl',
-            //port: 587,
-            host: 'mail.aseolimpiecito.cl',
-            port: 465,
-            secureConnection: true, // use SSL
-            //secure: true,
-            auth: {
-                //user: 'prueba',
-                //pass: 'waliex123'
-                user: 'no-reply@aseolimpiecito.cl',
-                pass: 'limpiecito-2020-noreply'
-            },
-            tls: {
-                rejectUnauthorized: false
-            }
-        });
+        var transporter = crearTransporte();
     
         console.log(contacto.nombre);
         console.log(contacto.email);
