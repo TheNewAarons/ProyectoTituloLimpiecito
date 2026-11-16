@@ -13,6 +13,7 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `NODE_ENV` | `development` o `production` | **Sí**: el middleware de errores (RNF-API-02) oculta stack y detalles internos si vale `production` |
 | `SECRET_KEY` | Clave de firma de los JWT (sesiones de los 4 contextos y enlaces de recuperación) | **Sí**, y es **obligatoria**: sin ella el servidor no arranca (`config/auth.js`, AUT-005) |
 | `JWT_EXPIRES_IN` | Duración de las sesiones JWT | **Sí** (`config/auth.js`); por defecto `8h` |
+| `ROLES_GESTION_USUARIOS` | Roles que gestionan usuarios del sistema (crear, listar, editar a otros, cambiar rol o estado), separados por coma, sin distinguir mayúsculas. Ej.: `Administrador,RRHH` | **Sí** (`config/roles.js`, AUT-006); vacía = solo `Administrador`. Se aplica al reiniciar; el servidor escribe en el log qué roles quedaron |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | Correo saliente (Nodemailer) | **Parcial**: el módulo RF-BOD-03 (`services/bodega/correoOrdenCompra.js`) ya las lee del entorno y responde `SMTP_NO_CONFIGURADO` 503 si falta alguna; el resto de controladores legacy sigue con la configuración escrita en el código (D-050) |
 | `EMPRESA_NOMBRE`, `EMPRESA_RUT` | Datos de la empresa en la plantilla de orden de compra (RF-BOD-03) | **Sí** (`renderizarOrden`); tienen default en el código si faltan |
 | `TRANSBANK_ENV`, `TRANSBANK_COMMERCE_CODE`, `TRANSBANK_API_KEY` | Pagos Webpay Plus | **No**: están escritos en `routes/rutas_app/Reserva.js` |
@@ -25,6 +26,7 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `DATABASE_*` | BD local (`localhost`) | RDS; credenciales solo en el servidor |
 | `SECRET_KEY` | Valor propio, aleatorio y distinto al de producción | Valor aleatorio largo, **rotado** y solo en el servidor |
 | `JWT_EXPIRES_IN` | `8h` | `8h` |
+| `ROLES_GESTION_USUARIOS` | Vacía (solo Administrador) | Vacía, salvo que se confirme otro rol que gestione usuarios |
 | `SMTP_*` | Cuenta de pruebas o vacío (RF-BOD-03 responde `SMTP_NO_CONFIGURADO` 503 si faltan; el envío de orden de compra falla sin tocar la BD). **No usar el SMTP real** con una BD que tenga correos de clientes: el cron de las 18:00 envía correos de verdad | Cuenta real, **rotada** |
 | `EMPRESA_NOMBRE`, `EMPRESA_RUT` | Opcionales: el código usa defaults si faltan | Datos reales de la empresa |
 | `TRANSBANK_ENV` | `integration` (credenciales públicas de pruebas de Transbank) | `production` |
