@@ -6,6 +6,7 @@ require('./config/auth').exigirSecreto(); // RNF-SEC-01: sin SECRET_KEY en el en
 // RNF-SEC-01 (AUT-005 parte 2): Webpay y correo solo desde el entorno. Sin TRANSBANK_ENV el servidor no arranca.
 console.log('[pagos] Webpay en modo: ' + require('./config/transbank').configurarWebpay());
 if (!require('./services/correo/transporte').smtpConfigurado()) console.warn('[correo] SMTP_HOST/SMTP_USER/SMTP_PASS no configurados: los correos fallarán');
+console.log('[seguridad] roles que gestionan usuarios: ' + require('./config/roles').ROLES_GESTION_USUARIOS.join(', ')); // AUT-006
 const path = require('path');
 
 const app = express();

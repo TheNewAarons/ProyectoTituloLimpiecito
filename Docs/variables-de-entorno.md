@@ -13,6 +13,7 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `NODE_ENV` | `development` o `production` | **Sí**: el middleware de errores (RNF-API-02) oculta stack y detalles internos si vale `production` |
 | `SECRET_KEY` | Clave de firma de los JWT (sesiones de los 4 contextos y enlaces de recuperación) | **Sí**, y es **obligatoria**: sin ella el servidor no arranca (`config/auth.js`, AUT-005) |
 | `JWT_EXPIRES_IN` | Duración de las sesiones JWT | **Sí** (`config/auth.js`); por defecto `8h` |
+| `ROLES_GESTION_USUARIOS` | Roles que gestionan usuarios del sistema (crear, listar, editar a otros, cambiar rol o estado), separados por coma, sin distinguir mayúsculas. Ej.: `Administrador,RRHH` | **Sí** (`config/roles.js`, AUT-006); vacía = solo `Administrador`. Se aplica al reiniciar; el servidor escribe en el log qué roles quedaron |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | Correo saliente (Nodemailer) | **Sí**: los correos legacy (recuperación, reservas, cron de las 18:00, contacto, cronograma) usan `services/correo/transporte.js` (AUT-005 parte 2) y RF-BOD-03 su propio transporte. Sin `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` el backend arranca con un aviso en el log y los envíos fallan. `SMTP_PORT` por defecto 465; `SMTP_SECURE` vacío = TLS directo en 465 |
 | `EMPRESA_NOMBRE`, `EMPRESA_RUT` | Datos de la empresa en la plantilla de orden de compra (RF-BOD-03) | **Sí** (`renderizarOrden`); tienen default en el código si faltan |
 | `TRANSBANK_ENV`, `TRANSBANK_COMMERCE_CODE`, `TRANSBANK_API_KEY` | Pagos Webpay Plus | **Sí** (`config/transbank.js`, AUT-005 parte 2). `TRANSBANK_ENV` es **obligatoria** (`integration` o `production`): sin ella el servidor no arranca, para que producción nunca quede en modo prueba sin aviso. `production` exige código y llave; `integration` usa las credenciales públicas de prueba del SDK. Al arrancar se escribe `[pagos] Webpay en modo: ...` |
@@ -25,6 +26,7 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `DATABASE_*` | BD local (`localhost`) | RDS; credenciales solo en el servidor |
 | `SECRET_KEY` | Valor propio, aleatorio y distinto al de producción | Valor aleatorio largo, **rotado** y solo en el servidor |
 | `JWT_EXPIRES_IN` | `8h` | `8h` |
+| `ROLES_GESTION_USUARIOS` | Vacía (solo Administrador) | Vacía, salvo que se confirme otro rol que gestione usuarios |
 | `SMTP_*` | Cuenta de pruebas o vacío (RF-BOD-03 responde `SMTP_NO_CONFIGURADO` 503 si faltan; el envío de orden de compra falla sin tocar la BD). **No usar el SMTP real** con una BD que tenga correos de clientes: el cron de las 18:00 envía correos de verdad | Cuenta real, **rotada** |
 | `EMPRESA_NOMBRE`, `EMPRESA_RUT` | Opcionales: el código usa defaults si faltan | Datos reales de la empresa |
 | `TRANSBANK_ENV` | `integration` (credenciales públicas de pruebas de Transbank) | `production` |

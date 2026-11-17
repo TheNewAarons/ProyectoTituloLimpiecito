@@ -5,6 +5,15 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const atob = require('atob');
 const { expiraEn } = require('../../../config/auth');
+const { gestionaUsuarios } = require('../../../config/roles');
+
+// AUT-006: quien no gestiona usuarios (Editar perfil) no puede cambiarse el rol ni el estado.
+const limitarAlPerfilPropio = (req, usuarioData) => {
+  if (!gestionaUsuarios(req.usuario && req.usuario.rol_nombre)) {
+    delete usuarioData.roleId;
+    delete usuarioData.estado;
+  }
+};
 
 const crearUsuario = async (req, res) => {
   const usuario = JSON.parse(req.body.usuario);
@@ -24,7 +33,9 @@ const crearUsuario = async (req, res) => {
       const hash = bcrypt.hashSync(usuarioData.password, 10);
       usuarioData.password = hash;
       let usuario_creado = await logicaDB.crearUsuarioDB(usuarioData);
-      return res.json({ usuario: usuario_creado });
+      const respuesta = Object.assign({}, usuario_creado.dataValues);
+      delete respuesta.password;
+      return res.json({ usuario: respuesta });
     } else {
       console.log('entra else')
       return res.json({ error: 'Usuario ya registrado' });
@@ -45,6 +56,7 @@ const editarUsuario = async (req, res) => {
     estado: usuario.estado,
     roleId: usuario.roleId
   };
+  limitarAlPerfilPropio(req, usuarioData);
   try {
     let filas = await logicaDB.editarUsuarioDB(req.params.id, usuarioData);
     return res.json({ filas });
@@ -64,6 +76,7 @@ const cambiarContrasenaUsuario = async (req, res) => {
     //estado: usuario.estado,
     roleId: usuario.roleId
   };
+  limitarAlPerfilPropio(req, usuarioData);
   try {
     const hash = bcrypt.hashSync(usuarioData.password, 10);
     usuarioData.password = hash;
