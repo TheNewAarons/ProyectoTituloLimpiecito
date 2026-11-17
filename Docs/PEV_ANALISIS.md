@@ -630,6 +630,69 @@ Prueba manual: para 3 listas PEV, comparar la vista legacy (`GET /lista_pev_trab
 
 ---
 
+## h) Reporte de conteos 02b (clon local)
+
+> **ADVERTENCIA:** estas cifras salen de `aseolimp_pev02b_verif`, un clon de la BD local `aseolimp_minda_oficial09` con datos sintéticos (hallazgo g.14). Antes de desplegar hay que repetir B0 y B6 sobre una **copia de producción**: dry-run, up, segunda corrida, down y up. Ninguna cifra de esta tabla sirve para producción.
+
+Herramientas: `limpi_back/scripts/pev-02b-dry-run.js` (solo lectura; corre `planificar` y `controles` en una transacción con rollback) y la migración `20261117055508-RF-PEV-02b-backfill-asignaciones.js` (envuelve a `services/pev/backfill.js`). MySQL 26.7.0 local.
+
+**Hallazgos de B0**
+- **Collation:** `tareas.nombre` y `actividades.nombre` usan ambas `utf8mb4_unicode_ci`. La clave de agrupación usa `WEIGHT_STRING` con la collation del índice único.
+- **`trabajadores.estado`:** "activo" = `1`. Evidencia: `activarTrabajadorDB` escribe 1 y `desactivarTrabajadorDB` escribe 0. En local las 24 filas valen 1.
+- **`*TrabId`:** las columnas están pobladas y coinciden con `listaPevId`/`listaSuperId` en todas las filas, así que C2 no cambia nada en local.
+- **Histograma de `HOUR(fecha_chequeo)` en `listas_pev_trabajadores` (UTC):** 93 listas a las 18:00 y 3 en NULL. **HORA_ATIPICA = 93 de 93 listas no nulas (100 %)**, lo que corresponde a 558 líneas. **Supera el umbral de ~5 % de D-117, así que es BLOQUEANTE para aplicar en producción** (ver D-122).
+- **Volumen:** 96 tareas, 576 líneas PEV y 576 líneas super; 1.560 filas escritas en el log. Muy por debajo del umbral de F (60 s / 200k filas), así que se usa transacción global.
+
+**Exclusiones por motivo (plan del dry-run)**
+
+| Entidad | Motivo | Filas |
+|---|---|---|
+| tareas | (ninguna) | 0 |
+| linea_lista_pev_trabajadores | `FECHA_NULL` (las 3 listas con `fecha_chequeo` NULL × 6 líneas) | 18 |
+| linea_lista_super_trabajadores | `LINEA_PEV_SIN_ASIGNACION` (son las parejas de las 18 anteriores) | 18 |
+| aviso | `HORA_ATIPICA_LINEAS` | 558 |
+| aviso | `posibles_duplicados` (nombres que solo difieren en el sufijo numérico, p. ej. "Barrido 1"/"Barrido 3") | 22 grupos |
+
+Plan: 75 actividades `BACKFILL` con 225 pasos, 48 asignaciones (30 `ACTIVA` y 18 `CERRADA`), 96 tareas vinculadas, 558 + 558 líneas enlazadas.
+
+**Conteos K (antes → después del up → después del down)**
+
+| K | Control | Antes | Después del up | Después del down |
+|---|---|---|---|---|
+| K-1 | Filas de las 9 tablas legacy (tareas 96, turnos_tareas 96, linea_cronogramas 576, checkeos 3312, trabajadores_cronogramas 288, listas pev/super 96/96, líneas pev/super 576/576) | base | igual | igual |
+| K-2 | Checksum CRC32 de columnas legacy (tareas / lpev / lsup) | `96:209992242552` / `576:1276831046380` / `576:1243642704364` | igual | igual |
+| K-3 | `tareas`: total = vinculadas M2 + vinculadas antes + excluidas (non-NULL `actividadId`) | 96 = 0 + 0 + 0 (0) | 96 = 96 + 0 + 0 (96) | (0) |
+| K-4 | Actividades BACKFILL + APP reutilizadas; pasos = 3 × BACKFILL | 0; 0 | 75 + 0; 225 | 0; 0 |
+| K-5 | Líneas PEV: total = BACKFILL + APP + antes + NULL por motivo (non-NULL `asignacionId` pev/super) | 576 (0 / 0) | 576 = 558 + 0 + 0 + 18 `FECHA_NULL` (558 / 558) | (0 / 0) |
+| K-6 | Asignaciones BACKFILL (30 ACTIVA + 18 CERRADA) / BACKFILL sin líneas / Σ líneas por asignación | 0 / 0 / 0 | 48 / 0 / 558 | 0 / 0 / 0 |
+| K-7 | Líneas fuera de la vigencia de su asignación | 0 | 0 | 0 |
+| K-8 | Líneas super: enlazadas + NULL por motivo = total; con asignación distinta a su línea PEV | 0 + 576; 0 | 558 + 18 `LINEA_PEV_SIN_ASIGNACION` = 576; 0 | 0 + 576; 0 |
+| K-9 | `ACTIVA` duplicadas / `activa_flag` inconsistente | 0 / 0 | 0 / 0 | 0 / 0 |
+| K-10 | Log por entidad (CREAR act 75, pasos 225, asig 48; VINCULAR tareas 96, lpev 558, lsup 558) | sin tabla | 1.560 | sin tabla |
+| K-11 | `checkeos` intacto | 3312 | 3312 | 3312 |
+| K-12 | Segunda corrida (lote 2) | — | 0 filas nuevas en el log, sin fila de auditoría | — |
+| K-13 | Cumplimiento por (n_empleado, fecha_chequeo): legacy | `96:1710:219739687550` | igual; enlazadas = vía asignación = `93:1674:211059408428` | igual |
+| K-14 | Ídem con las líneas super: legacy | `96:5130:185971799614` | igual; enlazadas = vía asignación = `93:5022:178851842619` | igual |
+
+Después del down, el plan del dry-run es idéntico al de antes (comparación JSON completa). Auditoría: una fila `MIGRACION` (filas_log 1560) por el up y una `REVERSION_MIGRACION` por el down. El re-up dejó K-1…K-14 iguales a los del primer up.
+
+**Guardia del down (`revertir`):** se hicieron 3 pruebas. En las 3 abortó con "down abortado sin cambios", K y el log quedaron iguales y `SequelizeMeta` siguió marcando la migración. Después se limpió la fila de prueba:
+- se insertó una asignación `APP` en una actividad `BACKFILL` → `ASIGNACION_AJENA_EN_ACTIVIDAD_BACKFILL=1`;
+- se enlazó una línea PEV que no está en el log a una asignación `BACKFILL` → `LINEA_PEV_AJENA_EN_ASIGNACION_BACKFILL=1`;
+- se cambió el `updated_at` de una asignación `BACKFILL` → `ASIGNACION_BACKFILL_MODIFICADA=1`.
+
+**Tiempos (clon local)**
+
+| Paso | Tiempo |
+|---|---|
+| Dry-run (`planificar` / total con controles) | 184 ms / 236 ms |
+| up (según sequelize-cli / proceso completo) | 0,493 s / 1,36 s |
+| Segunda corrida (`aplicar`, no-op) | 106 ms |
+| down | 0,273 s |
+| re-up | 0,554 s |
+
+---
+
 ## Pendientes de verificación
 
 - Contenido real de producción: unicidad de `n_empleado`, valores de `listaPevTrabId`/`listaSuperTrabId`, líneas con `tareaId` NULL, versión de MySQL en RDS (consultas de d.3 contra un respaldo).
