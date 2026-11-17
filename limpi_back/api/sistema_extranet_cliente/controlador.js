@@ -5,6 +5,7 @@ const atob = require('atob')
 const nodemailer = require('nodemailer');
 const { registrarLogin } = require('../../services/auditoria/login');
 const { expiraEn } = require('../../config/auth');
+const { crearTransporte } = require('../../services/correo/transporte');
 
 const inicioSesion = async(req,res) => {
     const acceso = req.body
@@ -137,13 +138,7 @@ const enviarMailClienteCronograma = async(req,res) => {
     let data = req.body.mail;
     console.log(data);
     try {
-        const transporter = nodemailer.createTransport({
-            host: 'mail.aseolimpiecito.cl',
-            port: 465,
-            secureConnection: true,
-            auth: { user: 'no-reply@aseolimpiecito.cl', pass: 'limpiecito-2020-noreply' },
-            tls: { rejectUnauthorized: false }
-        });
+        const transporter = crearTransporte();
         const mailOptions = {
             from: 'no-reply@aseolimpiecito.cl',
             to: 'soporte@waliex.com',
