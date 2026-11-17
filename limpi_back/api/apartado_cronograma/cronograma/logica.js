@@ -14,6 +14,7 @@ const ListaPev = require('../../../modelos/apartado_listas_pev/listaPevTrabajado
 const ListaSuper = require('../../../modelos/apartado_listas_pev/listaSuperTrabajador')
 const LineaPev = require('../../../modelos/apartado_listas_pev/lineaListaPevTrabajador')
 const LineaSuper = require('../../../modelos/apartado_listas_pev/lineaSuperTrabajador')
+const { resolverAsignacion, asignacionDeLineaPev } = require('../../../services/pev/resolverAsignacion')
 
 
 
@@ -135,6 +136,8 @@ const obtenerListasPevPorCronogramaYSectorDB = async(cronogramaId, sectoreId) =>
 }
 
 const crearLineaListaPevDB = async(tareaId, idListaPev) => {
+    // RF-PEV-02b dual-write: n_empleado/cronograma/fecha se leen de la lista; null si no hay asignación vigente
+    const asignacionId = await resolverAsignacion({tareaId, listaPevId: idListaPev})
     let respuesta = await LineaPev.create({
         check_trabajador_1: 0,
         hora_check_trabajador_1:null,
@@ -144,12 +147,15 @@ const crearLineaListaPevDB = async(tareaId, idListaPev) => {
         hora_check_trabajador_3:null,
         observaciones:null,
         listasPevTrabajadoreId: idListaPev,
-        tareaId:tareaId
+        tareaId:tareaId,
+        asignacionId
     })
     return respuesta
 }
 
 const crearLineaListaSuperDB = async(tareaId,idListaSuper) => {
+    // RF-PEV-02b dual-write: copia el asignacionId de la línea PEV (misma lista PEV y tareaId), creada justo antes
+    const asignacionId = await asignacionDeLineaPev({tareaId, listaSuperId: idListaSuper})
     let respuesta = await LineaSuper.create({
         hora_1:null,
         despolvado_1:0,
@@ -165,7 +171,8 @@ const crearLineaListaSuperDB = async(tareaId,idListaSuper) => {
         abrillantado_3:0,
         observaciones:null,
         listasSuperTrabajadoreId:idListaSuper,
-        tareaId:tareaId
+        tareaId:tareaId,
+        asignacionId
     })
     return respuesta
 }

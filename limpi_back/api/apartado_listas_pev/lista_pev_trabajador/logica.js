@@ -18,6 +18,7 @@ const Areas = require('../../../modelos/apartado_listas_pev/area');
 const Sectores = require('../../../modelos/apartado_listas_pev/sector');
 
 const Cronograma = require('../../../modelos/apartado_cronograma/Cronograma')
+const { resolverAsignacion } = require('../../../services/pev/resolverAsignacion')
 
 
 
@@ -116,6 +117,11 @@ const crearListasPevTrabajadorDB = async (cronogramaId,n_empleado,sectoreId,fech
     cronogramaId = parseInt(cronogramaId)
     let id_lista_pev_trabajador;
     let date = new Date();
+    // RF-PEV-02b dual-write: se resuelve antes de la tx (lecturas de otras tablas); null si no hay asignación vigente
+    const asignaciones = [];
+    for(let index = 0; index < tareas.length; index++){
+        asignaciones.push(await resolverAsignacion({tareaId: tareas[index].tareaId, n_empleado, cronogramaId, fecha_chequeo}))
+    }
     await sequelize_listas_pev_trabajador.transaction(async(t) => {
         id_lista_pev_trabajador = await ListaPevTrabajador.create({
             estado:1,
@@ -137,7 +143,8 @@ const crearListasPevTrabajadorDB = async (cronogramaId,n_empleado,sectoreId,fech
                 hora_check_trabajador_3:null,
                 observaciones:null,
                 listasPevTrabajadoreId: id_lista_pev_trabajador,
-                tareaId:tareas[index].tareaId
+                tareaId:tareas[index].tareaId,
+                asignacionId: asignaciones[index]
             },{transaction:t})
         }
         });
@@ -236,11 +243,14 @@ const obtenerTrabajadorPorNumeroEmpleadoDB = async (n_empleado) => {
     })
     return respuesta
 }
+const CAMPOS_LINEA_PEV = ['check_trabajador_1','hora_check_trabajador_1','check_trabajador_2','hora_check_trabajador_2',
+    'check_trabajador_3','hora_check_trabajador_3','observaciones']
 //Actualizar Linea Lista Pev Trabajador
 const actualizarLineaListaPevTrabajadorDB = async (id,linea_lista_pev) => {
     id = parseInt(id)
+    // RF-PEV-02b: lista blanca; tareaId/FK/asignacionId del body se ignoran (mass assignment, g.2)
     const respuesta = await LineaListaPevTrabajador.update(
-        linea_lista_pev,{where: {id},}
+        linea_lista_pev,{where: {id}, fields: CAMPOS_LINEA_PEV}
     )
     return respuesta
 }

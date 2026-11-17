@@ -13,6 +13,7 @@ const sequelize_listas_Super_trabajador = ListasSuperTrabajadores.sequelize
 const Tareas = require('../../../modelos/apartado_listas_pev/tarea');
 const Areas = require('../../../modelos/apartado_listas_pev/area');
 const Sectores = require('../../../modelos/apartado_listas_pev/sector');
+const { asignacionDeLineaPev } = require('../../../services/pev/resolverAsignacion')
 
 ListasSuperTrabajadores.hasMany(LineaListasSuperTrabajadores)
 LineaListasSuperTrabajadores.belongsTo(Tareas)
@@ -22,6 +23,11 @@ const crearListasSuperTrabajadorDB = async(listasPevTrabajadoreId,n_empleado,tar
     listasPevTrabajadoreId = parseInt(listasPevTrabajadoreId)
     let id_lista_super_trabajador
     let date = new Date()
+    // RF-PEV-02b dual-write: copia el asignacionId de la línea PEV de la misma lista y tareaId (null si no hay o es ambiguo)
+    const asignaciones = []
+    for(let index = 0; index < tareas.length; index++){
+        asignaciones.push(await asignacionDeLineaPev({listaPevId: listasPevTrabajadoreId, tareaId: tareas[index].tareaId}))
+    }
     await sequelize_listas_Super_trabajador.transaction(async(t) => {
         id_lista_super_trabajador = await ListasSuperTrabajadores.create({
             estado:1,
@@ -47,7 +53,8 @@ const crearListasSuperTrabajadorDB = async(listasPevTrabajadoreId,n_empleado,tar
                 abrillantado_3:0,
                 observaciones:null,
                 listasSuperTrabajadoreId:id_lista_super_trabajador,
-                tareaId:tareas[index].tareaId
+                tareaId:tareas[index].tareaId,
+                asignacionId: asignaciones[index]
             },{transaction:t})
         }
     })
@@ -82,10 +89,14 @@ const obtenerEstadoCronogramaDB = async(cronogramaId) => {
     return respuesta
 }
 
+const CAMPOS_LINEA_SUPER = ['hora_1','despolvado_1','aplicacion_producto_1','abrillantado_1','hora_2','despolvado_2',
+    'aplicacion_producto_2','abrillantado_2','hora_3','despolvado_3','aplicacion_producto_3','abrillantado_3','observaciones']
+
 const actualizarLineaListaSuperTrabajadorDB = async(id,linea_lista_super) => {
     id = parseInt(id)
+    // RF-PEV-02b: lista blanca; tareaId/FK/asignacionId del body se ignoran (mass assignment, g.2)
     const respuesta = await LineaListasSuperTrabajadores.update(
-        linea_lista_super,{where:{id}}
+        linea_lista_super,{where:{id}, fields: CAMPOS_LINEA_SUPER}
     )
     return respuesta
 }

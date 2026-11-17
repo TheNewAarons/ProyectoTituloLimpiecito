@@ -82,10 +82,16 @@ const obtenerListaSupervisorDB = async(id) => {
     return respuesta
 }
 
+const CAMPOS_LINEA_PEV = ['check_trabajador_1','hora_check_trabajador_1','check_trabajador_2','hora_check_trabajador_2',
+    'check_trabajador_3','hora_check_trabajador_3','observaciones']
+const CAMPOS_LINEA_SUPER = ['hora_1','despolvado_1','aplicacion_producto_1','abrillantado_1','hora_2','despolvado_2',
+    'aplicacion_producto_2','abrillantado_2','hora_3','despolvado_3','aplicacion_producto_3','abrillantado_3','observaciones']
+
 const actualizarLineaListaPevTrabajadorDB = async (id,linea_lista_pev) => {
     id = parseInt(id)
+    // RF-PEV-02b: lista blanca; tareaId/FK/asignacionId del body se ignoran (mass assignment, g.2)
     const respuesta = await LineaPev.update(
-        linea_lista_pev,{where: {id},}
+        linea_lista_pev,{where: {id}, fields: CAMPOS_LINEA_PEV}
     )
     return respuesta
 }
@@ -117,7 +123,7 @@ const cambiarEstadoListaSupervisorDB = async(id,lista_super) => {
 const actualizarLineaListaSuperTrabajadorDB = async(id,linea_lista_super) => {
     id = parseInt(id)
     const respuesta = await LineaSupervisor.update(
-        linea_lista_super,{where:{id}}
+        linea_lista_super,{where:{id}, fields: CAMPOS_LINEA_SUPER}
     )
     return respuesta
 }
