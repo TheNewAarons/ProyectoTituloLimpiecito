@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config()
 require('./config/auth').exigirSecreto(); // RNF-SEC-01: sin SECRET_KEY en el entorno el servidor no arranca
+console.log('[seguridad] roles que gestionan usuarios: ' + require('./config/roles').ROLES_GESTION_USUARIOS.join(', ')); // AUT-006
 const path = require('path');
 
 const app = express();
