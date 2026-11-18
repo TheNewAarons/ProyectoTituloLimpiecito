@@ -61,6 +61,21 @@ describe('planificar', () => {
     expect(plan.resumen.lineas_pev.enlazadas_antes).toBe(1); // 1011 ya tenía asignacionId
   });
 
+  test('asignación existente: APP gana sobre BACKFILL; dos APP vigentes en la fecha → ASIGNACION_AMBIGUA (regla de resolverAsignacion)', async () => {
+    const clave = { actividad_id: 501, area_id: 20, trabajador_id: 14, turno_id: 6 };
+    const conBackfill = fixturesBase();
+    conBackfill.existentes.push(Object.assign({ id: 801, origen: 'BACKFILL', estado: 'CERRADA', desde: '2026-01-01', hasta: '2026-01-10' }, clave));
+    const p1 = await backfill.planificar(falsoSequelize(conBackfill));
+    expect(p1.lpev.find((v) => v.id === 1010).destino.id).toBe(800);
+
+    const dosApp = fixturesBase();
+    dosApp.existentes.push(Object.assign({ id: 802, origen: 'APP', estado: 'CERRADA', desde: '2026-01-01', hasta: '2026-01-10' }, clave));
+    const p2 = await backfill.planificar(falsoSequelize(dosApp));
+    expect(p2.lpev.find((v) => v.id === 1010)).toBeUndefined();
+    expect(p2.resumen.lineas_pev.excluidas.ASIGNACION_AMBIGUA).toBe(1);
+    expect(p2.asignacionesNuevas.length).toBe(2); // no crea BACKFILL para la línea ambigua
+  });
+
   test('(b) conteos: total = enlazadas + a enlazar + NULL por motivo; líneas por asignación; claves; pasos; ACTIVA única', () => {
     const lp = plan.resumen.lineas_pev;
     const excluidas = Object.keys(lp.excluidas).reduce((s, k) => s + lp.excluidas[k], 0);

@@ -240,8 +240,13 @@ async function planificar(sequelize, opciones) {
     const ex = exPorClave.get(k) || [];
     const resto = [];
     g.lineas.forEach(function (ln) {
-      // Dentro de la vigencia de una asignación existente (APP, o BACKFILL de una corrida previa) → esa
-      const a = ex.filter(function (e) { return e.desde <= ln.fecha && (e.hasta === null || ln.fecha <= e.hasta); })[0];
+      // Dentro de la vigencia de una asignación existente (APP, o BACKFILL de una corrida previa) → esa.
+      // Misma regla que resolverAsignacion: APP gana; más de una candidata → excluida
+      const cand = ex.filter(function (e) { return e.desde <= ln.fecha && (e.hasta === null || ln.fecha <= e.hasta); });
+      const app = cand.filter(function (e) { return e.origen === 'APP'; });
+      const elegidas = app.length ? app : cand;
+      if (elegidas.length > 1) { contar(excl.lpev, 'ASIGNACION_AMBIGUA'); return; }
+      const a = elegidas[0];
       if (a) {
         vincPev.push({ id: ln.id, destino: a });
         finalPev.set(ln.id, a);
