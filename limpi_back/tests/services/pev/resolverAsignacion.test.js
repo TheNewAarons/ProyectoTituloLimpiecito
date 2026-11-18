@@ -15,6 +15,7 @@ function simular() {
     if (sql.indexOf('FROM trabajadores') !== -1) return bd.trabajadores.filter((t) => t.n_empleado === o.replacements.n).slice(0, 2);
     if (sql.indexOf('FROM tareas t') !== -1) { bd.fechas.push(o.replacements.fecha); return bd.candidatas; }
     if (sql.indexOf('SELECT DISTINCT l.asignacionId') !== -1) return bd.lineas;
+    if (sql.indexOf('LOCK IN SHARE MODE') !== -1) { bd.locks.push(o); return bd.vigentes.filter((id) => id === o.replacements.id).map((id) => ({ id })); }
     throw new Error('SQL no esperado: ' + sql);
   });
 }
@@ -22,7 +23,7 @@ function simular() {
 const base = { tareaId: 7, n_empleado: 120, cronogramaId: 3, fecha_chequeo: '2026-03-10T15:00:00Z' };
 
 beforeEach(() => {
-  bd = { listas: [], trabajadores: [{ id: 11, n_empleado: 120 }], candidatas: [], lineas: [], fechas: [], error: null };
+  bd = { listas: [], trabajadores: [{ id: 11, n_empleado: 120 }], candidatas: [], lineas: [], fechas: [], vigentes: [], locks: [], error: null };
   db.sequelize.query.mockReset();
   simular();
   jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -37,6 +38,23 @@ describe('resolverAsignacion', () => {
     expect(llamada[0]).toMatch(/aa\.turno_id <=> c\.turnoId/);
     expect(llamada[0]).toMatch(/aa\.estado <> 'ANULADA'/);
     expect(llamada[1].replacements).toEqual({ cronogramaId: 3, trabajadorId: 11, tareaId: 7, fecha: '2026-03-10' });
+  });
+
+  test('con transacción revalida el id con LOCK IN SHARE MODE en esa tx; anulada/cerrada entre medio → null', async () => {
+    const t = { id: 'tx' };
+    bd.candidatas = [{ id: 40, origen: 'BACKFILL' }];
+    bd.vigentes = [40];
+    expect(await resolverAsignacion(base, { transaction: t })).toBe(40);
+    expect(bd.locks[0].transaction).toBe(t);
+    expect(bd.locks[0].replacements).toEqual({ id: 40, fecha: '2026-03-10' });
+    bd.vigentes = [];
+    expect(await resolverAsignacion(base, { transaction: t })).toBeNull();
+  });
+
+  test('sin transacción no toma lock', async () => {
+    bd.candidatas = [{ id: 40, origen: 'BACKFILL' }];
+    expect(await resolverAsignacion(base)).toBe(40);
+    expect(bd.locks).toEqual([]);
   });
 
   test('sin asignación vigente → null', async () => {

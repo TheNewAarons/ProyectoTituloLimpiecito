@@ -136,21 +136,23 @@ const obtenerListasPevPorCronogramaYSectorDB = async(cronogramaId, sectoreId) =>
 }
 
 const crearLineaListaPevDB = async(tareaId, idListaPev) => {
-    // RF-PEV-02b dual-write: n_empleado/cronograma/fecha se leen de la lista; null si no hay asignación vigente
-    const asignacionId = await resolverAsignacion({tareaId, listaPevId: idListaPev})
-    let respuesta = await LineaPev.create({
-        check_trabajador_1: 0,
-        hora_check_trabajador_1:null,
-        check_trabajador_2: 0,
-        hora_check_trabajador_2:null,
-        check_trabajador_3: 0,
-        hora_check_trabajador_3:null,
-        observaciones:null,
-        listasPevTrabajadoreId: idListaPev,
-        tareaId:tareaId,
-        asignacionId
+    // RF-PEV-02b dual-write: n_empleado/cronograma/fecha se leen de la lista; tx corta para el lock compartido
+    // de la asignación (vs anular/cerrar); null si no hay asignación vigente
+    return LineaPev.sequelize.transaction(async (t) => {
+        const asignacionId = await resolverAsignacion({tareaId, listaPevId: idListaPev}, {transaction: t})
+        return LineaPev.create({
+            check_trabajador_1: 0,
+            hora_check_trabajador_1:null,
+            check_trabajador_2: 0,
+            hora_check_trabajador_2:null,
+            check_trabajador_3: 0,
+            hora_check_trabajador_3:null,
+            observaciones:null,
+            listasPevTrabajadoreId: idListaPev,
+            tareaId:tareaId,
+            asignacionId
+        }, {transaction: t})
     })
-    return respuesta
 }
 
 const crearLineaListaSuperDB = async(tareaId,idListaSuper) => {

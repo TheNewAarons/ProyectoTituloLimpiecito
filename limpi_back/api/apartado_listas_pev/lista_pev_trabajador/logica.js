@@ -117,12 +117,12 @@ const crearListasPevTrabajadorDB = async (cronogramaId,n_empleado,sectoreId,fech
     cronogramaId = parseInt(cronogramaId)
     let id_lista_pev_trabajador;
     let date = new Date();
-    // RF-PEV-02b dual-write: se resuelve antes de la tx (lecturas de otras tablas); null si no hay asignación vigente
-    const asignaciones = [];
-    for(let index = 0; index < tareas.length; index++){
-        asignaciones.push(await resolverAsignacion({tareaId: tareas[index].tareaId, n_empleado, cronogramaId, fecha_chequeo}))
-    }
     await sequelize_listas_pev_trabajador.transaction(async(t) => {
+        // RF-PEV-02b dual-write: se resuelve dentro de la tx (lock compartido vs anular/cerrar); null si no hay asignación vigente
+        const asignaciones = [];
+        for(let index = 0; index < tareas.length; index++){
+            asignaciones.push(await resolverAsignacion({tareaId: tareas[index].tareaId, n_empleado, cronogramaId, fecha_chequeo}, {transaction: t}))
+        }
         id_lista_pev_trabajador = await ListaPevTrabajador.create({
             estado:1,
             fecha_creacion:date,
@@ -249,6 +249,7 @@ const CAMPOS_LINEA_PEV = ['check_trabajador_1','hora_check_trabajador_1','check_
 const actualizarLineaListaPevTrabajadorDB = async (id,linea_lista_pev) => {
     id = parseInt(id)
     // RF-PEV-02b: lista blanca; tareaId/FK/asignacionId del body se ignoran (mass assignment, g.2)
+    if (!CAMPOS_LINEA_PEV.some(c => c in linea_lista_pev)) return [0] // sin campos editables: no-op en vez de UPDATE vacío (500)
     const respuesta = await LineaListaPevTrabajador.update(
         linea_lista_pev,{where: {id}, fields: CAMPOS_LINEA_PEV}
     )

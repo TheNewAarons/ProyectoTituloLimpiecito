@@ -90,6 +90,7 @@ const CAMPOS_LINEA_SUPER = ['hora_1','despolvado_1','aplicacion_producto_1','abr
 const actualizarLineaListaPevTrabajadorDB = async (id,linea_lista_pev) => {
     id = parseInt(id)
     // RF-PEV-02b: lista blanca; tareaId/FK/asignacionId del body se ignoran (mass assignment, g.2)
+    if (!CAMPOS_LINEA_PEV.some(c => c in linea_lista_pev)) return [0] // sin campos editables: no-op en vez de UPDATE vacío (500)
     const respuesta = await LineaPev.update(
         linea_lista_pev,{where: {id}, fields: CAMPOS_LINEA_PEV}
     )
@@ -122,6 +123,7 @@ const cambiarEstadoListaSupervisorDB = async(id,lista_super) => {
 
 const actualizarLineaListaSuperTrabajadorDB = async(id,linea_lista_super) => {
     id = parseInt(id)
+    if (!CAMPOS_LINEA_SUPER.some(c => c in linea_lista_super)) return [0] // sin campos editables: no-op en vez de UPDATE vacío (500)
     const respuesta = await LineaSupervisor.update(
         linea_lista_super,{where:{id}, fields: CAMPOS_LINEA_SUPER}
     )

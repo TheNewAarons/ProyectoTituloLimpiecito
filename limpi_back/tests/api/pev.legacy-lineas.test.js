@@ -58,16 +58,32 @@ describe('update legacy con lista blanca fields', () => {
   });
 });
 
+describe('update legacy sin campos editables (D-128)', () => {
+  test.each([
+    ['lista_pev_trabajador PEV', () => listaPev.actualizarLineaListaPevTrabajadorDB],
+    ['clientes-trabajador PEV', () => intranet.actualizarLineaListaPevTrabajadorDB],
+    ['lista_super_trabajador', () => listaSuper.actualizarLineaListaSuperTrabajadorDB],
+    ['clientes-trabajador supervisor', () => intranet.actualizarLineaListaSuperTrabajadorDB]
+  ])('%s: body solo con campos fuera de la lista blanca → [0] sin consultar', async (_n, fn) => {
+    expect(await fn()(1, Object.assign({}, prohibidos))).toEqual([0]);
+    expect(db.sequelize.query).not.toHaveBeenCalled();
+  });
+});
+
 describe('dual-write en la propagación del cronograma', () => {
   const LineaPev = require('../../modelos/apartado_listas_pev/lineaListaPevTrabajador');
   const LineaSuper = require('../../modelos/apartado_listas_pev/lineaSuperTrabajador');
   afterEach(() => jest.restoreAllMocks());
 
   test('crearLineaListaPevDB inserta el asignacionId resuelto desde la lista', async () => {
+    const t = { id: 'tx' };
+    jest.spyOn(LineaPev.sequelize, 'transaction').mockImplementation((cb) => cb(t));
     const create = jest.spyOn(LineaPev, 'create').mockResolvedValue({ id: 1 });
-    await cronograma.crearLineaListaPevDB(7, 9);
-    expect(resolver.resolverAsignacion).toHaveBeenCalledWith({ tareaId: 7, listaPevId: 9 });
+    expect(await cronograma.crearLineaListaPevDB(7, 9)).toEqual({ id: 1 });
+    // resolver e INSERT en la misma tx: el lock compartido de la asignación cubre el INSERT
+    expect(resolver.resolverAsignacion).toHaveBeenCalledWith({ tareaId: 7, listaPevId: 9 }, { transaction: t });
     expect(create.mock.calls[0][0]).toMatchObject({ tareaId: 7, listasPevTrabajadoreId: 9, asignacionId: 40 });
+    expect(create.mock.calls[0][1]).toEqual({ transaction: t });
   });
 
   test('crearLineaListaSuperDB copia el asignacionId de la línea PEV', async () => {

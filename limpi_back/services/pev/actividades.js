@@ -153,7 +153,8 @@ async function crear(entrada, contexto) {
  */
 async function vincularTareaLegacy(tareaId, contexto) {
   return reintentarTransaccion(function () {
-    return db.sequelize.transaction(async function (t) {
+    // READ COMMITTED: tras un 1062, buscar() debe ver la actividad ganadora (en REPEATABLE READ no la ve)
+    return db.sequelize.transaction({ isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.READ_COMMITTED }, async function (t) {
       const filas = await db.sequelize.query(
         'SELECT TRIM(t.nombre) AS nombre, t.actividadId, s.clienteId FROM tareas t ' +
           'LEFT JOIN areas a ON a.id = t.areaId LEFT JOIN sectores s ON s.id = a.sectoreId WHERE t.id = :id',

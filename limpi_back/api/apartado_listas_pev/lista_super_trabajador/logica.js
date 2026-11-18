@@ -95,6 +95,7 @@ const CAMPOS_LINEA_SUPER = ['hora_1','despolvado_1','aplicacion_producto_1','abr
 const actualizarLineaListaSuperTrabajadorDB = async(id,linea_lista_super) => {
     id = parseInt(id)
     // RF-PEV-02b: lista blanca; tareaId/FK/asignacionId del body se ignoran (mass assignment, g.2)
+    if (!CAMPOS_LINEA_SUPER.some(c => c in linea_lista_super)) return [0] // sin campos editables: no-op en vez de UPDATE vacío (500)
     const respuesta = await LineaListasSuperTrabajadores.update(
         linea_lista_super,{where:{id}, fields: CAMPOS_LINEA_SUPER}
     )

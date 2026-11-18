@@ -24,6 +24,11 @@ const SQL_CANDIDATAS =
   "AND aa.estado <> 'ANULADA' AND aa.fecha_desde <= :fecha AND (aa.fecha_hasta IS NULL OR aa.fecha_hasta >= :fecha) " +
   'ORDER BY aa.id';
 
+// Revalidación con lock compartido dentro de la tx legacy: serializa con anular/cerrar (FOR UPDATE)
+const SQL_VIGENTE =
+  "SELECT id FROM actividad_asignaciones WHERE id = :id AND estado <> 'ANULADA' " +
+  'AND fecha_desde <= :fecha AND (fecha_hasta IS NULL OR fecha_hasta >= :fecha) LOCK IN SHARE MODE';
+
 function consultar(sql, replacements, transaction) {
   return db.sequelize.query(sql, { replacements: replacements, type: Q.SELECT, transaction: transaction });
 }
@@ -49,7 +54,7 @@ function fechaDeNegocio(valor) {
 /**
  * @param {{tareaId: number, n_empleado?: number, cronogramaId?: number, fecha_chequeo?: (Date|string),
  *          listaPevId?: number}} p  con `listaPevId` se leen n_empleado/cronogramaId/fecha_chequeo de esa lista
- * @param {{transaction?: object}} [opciones]
+ * @param {{transaction?: object}} [opciones]  con transaction, el id elegido se revalida con LOCK IN SHARE MODE
  * @returns {Promise<number|null>} id de la asignación vigente o null
  */
 async function resolverAsignacion(p, opciones) {
@@ -76,7 +81,11 @@ async function resolverAsignacion(p, opciones) {
     const app = filas.filter(function (f) { return f.origen === 'APP'; });
     const elegidas = app.length ? app : filas;
     if (elegidas.length > 1) { avisar('ASIGNACION_AMBIGUA', tareaId); return null; }
-    return elegidas.length ? elegidas[0].id : null;
+    const id = elegidas.length ? elegidas[0].id : null;
+    if (id === null || !t) return id;
+    // Sin esto, una anulación/cierre que confirma entre la lectura y el INSERT deja historial en una asignación no vigente
+    const vigente = await consultar(SQL_VIGENTE, { id: id, fecha: fecha }, t);
+    return vigente.length ? id : null;
   } catch (error) {
     avisar('ERROR', tareaId, error);
     return null;
