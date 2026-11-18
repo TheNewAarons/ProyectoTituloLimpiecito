@@ -39,7 +39,7 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 | RF-WEB-02 | Portal de PDFs descargables (políticas, reglamento) | Web | 🟡 Media | S | Feature nueva | 4 | — | Implementado – pendiente verificación/PR |
 | RF-WEB-03 | Publicaciones y anuncios desde el sistema | Web | 🟢 Baja | S | Feature nueva | 4 | — | Implementado – pendiente verificación/PR |
 | RF-PEV-01 | Asignación masiva de actividades PEV | PEV/Cronograma | 🟠 Media-Alta | L | Mejora | 5 | Reunión técnica | 🔒 Bloqueado |
-| RF-PEV-02 | Escalabilidad de tareas PEV (1 tarea → N trabajadores) | PEV/Cronograma | 🟠 Media-Alta | XL | Refactor | 5 | Reunión técnica | En progreso (02a implementado: esquema + API admin; 02b/02c pendientes) |
+| RF-PEV-02 | Escalabilidad de tareas PEV (1 tarea → N trabajadores) | PEV/Cronograma | 🟠 Media-Alta | XL | Refactor | 5 | Reunión técnica | En progreso (02a implementado: esquema + API admin; 02b implementado: migración de datos + dual-write, PR pendiente, requiere verificación en copia de producción; 02c pendiente) |
 | RF-BI-01 | Dashboard financiero (utilidad, tendencias, proyección) | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-01/02, FAC-01 | Sin empezar |
 | RF-BI-02 | Rentabilidad por cliente / centro de costo | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-02, FAC-01, BOD-04 | Sin empezar |
 | RF-BI-03 | Análisis de consumo de bodega | BI/Analytics | 🟠 Media-Alta | M | Feature nueva | 6 | BOD-01..04 | Sin empezar |
@@ -560,7 +560,7 @@ Implementar la lógica en un servicio (`services/bodega/cruceStock.js`) con test
 
 > El alcance definitivo depende de la **reunión técnica pendiente con el desarrollador original**. La lógica actual es compleja y no está documentada. **No modificar el esquema ni la lógica PEV hasta que el equipo lo autorice explícitamente.**
 
-> **Desbloqueo parcial (2026-11-16):** tras la reunión técnica de esa fecha, el equipo (Aaron y Bastián) autorizó **RF-PEV-02a** (esquema aditivo de actividades/asignaciones + API admin `/api/v1/pev`) mediante la autorización **RF-PEV-02-001** (vigente hasta 2026-12-31, `.claude/autorizaciones.json`). Las fases 02b (backfill + dual write) y 02c (cumplimiento) siguen condicionadas.
+> **Desbloqueo parcial (2026-11-16):** tras la reunión técnica de esa fecha, el equipo (Aaron y Bastián) autorizó **RF-PEV-02a** (esquema aditivo de actividades/asignaciones + API admin `/api/v1/pev`) mediante la autorización **RF-PEV-02-001** (vigente hasta 2026-12-31, `.claude/autorizaciones.json`). Las fases 02b (backfill + dual write) y 02c (cumplimiento) siguen condicionadas. **RF-PEV-02b** se implementó el 2026-11-17/18 bajo la misma autorización (migración de datos aditiva + dual-write).
 
 ### Lo que sí se sabe (reunión de kickoff)
 - Un **supervisor** tiene trabajadores asignados; a cada **trabajador** se le asigna un **área**; cada área tiene varias **actividades**, y cada actividad tiene **tres pasos de limpieza**.
