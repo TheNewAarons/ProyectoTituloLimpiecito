@@ -13,5 +13,7 @@ router.use(crearLimitePorIp());
 router.get('/documentos', asyncHandler(controlador.listar));
 router.get('/documentos/:id/descargar', asyncHandler(controlador.descargar));
 router.get('/publicaciones', asyncHandler(controlador.listarPublicaciones));
+// RF-WEB-01: carga diferida (el modelo nuevo no está simulado en los tests de RF-WEB-02/03).
+router.get('/catalogo', asyncHandler((req, res) => require('./catalogo').listarCatalogo(req, res)));
 
 module.exports = router;

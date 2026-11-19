@@ -337,6 +337,10 @@ app.use(process.env.PREFIJO + '/api/v1/public', PublicV1);
 const PublicacionesV1 = require('./api/v1/web/publicaciones/routes');
 app.use(process.env.PREFIJO + '/api/v1/web/publicaciones', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), PublicacionesV1);
 
+// RF-WEB-01: catálogo del sitio (solo Admin); el listado público está en /api/v1/public/catalogo.
+const CatalogoV1 = require('./api/v1/web/catalogo/routes');
+app.use(process.env.PREFIJO + '/api/v1/web/catalogo', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), CatalogoV1);
+
 app.use(process.env.PREFIJO + '/api/v1', require('./middleware/errores').noEncontrado); // RNF-API-02: 404 JSON solo en /api/v1
 app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas
 
