@@ -1,5 +1,6 @@
 const logicaDB = require('./logica')
 const Schema = require('./schema');
+const { actorDeRequest } = require('../../../services/auditoria/actor');
 
 const crearTarea = async(req,res) => {
 
@@ -14,7 +15,7 @@ const crearTarea = async(req,res) => {
     }
     try{
 
-        let respuesta = await logicaDB.crearTareaDB(tarea, turnos)
+        let respuesta = await logicaDB.crearTareaDB(tarea, turnos, actorDeRequest(req))
         return res.status(200).json({
             'tarea':respuesta
         })
