@@ -129,6 +129,7 @@ export const ROUTES: RouteInfo[] = [
     icontype: 'public',
     collapse: 'pagina_web',
     children: [
+      { path: 'catalogo', title: 'Catálogo', ab: 'CA' },
       { path: 'anuncios', title: 'Anuncios', ab: 'AN' }
     ]
   },

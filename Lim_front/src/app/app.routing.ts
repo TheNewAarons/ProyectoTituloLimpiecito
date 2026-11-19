@@ -109,6 +109,12 @@ export const AppRoutes: Routes = [
         canActivate: [ArchivoGuardService],
         loadChildren: './component/pagina-web/pagina-web.module#PaginaWebModule'
       },
+      // RF-WEB-01: catálogo web (mismos guards que Página Web; el backend exige Admin)
+      {
+        path: '',
+        canActivate: [ArchivoGuardService],
+        loadChildren: './component/catalogo-web/catalogo-web.module#CatalogoWebModule'
+      },
       {
         path: '',
         canActivate: [LvlAppGuardService,ArchivoGuardService,RestriccionGuardService],

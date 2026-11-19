@@ -46,7 +46,12 @@ module.exports = db.sequelize.define(
           model: Tareas,
           key: 'id'
         }
-      }
+      },
+    // RF-PEV-02b: solo lo escribe el dual-write al crear; los update legacy lo excluyen con `fields`
+    asignacionId: {
+      type: Sequelize.INTEGER,
+      allowNull: true
+    }
   },
   {
     timestamps: false
