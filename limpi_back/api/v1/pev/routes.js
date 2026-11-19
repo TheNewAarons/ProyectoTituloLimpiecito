@@ -17,5 +17,6 @@ router.get('/asignaciones', asyncHandler(controlador.listarAsignaciones));
 router.post('/asignaciones', asyncHandler(controlador.crearAsignacion));
 router.patch('/asignaciones/:id/cerrar', asyncHandler(controlador.cerrarAsignacion));
 router.patch('/asignaciones/:id/anular', asyncHandler(controlador.anularAsignacion));
+router.get('/asignaciones/:id/cumplimiento', asyncHandler(controlador.verCumplimiento));
 
 module.exports = router;

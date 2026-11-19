@@ -8,6 +8,7 @@ const AppError = require('../../../libs/app-error');
 const fecha = require('../../../libs/fecha');
 const actividades = require('../../../services/pev/actividades');
 const asignaciones = require('../../../services/pev/asignaciones');
+const cumplimiento = require('../../../services/pev/cumplimiento');
 
 const LIMIT_DEFECTO = 20;
 const LIMIT_MAX = 100;
@@ -186,7 +187,7 @@ const cerrarAsignacion = async (req, res) => {
   }
 
   const data = await asignaciones.cerrar(id, datos, { usuario: usuarioDesdeRequest(req), ip: req.ip });
-  return res.json({ ok: true, data: serializarAsignacion(data) });
+  return res.json({ ok: true, data: serializarAsignacion(data), meta: { lineas_posteriores: data.lineas_posteriores || 0 } });
 };
 
 const anularAsignacion = async (req, res) => {
@@ -201,11 +202,27 @@ const anularAsignacion = async (req, res) => {
   return res.json({ ok: true, data: serializarAsignacion(data) });
 };
 
+const verCumplimiento = async (req, res) => {
+  const id = entero(req.params.id, 'id', 1);
+  const q = req.query || {};
+  const { page, limit } = paginacion(q);
+  const filtros = {
+    desde: q.desde === undefined || q.desde === '' ? undefined : validarFecha(q.desde, 'desde'),
+    hasta: q.hasta === undefined || q.hasta === '' ? undefined : validarFecha(q.hasta, 'hasta'),
+    page: page,
+    limit: limit
+  };
+
+  const r = await cumplimiento.historial(id, filtros);
+  return res.json({ ok: true, data: r.rows, meta: { page: page, limit: limit, total: r.count } });
+};
+
 module.exports = {
   listarActividades: listarActividades,
   crearActividad: crearActividad,
   listarAsignaciones: listarAsignaciones,
   crearAsignacion: crearAsignacion,
   cerrarAsignacion: cerrarAsignacion,
-  anularAsignacion: anularAsignacion
+  anularAsignacion: anularAsignacion,
+  verCumplimiento: verCumplimiento
 };
