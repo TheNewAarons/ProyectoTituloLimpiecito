@@ -3,6 +3,7 @@ const Acceso_cliente = require('../../modelos/sistema_base/Acceso_cliente');
 const Doc_subida = require('../../modelos/sist_doc_cliente/Doc_subido');
 //PARA EL CORREO
 const nodemailer = require("nodemailer")
+const { crearTransporte } = require('../../services/correo/transporte')
 
 const prueba = async () => {
     console.log('Prueba')
@@ -27,18 +28,7 @@ const mandarCorreo = async () => {
                             let pre = `<li>${element.dataValues.ruta}</li>`
                             lista = lista+pre
                         });
-                        const transporter = nodemailer.createTransport({
-                            host: 'mail.aseolimpiecito.cl',
-                            port: 465,
-                            secureConnection:true,
-                            auth:{
-                            user: 'no-reply@aseolimpiecito.cl',
-                            pass: 'limpiecito-2020-noreply'
-                            },
-                            tls: {
-                            rejectUnauthorized: false
-                            }
-                        })
+                        const transporter = crearTransporte()
                         const mailOptionsEmpresa = {
                             from:"no-reply@aseolimpiecito.cl",
                             to: accesos[j].correo,
