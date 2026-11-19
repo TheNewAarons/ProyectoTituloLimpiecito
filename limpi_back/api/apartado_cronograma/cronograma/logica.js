@@ -15,6 +15,7 @@ const ListaSuper = require('../../../modelos/apartado_listas_pev/listaSuperTraba
 const LineaPev = require('../../../modelos/apartado_listas_pev/lineaListaPevTrabajador')
 const LineaSuper = require('../../../modelos/apartado_listas_pev/lineaSuperTrabajador')
 const { resolverAsignacion, asignacionDeLineaPev } = require('../../../services/pev/resolverAsignacion')
+const { Op } = require('sequelize')
 
 
 
@@ -247,6 +248,39 @@ const eliminarCronogramaDB = async(id) => {
     let respuesta = await Cronograma.destroy({where:{id}})
     return respuesta
 }
+
+// RF-PEV-02c (C7): guard de borrado acotado a las líneas que el flujo va a borrar (listas PEV dadas y,
+// opcionalmente, una tarea y sus listas supervisor). true si alguna tiene asignacionId y marca (D-139). Solo lectura.
+// shortcut: chequeo y DELETE no son atómicos (sin tx en el legacy); una marca escrita entre ambos se pierde.
+async function hayLineasConMarcaAsignacion(listaPevIds, opciones) {
+    opciones = opciones || {}
+    if (!listaPevIds.length) return false
+    const filtroPev = { asignacionId: { [Op.ne]: null }, listasPevTrabajadoreId: { [Op.in]: listaPevIds } }
+    if (opciones.tareaId !== undefined) filtroPev.tareaId = opciones.tareaId
+    filtroPev[Op.or] = [
+        { check_trabajador_1: 1 }, { check_trabajador_2: 1 }, { check_trabajador_3: 1 },
+        { hora_check_trabajador_1: { [Op.ne]: null } },
+        { hora_check_trabajador_2: { [Op.ne]: null } },
+        { hora_check_trabajador_3: { [Op.ne]: null } },
+        { observaciones: { [Op.notIn]: [''] } } // NOT IN excluye NULL y ''
+    ]
+    const pev = await LineaPev.findOne({ attributes: ['id'], where: filtroPev })
+    if (pev) return true
+    if (!opciones.incluirSupervisor) return false
+
+    const listasSuper = await ListaSuper.findAll({ attributes: ['id'], where: { listasPevTrabajadoreId: { [Op.in]: listaPevIds } } })
+    if (!listasSuper.length) return false
+    const filtroSuper = { asignacionId: { [Op.ne]: null }, listasSuperTrabajadoreId: { [Op.in]: listasSuper.map(l => l.id) } }
+    filtroSuper[Op.or] = [
+        { hora_1: { [Op.ne]: null } }, { hora_2: { [Op.ne]: null } }, { hora_3: { [Op.ne]: null } },
+        { despolvado_1: 1 }, { aplicacion_producto_1: 1 }, { abrillantado_1: 1 },
+        { despolvado_2: 1 }, { aplicacion_producto_2: 1 }, { abrillantado_2: 1 },
+        { despolvado_3: 1 }, { aplicacion_producto_3: 1 }, { abrillantado_3: 1 },
+        { observaciones: { [Op.notIn]: [''] } } // NOT IN excluye NULL y ''
+    ]
+    const sup = await LineaSuper.findOne({ attributes: ['id'], where: filtroSuper })
+    return !!sup
+}
 module.exports = {
     crearCronogramaDB,
     editarCronogramaDB,
@@ -279,5 +313,6 @@ module.exports = {
     obtenerLineasCronogramaDB,
     obtenerListasPevTrabajadorDB,
     obtenerListasSuperDB,
-    eliminarCronogramaDB
+    eliminarCronogramaDB,
+    hayLineasConMarcaAsignacion
 }
