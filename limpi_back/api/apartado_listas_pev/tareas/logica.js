@@ -138,9 +138,11 @@ const obtenerCantidadTareasActivasPorAreaDB = async (areaId) => {
 }
 
 const eliminarTareaPorIdDB = async(id) => {
-    let respuesta_turno_tarea = await Turno_tarea.destroy({where:{tareaId:id}})
-    let respuesta = await Tareas.destroy({where:{id}})
-    return respuesta
+    // RF-PEV-02a: en una tx, para no dejar la tarea sin turnos si una FK (p.ej. actividad_asignaciones) rechaza el borrado
+    return sequelize_tareas.transaction(async(t) => {
+        await Turno_tarea.destroy({where:{tareaId:id}, transaction:t})
+        return Tareas.destroy({where:{id}, transaction:t})
+    })
 }
 
 const buscarExistenciasTareaIdDB = async(tareaId) => {

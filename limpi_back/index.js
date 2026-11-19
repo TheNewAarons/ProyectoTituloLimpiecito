@@ -337,6 +337,10 @@ app.use(process.env.PREFIJO + '/api/v1/public', PublicV1);
 const PublicacionesV1 = require('./api/v1/web/publicaciones/routes');
 app.use(process.env.PREFIJO + '/api/v1/web/publicaciones', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), PublicacionesV1);
 
+// RF-PEV-02a: actividades y asignaciones PEV (solo Admin).
+const PevV1 = require('./api/v1/pev/routes');
+app.use(process.env.PREFIJO + '/api/v1/pev', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), PevV1);
+
 app.use(process.env.PREFIJO + '/api/v1', require('./middleware/errores').noEncontrado); // RNF-API-02: 404 JSON solo en /api/v1
 app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas
 
