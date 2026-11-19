@@ -120,3 +120,53 @@ describe('crear actividad', () => {
     expect(mem.actividades.length).toBe(0);
   });
 });
+
+describe('vincularTareaLegacy (RF-PEV-02b dual-write)', () => {
+  const db = require('../../../database/database');
+  function tareaEnBd(fila) {
+    db.sequelize.query.mockImplementation(async (sql) => (sql.indexOf('SELECT') === 0 ? (fila ? [fila] : []) : [{ affectedRows: 1 }]));
+  }
+  const updates = () => db.sequelize.query.mock.calls.filter((c) => c[0].indexOf('UPDATE tareas') === 0);
+
+  it('reutiliza la actividad existente (cliente, TRIM(nombre)) sin crear otra', async () => {
+    const existente = await servicio.crear({ cliente_id: 10, nombre: 'Pulido de pisos' }, CTX);
+    jest.clearAllMocks();
+    tareaEnBd({ nombre: 'Pulido de pisos', actividadId: null, clienteId: 10 });
+    expect(await servicio.vincularTareaLegacy(55, CTX)).toBe(existente.id);
+    expect(Actividad.create).not.toHaveBeenCalled();
+    expect(updates()[0][1].replacements).toEqual({ a: existente.id, id: 55 });
+    expect(updates()[0][0]).toMatch(/actividadId IS NULL/);
+  });
+
+  it('crea actividad APP con 3 pasos y auditoría si no existe', async () => {
+    tareaEnBd({ nombre: 'Lavado vidrios', actividadId: null, clienteId: 10 });
+    const id = await servicio.vincularTareaLegacy(56, CTX);
+    expect(mem.actividades).toEqual([expect.objectContaining({ id: id, cliente_id: 10, nombre: 'Lavado vidrios', origen: 'APP' })]);
+    expect(mem.pasos.length).toBe(3);
+    expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ entidad: 'actividades', accion: 'CREAR' }));
+  });
+
+  it('carrera (1062 en el INSERT): reutiliza la actividad ganadora', async () => {
+    tareaEnBd({ nombre: 'Encerado', actividadId: null, clienteId: 10 });
+    Actividad.create.mockImplementationOnce(async () => {
+      mem.actividades.push({ id: 77, cliente_id: 10, nombre: 'Encerado' });
+      throw Object.assign(new Error('Duplicate entry'), { name: 'SequelizeUniqueConstraintError' });
+    });
+    expect(await servicio.vincularTareaLegacy(57, CTX)).toBe(77);
+  });
+
+  it('no aplica: tarea ya vinculada, sin cliente o nombre con espacios no-trim (regla M1) → null sin escribir', async () => {
+    for (const fila of [
+      { nombre: 'X', actividadId: 3, clienteId: 10 },
+      { nombre: 'X', actividadId: null, clienteId: null },
+      { nombre: '\tX', actividadId: null, clienteId: 10 }
+    ]) {
+      tareaEnBd(fila);
+      expect(await servicio.vincularTareaLegacy(58, CTX)).toBeNull();
+    }
+    tareaEnBd(null);
+    expect(await servicio.vincularTareaLegacy(59, CTX)).toBeNull();
+    expect(updates()).toEqual([]);
+    expect(Actividad.create).not.toHaveBeenCalled();
+  });
+});

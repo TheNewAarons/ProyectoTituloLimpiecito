@@ -3,6 +3,7 @@ const Tareas = require('../../../modelos/apartado_listas_pev/tarea')
 const TareasTurnos = require('../../../modelos/apartado_listas_pev/turnoTarea')
 const Turnos = require('../../../modelos/apartado_listas_pev/turno')
 const paginador = require('../../../services/paginado')
+const { vincularTareaLegacy } = require('../../../services/pev/actividades')
 
 const Linea_lista_super = require('../../../modelos/apartado_listas_pev/lineaSuperTrabajador')
 const Linea_lista_pev = require('../../../modelos/apartado_listas_pev/lineaListaPevTrabajador')
@@ -14,7 +15,7 @@ const sequelize_tareas = Tareas.sequelize
 Tareas.hasMany(TareasTurnos)
 TareasTurnos.belongsTo(Turnos)
 
-const crearTareaDB = async (tarea, turnos) => {
+const crearTareaDB = async (tarea, turnos, contexto) => {
     let tareaId;
     await sequelize_tareas.transaction(async(t) => {
         tareaId = await Tareas.create(tarea,{transaction:t}).then( function (x){
@@ -28,6 +29,12 @@ const crearTareaDB = async (tarea, turnos) => {
             },{transaction:t})
         }
         });
+    // RF-PEV-02b dual-write, best-effort tras el commit: un fallo no cambia la respuesta legacy (D-127)
+    try {
+        await vincularTareaLegacy(tareaId, contexto || { usuario: { id: null, contexto: 'sistema' }, ip: null })
+    } catch (error) {
+        console.error('[pev] vincularTareaLegacy tareaId=' + tareaId + ' error=' + (error && error.name || 'Error'))
+    }
     return true
 }
 
