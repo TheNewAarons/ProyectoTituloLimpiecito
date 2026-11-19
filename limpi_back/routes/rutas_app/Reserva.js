@@ -11,11 +11,12 @@ const Bloque = require('../../modelos/sist_app/Bloque')
 
 //PARA EL CORREO
 const nodemailer = require("nodemailer")
+const { crearTransporte } = require('../../services/correo/transporte')
 
 //WEB PAY
 const WebpayPlus = require("transbank-sdk").WebpayPlus;
-// WebpayPlus.configureForIntegration(597055555532,'579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C')
-WebpayPlus.configureForProduction(597035985883,'027e4ca44a9bf95b0a7db601a62c1b8a')
+// RNF-SEC-01 (AUT-005): ambiente y credenciales solo desde TRANSBANK_* (ver config/transbank.js).
+require('../../config/transbank').configurarWebpay()
 
 const sequelize = require('sequelize');
 const Usuario_app = require('../../modelos/sist_app/Usuario_app');
@@ -101,18 +102,7 @@ reservas.post('/crear', async (req, res) => {
         let usuario = await Usuario_app.findById(reservaData.usuarioAppId);
         let servicio = await Servicio.findById(reservaData.servicioId);
         
-        const transporter = nodemailer.createTransport({
-          host: 'mail.aseolimpiecito.cl',
-          port: 465,
-          secureConnection:true,
-          auth:{
-            user: 'no-reply@aseolimpiecito.cl',
-            pass: 'limpiecito-2020-noreply'
-          },
-          tls: {
-            rejectUnauthorized: false
-          }
-        })
+        const transporter = crearTransporte()
         const mailOptionsEmpresa = {
           from:"no-reply@aseolimpiecito.cl",
           to: 'app.movil@aseolimpiecito.cl',
@@ -160,18 +150,7 @@ reservas.post('/crear', async (req, res) => {
         let usuario = await Usuario_app.findById(reservaData.usuarioAppId);
         let servicio = await Servicio.findById(reservaData.servicioId);
         
-        const transporter = nodemailer.createTransport({
-          host: 'mail.aseolimpiecito.cl',
-          port: 465,
-          secureConnection:true,
-          auth:{
-            user: 'no-reply@aseolimpiecito.cl',
-            pass: 'limpiecito-2020-noreply'
-          },
-          tls: {
-            rejectUnauthorized: false
-          }
-        })
+        const transporter = crearTransporte()
         const mailOptionsEmpresa = {
           from:"no-reply@aseolimpiecito.cl",
           to: 'app.movil@aseolimpiecito.cl',
@@ -289,18 +268,7 @@ reservas.post('/crear-normal', async (req, res) => {
         let usuario = await Usuario_app.findById(reservaData.usuarioAppId);
         let servicio = await Servicio.findById(reservaData.servicioId);
         
-        const transporter = nodemailer.createTransport({
-          host: 'mail.aseolimpiecito.cl',
-          port: 465,
-          secureConnection:true,
-          auth:{
-            user: 'no-reply@aseolimpiecito.cl',
-            pass: 'limpiecito-2020-noreply'
-          },
-          tls: {
-            rejectUnauthorized: false
-          }
-        })
+        const transporter = crearTransporte()
         const mailOptionsEmpresa = {
           from:"no-reply@aseolimpiecito.cl",
           to: 'app.movil@aseolimpiecito.cl',
@@ -347,18 +315,7 @@ reservas.post('/crear-normal', async (req, res) => {
         let usuario = await Usuario_app.findById(reservaData.usuarioAppId);
         let servicio = await Servicio.findById(reservaData.servicioId);
         
-        const transporter = nodemailer.createTransport({
-          host: 'mail.aseolimpiecito.cl',
-          port: 465,
-          secureConnection:true,
-          auth:{
-            user: 'no-reply@aseolimpiecito.cl',
-            pass: 'limpiecito-2020-noreply'
-          },
-          tls: {
-            rejectUnauthorized: false
-          }
-        })
+        const transporter = crearTransporte()
         const mailOptionsEmpresa = {
           from:"no-reply@aseolimpiecito.cl",
           to: 'app.movil@aseolimpiecito.cl',
