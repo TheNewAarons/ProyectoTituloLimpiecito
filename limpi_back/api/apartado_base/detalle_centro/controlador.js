@@ -1,5 +1,6 @@
 const logicaDB = require('./logica')
 const { actorDeRequest } = require('../../../services/auditoria/actor')
+const Lista_insumo = require('../../../modelos/sistema_base/Lista_insumo')
 
 const crearAsociacionCentroTrabajador = async (req, res) => {
     const asociacion = JSON.parse(req.body.asociacion);
@@ -59,7 +60,16 @@ const aprobarListaInsumo = async (req, res) => {
     }
 }
 const eliminarListaInsumo = async (req, res) => {
+    // AUT-003: exige sesión (identificarOpcional deja req.usuario solo con un token válido) y solo borra listas
+    // pendientes. Las aprobadas y las de bodega (estado 1, no descontaron stock) no se borran: reponer su stock lo inflaría.
+    if (!req.usuario) {
+        return res.status(401).json({ ok: false, error: { code: 'TOKEN_REQUERIDO', message: 'debe iniciar sesión para eliminar una lista' } })
+    }
     try {
+        const lista = await Lista_insumo.findById(req.params.id)
+        if (lista && Number(lista.estado) !== 0) {
+            return res.status(409).json({ ok: false, error: { code: 'LISTA_NO_ELIMINABLE', message: 'solo se pueden eliminar listas pendientes (no aprobadas ni de bodega)' } })
+        }
         let numero_eliminado = await logicaDB.eliminarListaInsumoCompletoDB(req.params.id, actorDeRequest(req))
         return res.json({ numero_eliminado })
     } catch (error) {

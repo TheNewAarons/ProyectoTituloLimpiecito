@@ -19,7 +19,7 @@ const buscarUsuarioCorreoTrueDB = async(correo) => {
 }
 
 const buscarUsuarioIdDB = async (id) => {
-  let respuesta = await Usuario.findOne({ where: {id} });
+  let respuesta = await Usuario.findOne({ where: {id}, attributes: { exclude: ['password'] } });
   return respuesta;
 };
 
@@ -46,6 +46,7 @@ const desactivarUsuarioDB = async (id) => {
 const obtenerUsuariosActivosDB = async () => {
   let respuesta = await Usuario.findAll({
     where: { estado: 1 },
+    attributes: { exclude: ['password'] },
     include: {
       model: Rol,
       as: 'role'
@@ -58,6 +59,7 @@ const obtenerUsuariosActivosDB = async () => {
 const obtenerUsuariosInactivosDB = async () => {
   let respuesta = await Usuario.findAll({
     where: { estado: 0 },
+    attributes: { exclude: ['password'] },
     include: {
       model: Rol,
       as: 'role'
@@ -69,6 +71,7 @@ const obtenerUsuariosInactivosDB = async () => {
 
 const buscarUsuariosActivosDB = async (busca) => {
   let respuesta = Usuario.findAll({
+    attributes: { exclude: ['password'] },
     include: {
       model: Rol,
       as: 'role'
@@ -110,6 +113,7 @@ const buscarUsuariosActivosDB = async (busca) => {
 
 const buscarUsuariosInactivosDB = async (busca) => {
   let respuesta = Usuario.findAll({
+    attributes: { exclude: ['password'] },
     include: {
       model: Rol,
       as: 'role'
