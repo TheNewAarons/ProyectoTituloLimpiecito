@@ -1,22 +1,12 @@
 //PARA EL CORREO
 const nodemailer = require("nodemailer")
+const { crearTransporte } = require('../../../services/correo/transporte')
 
 const solicitudCronograma = async(req,res) => {
     let solicitud = req.body;
 
     try {
-        const transporter = nodemailer.createTransport({
-            host: 'mail.aseolimpiecito.cl',
-            port: 465,
-            secureConnection:true,
-            auth:{
-            user: 'no-reply@aseolimpiecito.cl',
-            pass: 'limpiecito-2020-noreply'
-            },
-            tls: {
-            rejectUnauthorized: false
-            }
-        })
+        const transporter = crearTransporte()
         const mailOptionsEmpresa = {
             from:"no-reply@aseolimpiecito.cl",
             to: "contactanos@aseolimpiecito.cl",

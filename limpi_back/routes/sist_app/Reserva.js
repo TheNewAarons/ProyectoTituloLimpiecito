@@ -12,6 +12,7 @@ const Observacion = require('../../modelos/sist_app/Observacion');
 
 //PARA EL CORREO
 const nodemailer = require("nodemailer");
+const { crearTransporte } = require('../../services/correo/transporte');
 const Categoria_servicio = require('../../modelos/sist_app/Categoria_servicio');
 
 Reserva.belongsTo(Servicio);
@@ -105,18 +106,7 @@ reservas.delete('/aprobar-reserva/:idReserva', async (req, res) => {
   let usuario = await Usuario.findById(reserva.usuarioAppId);
   let servicio = await Servicio.findById(reserva.servicioId);
 
-  const transporter = nodemailer.createTransport({
-    host: 'mail.aseolimpiecito.cl',
-    port: 465,
-    secureConnection:true,
-    auth:{
-      user: 'no-reply@aseolimpiecito.cl',
-      pass: 'limpiecito-2020-noreply'
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  })
+  const transporter = crearTransporte()
   const mailOptions = {
       from:"no-reply@aseolimpiecito.cl",
       to: usuario.correo,

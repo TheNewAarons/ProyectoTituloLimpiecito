@@ -10,6 +10,7 @@ const atob = require('atob')
 
 const Usuario = require('../../modelos/sist_app/Usuario_app')
 const recuperacion = require('../../services/seguridad/recuperacion')
+const { crearTransporte } = require('../../services/correo/transporte')
 
 //RECUPERAR PASSWORD APP
 
@@ -22,18 +23,7 @@ recuperar_pass_app.post("/recuperar-password", async (req, res) => {
         let token = recuperacion.firmar(usuario, recuperacion.PROPOSITO.APP)
         // let url = "http://localhost:4200/#/sistema/recuperar-password-app/"+token
         let url = "https://www.minda.aseolimpiecito.cl/#/sistema/recuperar-password-app/"+token
-        const transporter = nodemailer.createTransport({
-            host: 'mail.aseolimpiecito.cl',
-            port: 465,
-            secureConnection:true,
-            auth:{
-                user: 'no-reply@aseolimpiecito.cl',
-                pass: 'limpiecito-2020-noreply'
-            },
-            tls: {
-                rejectUnauthorized: false
-              }
-        })
+        const transporter = crearTransporte()
         const options = {
             viewEngine: {
                 layoutsDir: (__dirname, "./views/layouts"),
