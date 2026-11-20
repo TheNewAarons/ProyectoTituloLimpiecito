@@ -1,0 +1,145 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">leaderboard</i></div>
+            <h4 class="card-title">Rentabilidad por cliente <small *ngIf="meta">{{ meta.desde }} a {{ meta.hasta }}</small></h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-lg-6">
+                <app-filtro-periodo [desde]="desde" [hasta]="hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
+              </div>
+            </div>
+            <div class="alert alert-warning" *ngIf="meta && !meta.cuadra">
+              La rentabilidad no cuadra con la utilidad del período: diferencia de
+              {{ meta.diferencia_conciliacion | currency:'CLP':'symbol':'1.0-0' }}.
+            </div>
+            <p class="text-muted" *ngIf="meta && meta.estimacion">Incluye ingreso estimado (contrato).</p>
+            <div class="row">
+              <div class="col-12 col-sm-6 col-lg-3">
+                <app-kpi-card titulo="Utilidad total" icono="trending_up" color="success" [cargando]="cargando"
+                  [valor]="meta ? meta.utilidad_total : null"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-3">
+                <app-kpi-card titulo="Σ márgenes" icono="functions" color="info" [cargando]="cargando"
+                  [valor]="meta ? meta.totales.suma_margenes : null"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-3">
+                <app-kpi-card titulo="Gastos generales" icono="receipt" color="warning" [cargando]="cargando"
+                  [valor]="meta ? meta.totales.gastos_generales : null"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-3">
+                <app-kpi-card titulo="Clientes en pérdida" icono="trending_down" color="rose" formato="numero" [cargando]="cargando"
+                  [valor]="meta ? meta.totales.clientes_en_perdida : null"></app-kpi-card>
+              </div>
+            </div>
+            <app-grafico tipo="bar" titulo="Top 10 clientes por margen" [etiquetas]="etiquetas" [series]="series"></app-grafico>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Cliente</th>
+                    <th>Centros</th>
+                    <th class="text-right">Ingreso real</th>
+                    <th class="text-right">Costo total</th>
+                    <th class="text-right">Margen</th>
+                    <th class="text-right">Margen %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let f of filas" [class.table-danger]="f.en_perdida">
+                    <td>{{ f.posicion }}</td>
+                    <td>
+                      {{ f.cliente }}
+                      <span class="badge badge-danger" *ngIf="f.en_perdida">En pérdida</span>
+                    </td>
+                    <td>
+                      <button type="button" class="btn btn-link btn-sm" *ngFor="let c of f.centros" (click)="verDetalle(c.centro_costo_id)">CC {{ c.numero_cc }}</button>
+                    </td>
+                    <td class="text-right">
+                      {{ f.ingreso_real | currency:'CLP':'symbol':'1.0-0' }}
+                      <span class="badge badge-warning" *ngIf="esEstimado(f)">Estimado {{ f.ingreso_estimado | currency:'CLP':'symbol':'1.0-0' }}</span>
+                    </td>
+                    <td class="text-right">{{ f.costo_total | currency:'CLP':'symbol':'1.0-0' }}</td>
+                    <td class="text-right">{{ f.margen | currency:'CLP':'symbol':'1.0-0' }}</td>
+                    <td class="text-right">{{ f.margen_pct === null ? '—' : (f.margen_pct | number:'1.0-1':'es-CL') + ' %' }}</td>
+                  </tr>
+                  <ng-container *ngIf="gastos">
+                    <tr>
+                      <td></td>
+                      <td colspan="4">Gastos generales: egresos sin centro</td>
+                      <td class="text-right">{{ gastos.egresos_sin_centro | currency:'CLP':'symbol':'1.0-0' }}</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td></td>
+                      <td colspan="4">(−) Bodega cargada a centros</td>
+                      <td class="text-right">{{ -gastos.consumo_bodega_reasignado | currency:'CLP':'symbol':'1.0-0' }}</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td></td>
+                      <td colspan="4"><strong>Gastos generales netos</strong></td>
+                      <td class="text-right"><strong>{{ gastos.gastos_generales | currency:'CLP':'symbol':'1.0-0' }}</strong></td>
+                      <td></td>
+                    </tr>
+                  </ng-container>
+                  <tr *ngIf="!cargando && filas.length === 0">
+                    <td colspan="7" class="text-center">Sin datos en el período</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row" *ngIf="detalle">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-info card-header-icon">
+            <div class="card-icon"><i class="material-icons">account_tree</i></div>
+            <h4 class="card-title">Detalle CC {{ detalle.centro.numero_cc }} <small>{{ detalle.centro.cliente }}</small></h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-sm-4">
+                <app-kpi-card titulo="Sueldos" icono="people" color="info" [valor]="detalle.costos.sueldos"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-4">
+                <app-kpi-card titulo="EPP e insumos" icono="inventory_2" color="warning" [valor]="detalle.costos.epp_insumos"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-4">
+                <app-kpi-card titulo="Otros" icono="more_horiz" color="rose" [valor]="detalle.costos.otros"></app-kpi-card>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Período</th>
+                    <th class="text-right">Sueldos</th>
+                    <th class="text-right">EPP e insumos</th>
+                    <th class="text-right">Otros</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of detalle.por_periodo">
+                    <td>{{ p.periodo }}</td>
+                    <td class="text-right">{{ p.sueldos | currency:'CLP':'symbol':'1.0-0' }}</td>
+                    <td class="text-right">{{ p.epp_insumos | currency:'CLP':'symbol':'1.0-0' }}</td>
+                    <td class="text-right">{{ p.otros | currency:'CLP':'symbol':'1.0-0' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

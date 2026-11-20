@@ -15,10 +15,10 @@ export interface MetaAnalytics {
   estimacion?: boolean;
 }
 
-export interface RespuestaAnalytics<T> {
+export interface RespuestaAnalytics<T, M = MetaAnalytics> {
   ok: true;
   data: T;
-  meta: MetaAnalytics;
+  meta: M;
 }
 
 export interface SerieGrafico {
@@ -69,4 +69,64 @@ export interface ResumenFinanciero {
 
 export interface PuntoTendencia extends MovimientoProyectado {
   periodo: string;
+}
+
+// RF-BI-02: Rentabilidad por cliente / centro de costo (/api/v1/analytics/rentabilidad)
+export type OrigenIngreso = 'CAJA' | 'CONTRATO_ESTIMADO' | 'MIXTO' | 'SIN_INGRESO';
+
+export interface FilaRentabilidad {
+  tipo: 'CLIENTE';
+  posicion: number;
+  cliente_id: number | null;
+  cliente: string;
+  centros: { centro_costo_id: number; numero_cc: string | number }[];
+  ingreso_real: number;
+  ingreso_estimado: number;
+  ingreso_facturado: number;
+  costo_sueldos: number;
+  costo_bodega: number;
+  costo_otros: number;
+  egreso_estimado: number;
+  costo_total: number;
+  margen: number;
+  margen_pct: number | null;
+  margen_con_estimado: number;
+  en_perdida: boolean;
+  origen_ingreso: OrigenIngreso;
+}
+
+export interface FilaGastosGenerales {
+  tipo: 'GASTOS_GENERALES';
+  cliente: string;
+  egresos_sin_centro: number;
+  consumo_bodega_reasignado: number;
+  gastos_generales: number;
+}
+
+export interface MetaRentabilidad extends MetaAnalytics {
+  periodos: number;
+  totales: {
+    ingreso_real: number;
+    ingreso_estimado: number;
+    ingreso_facturado: number;
+    costo_total: number;
+    suma_margenes: number;
+    gastos_generales: number;
+    clientes_en_perdida: number;
+  };
+  utilidad_total: number;
+  diferencia_conciliacion: number;
+  cuadra: boolean;
+}
+
+export interface DetalleRentabilidad {
+  centro: { id: number; numero_cc: string | number; cliente_id: number | null; cliente: string | null; periodo: string; estado: number };
+  ingreso: { real: number; estimado: number; facturado: number; origen_ingreso: OrigenIngreso };
+  costos: { sueldos: number; epp_insumos: number; otros: number; otros_estimado: number };
+  costo_total: number;
+  margen: number;
+  margen_pct: number | null;
+  margen_con_estimado: number;
+  en_perdida: boolean;
+  por_periodo: { periodo: string; sueldos: number; epp_insumos: number; otros: number; otros_estimado: number }[];
 }

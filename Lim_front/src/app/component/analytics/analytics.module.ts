@@ -10,6 +10,7 @@ import { LoadingModule } from 'src/app/loading/loading.module';
 import { AnalyticsRoutes } from './analytics.routing';
 import { AnalyticsInicioComponent } from './inicio/analytics-inicio.component';
 import { DashboardFinancieroComponent } from './financiero/dashboard-financiero.component';
+import { RentabilidadComponent } from './rentabilidad/rentabilidad.component';
 import { KpiCardComponent } from './compartido/kpi-card/kpi-card.component';
 import { GraficoComponent } from './compartido/grafico/grafico.component';
 import { FiltroPeriodoComponent } from './compartido/filtro-periodo/filtro-periodo.component';
@@ -29,6 +30,7 @@ import { SelectorClienteComponent } from './compartido/selector-cliente/selector
   declarations: [
     AnalyticsInicioComponent,
     DashboardFinancieroComponent,
+    RentabilidadComponent,
     KpiCardComponent,
     GraficoComponent,
     FiltroPeriodoComponent,
