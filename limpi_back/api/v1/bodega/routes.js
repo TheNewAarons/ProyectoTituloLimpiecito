@@ -68,4 +68,16 @@ const dashboardBodega = require('./dashboard-controlador');
 router.get('/dashboard', admin, asyncHandler(dashboardBodega.obtener));
 router.patch('/productos/:id/stock-minimo', admin, asyncHandler(dashboardBodega.actualizarStockMinimo));
 
+// RNF-ARQ-01 parte 1 (SCRUM-42): equivalentes v1 de /producto/* (Admin y Operaciones). Docs/MIGRACION_RUTAS.md.
+const productosCrud = require('./productos-crud-controlador');
+router.get('/productos', ADMIN_Y_OPERACIONES, asyncHandler(productosCrud.listar));
+router.post('/productos', ADMIN_Y_OPERACIONES, asyncHandler(productosCrud.crear));
+router.put('/productos/:id', ADMIN_Y_OPERACIONES, asyncHandler(productosCrud.editar));
+router.patch('/productos/:id/estado', ADMIN_Y_OPERACIONES, asyncHandler(productosCrud.cambiarEstado));
+router.delete('/productos/:id', ADMIN_Y_OPERACIONES, asyncHandler(productosCrud.borrar));
+// Equivalentes v1 de /stock/obtener y /stock/crear.
+const stockRapido = require('./stock-rapido-controlador');
+router.get('/stock-rapido', ADMIN_Y_OPERACIONES, asyncHandler(stockRapido.listar));
+router.post('/stock-rapido', ADMIN_Y_OPERACIONES, asyncHandler(stockRapido.crear));
+
 module.exports = router;

@@ -89,6 +89,24 @@ const identificarOpcional = asyncHandler(async (req, res, next) => {
 });
 
 /**
+ * D-153: el usuario sigue existiendo, activo (estado 1, como el login) y con el mismo correo y roleId del token.
+ * @returns {Promise<boolean>}
+ */
+async function usuarioVigente(id, correo, roleId) {
+  const u = await Usuario.findById(id, { attributes: ['id', 'correo', 'roleId', 'estado'] });
+  return !!u && Number(u.estado) === 1 && u.correo === correo && Number(u.roleId) === Number(roleId);
+}
+
+/** Revalida contra la BD al usuario que dejó `autenticar` (el JWT dura 1 día). Va después de `autenticar`. */
+const revalidarUsuario = asyncHandler(async (req, res, next) => {
+  const u = req.usuario;
+  if (!u || !(await usuarioVigente(u.id, u.correo, u.roleId))) {
+    throw new AppError('TOKEN_INVALID', 'credenciales no validas', 401);
+  }
+  next();
+});
+
+/**
  * Exige que `req.usuario.rol_nombre` esté entre los nombres de rol permitidos (comparación
  * insensible a mayúsculas/acentos simples). Debe ir después de `autenticar`.
  * @param {...string} nombresPermitidos nombres de `roles.nombre` (ver services/constantes.js)
@@ -107,5 +125,7 @@ function requerirRol(...nombresPermitidos) {
 module.exports = {
   autenticar: autenticar,
   identificarOpcional: identificarOpcional,
+  revalidarUsuario: revalidarUsuario,
+  usuarioVigente: usuarioVigente,
   requerirRol: requerirRol
 };

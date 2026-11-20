@@ -41,7 +41,7 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 | RF-PEV-01 | Asignación masiva de actividades PEV | PEV/Cronograma | 🟠 Media-Alta | L | Mejora | 5 | Reunión técnica | 🔒 Bloqueado |
 | RF-PEV-02 | Escalabilidad de tareas PEV (1 tarea → N trabajadores) | PEV/Cronograma | 🟠 Media-Alta | XL | Refactor | 5 | Reunión técnica | En progreso (02a implementado: esquema + API admin; 02b implementado: migración de datos + dual-write, PR pendiente, requiere verificación en copia de producción; 02c implementado en rama: app laboral, verificación del supervisor y guard de borrado legacy; revisión C5 aplicada; pendiente: pruebas contra MySQL real (C4) y PR) |
 | RF-BI-01 | Dashboard financiero (utilidad, tendencias, proyección) | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-01/02, FAC-01 | Implementado (PR pendiente) |
-| RF-BI-02 | Rentabilidad por cliente / centro de costo | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-02, FAC-01, BOD-04 | Sin empezar |
+| RF-BI-02 | Rentabilidad por cliente / centro de costo | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-02, FAC-01, BOD-04 | Implementado (PR pendiente) |
 | RF-BI-03 | Análisis de consumo de bodega | BI/Analytics | 🟠 Media-Alta | M | Feature nueva | 6 | BOD-01..04 | Sin empezar |
 | RF-BI-04 | Productividad de trabajadores/supervisores PEV | BI/Analytics | 🟡 Media | M | Feature nueva | 7 | PEV-01/02 | 🔒 Condicionado |
 | RF-BI-05 | Predicción de demanda (app reservas) | BI/Analytics | 🟢 Baja | L | Feature nueva | 7 | — | Sin empezar |
@@ -631,7 +631,8 @@ Umbral configurable: tabla `configuracion (clave, valor)` o la que exista.
 | Ranking | Clientes ordenados por margen del período |
 
 **Endpoints:** `GET /api/v1/analytics/rentabilidad?desde=&hasta=` · `GET /api/v1/analytics/rentabilidad/:centroCostoId/detalle`.
-**Criterios:** [ ] Suma de márgenes por centro = utilidad total menos egresos no asignados (mostrar ese remanente como "Gastos generales"). [ ] Clientes en pérdida destacados.
+**Criterios:** [x] Suma de márgenes por centro = utilidad total menos egresos no asignados (mostrar ese remanente como "Gastos generales"). [x] Clientes en pérdida destacados.
+> **Desviación de la spec (implementado, D-165…D-172):** el ingreso real es `precio_servicio` de centros cerrados (cuadra con caja); las facturas de ingreso pagadas (`cc_ingresos`) son informativas (`ingreso_facturado`). Centros abiertos se estiman con `precio_servicio` o, si es 0/NULL, con `valor_factura`; van etiquetados `CONTRATO_ESTIMADO` y quedan fuera de la invariante. Gastos generales = egresos sin centro − bodega cargada a centros. `egresos.centro_costo_id` queda para un RF aparte (D-168).
 
 ### RF-BI-03 · Análisis de consumo de bodega
 **Prioridad:** 🟠 Media-Alta · **Esfuerzo:** M (2 pts) · **Sprint:** 6

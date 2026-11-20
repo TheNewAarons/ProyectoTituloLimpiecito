@@ -1,0 +1,165 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">inventory_2</i></div>
+            <h4 class="card-title">Consumo de bodega <small>{{ desde }} a {{ hasta }}</small></h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-lg-6">
+                <app-filtro-periodo [desde]="desde" [hasta]="hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
+              </div>
+            </div>
+            <p class="text-muted">"Solicitado" es lo pedido por los supervisores; "consumido" es lo efectivamente entregado por bodega.</p>
+
+            <div class="row">
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Unidades entregadas" icono="local_shipping" color="success" formato="numero" [cargando]="cargando"
+                  [valor]="totalEntregado" [detalle]="productoId ? nombreProductoElegido() : 'Todos los productos'"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Solicitudes entregadas" icono="assignment_turned_in" color="info" formato="numero" [cargando]="cargando"
+                  [valor]="solicitudesEntregadas" detalle="En el período"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Productos bajo mínimo" icono="warning" [color]="critico.length ? 'rose' : 'success'" formato="numero"
+                  [cargando]="cargando" [valor]="critico.length" detalle="Estado actual"></app-kpi-card>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12 col-sm-8 col-lg-4">
+                <mat-form-field class="w-100">
+                  <mat-select placeholder="Producto del gráfico" [(ngModel)]="productoId" (selectionChange)="cambiarProducto()">
+                    <mat-option [value]="null">Todos los productos</mat-option>
+                    <mat-option *ngFor="let p of top" [value]="p.producto_id">{{ p.producto }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+            <app-grafico tipo="bar" [enteros]="true" [titulo]="'Consumo mensual: ' + nombreProductoElegido()" [etiquetas]="etiquetas" [series]="series"></app-grafico>
+
+            <h4 class="mt-4">Productos más solicitados</h4>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Producto</th>
+                    <th class="text-right">Solicitado</th>
+                    <th class="text-right">Entregado</th>
+                    <th class="text-right">Solicitudes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let f of top">
+                    <td>{{ f.posicion }}</td>
+                    <td>{{ f.producto }}</td>
+                    <td class="text-right">{{ f.cantidad_pedida | number:'1.0-0':'es-CL' }}</td>
+                    <td class="text-right">{{ f.cantidad_entregada | number:'1.0-0':'es-CL' }}</td>
+                    <td class="text-right">{{ f.solicitudes }}</td>
+                  </tr>
+                  <tr *ngIf="!cargando && top.length === 0">
+                    <td colspan="5" class="text-center text-muted">Sin solicitudes en el período.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center mt-4">
+              <h4 class="mr-3 mb-0">Consumo por</h4>
+              <mat-button-toggle-group [(ngModel)]="agrupar" (change)="cambiarAgrupacion()" aria-label="Agrupar consumo por">
+                <mat-button-toggle value="supervisor">Supervisor</mat-button-toggle>
+                <mat-button-toggle value="centro_costo">Centro de costo</mat-button-toggle>
+              </mat-button-toggle-group>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>{{ agrupar === 'supervisor' ? 'Supervisor' : 'Centro de costo' }}</th>
+                    <th class="text-right">Unidades entregadas</th>
+                    <th class="text-right">Solicitudes</th>
+                    <th class="text-right">Productos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let g of grupos">
+                    <td>{{ g.etiqueta }}</td>
+                    <td class="text-right">{{ g.cantidad | number:'1.0-0':'es-CL' }}</td>
+                    <td class="text-right">{{ g.solicitudes }}</td>
+                    <td class="text-right">{{ g.productos }}</td>
+                  </tr>
+                  <tr *ngIf="!cargando && grupos.length === 0">
+                    <td colspan="4" class="text-center text-muted">Sin entregas en el período.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4 class="mt-4">Frecuencia de compra</h4>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="text-right">Órdenes</th>
+                    <th class="text-right">Unidades</th>
+                    <th class="text-right">Cada (días)</th>
+                    <th>Última compra</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let f of frecuencia">
+                    <td>{{ f.producto }}</td>
+                    <td class="text-right">{{ f.ordenes }}</td>
+                    <td class="text-right">{{ f.cantidad | number:'1.0-0':'es-CL' }}</td>
+                    <td class="text-right">{{ f.dias_promedio_entre_compras === null ? '—' : (f.dias_promedio_entre_compras | number:'1.0-1':'es-CL') }}</td>
+                    <td>{{ f.ultima_compra | date:'dd-MM-yyyy':'America/Santiago' }}</td>
+                  </tr>
+                  <tr *ngIf="!cargando && frecuencia.length === 0">
+                    <td colspan="5" class="text-center text-muted">Sin órdenes de compra enviadas en el período.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center mt-4">
+              <h4 class="mr-3 mb-0">Stock crítico</h4>
+              <a mat-raised-button routerLink="/bodega/inicio" class="btn btn-info btn-sm">
+                <span class="btn-label"><i class="material-icons">tune</i></span>
+                Editar mínimos
+              </a>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="text-right">Stock</th>
+                    <th class="text-right">Mínimo</th>
+                    <th class="text-right">Faltante</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of critico" class="table-danger">
+                    <td>{{ p.producto }}</td>
+                    <td class="text-right">{{ p.stock }}</td>
+                    <td class="text-right">{{ p.stock_minimo }}</td>
+                    <td class="text-right">{{ p.faltante }}</td>
+                  </tr>
+                  <tr *ngIf="critico.length === 0">
+                    <td colspan="4" class="text-center text-muted">Ningún producto bajo su mínimo.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
