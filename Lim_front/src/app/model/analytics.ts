@@ -35,3 +35,38 @@ export interface OpcionCliente {
   id: number;
   nombre: string;
 }
+
+// RF-BI-01: Dashboard financiero (/api/v1/analytics/financiero)
+export interface MovimientoProyectado {
+  ingresos: number;
+  egresos: number;
+  utilidad: number;
+}
+
+export interface RegresionProyectada extends MovimientoProyectado {
+  periodo: string;
+}
+
+export interface ProyeccionFinanciera {
+  insuficiente: boolean;
+  mensaje?: string;
+  meses_historia: number;
+  promedio_movil: MovimientoProyectado | null;
+  regresion: RegresionProyectada | null;
+  estimacion: boolean;
+}
+
+export interface ResumenFinanciero {
+  periodo: string;
+  utilidad_real: MovimientoProyectado & { cerrada: boolean | null };
+  saldo_acumulado: { saldo: number; provisional: boolean };
+  proyeccion: ProyeccionFinanciera;
+  alerta_utilidad: { activa: boolean; umbral: number; motivo: string | null };
+  liquidaciones_pendientes: { cantidad: number; monto: number };
+  por_cobrar: { cantidad: number; monto: number; nota: string };
+  por_pagar: { cantidad: number; monto: number };
+}
+
+export interface PuntoTendencia extends MovimientoProyectado {
+  periodo: string;
+}
