@@ -10,6 +10,7 @@ const { requerirRol, revalidarUsuario } = require('../../../middleware/auth');
 const { noEncontrado, asyncHandler } = require('../../../middleware/errores');
 const financiero = require('./financiero');
 const rentabilidad = require('./rentabilidad');
+const consumoBodega = require('./bodega');
 const { ROL_ADMIN_NOMBRES, ROL_OPERACIONES_NOMBRES } = require('../../../services/constantes');
 
 const ADMIN = requerirRol.apply(null, ROL_ADMIN_NOMBRES);
@@ -17,6 +18,10 @@ const ADMIN_Y_OPS = requerirRol.apply(null, ROL_ADMIN_NOMBRES.concat(ROL_OPERACI
 
 const bodega = express.Router(); // RF-BI-03: sus GET se agregan aquí
 const productividad = express.Router(); // RF-BI-04: sus GET se agregan aquí
+bodega.get('/top-productos', asyncHandler(consumoBodega.topProductos));
+bodega.get('/consumo', asyncHandler(consumoBodega.consumo));
+bodega.get('/frecuencia-compra', asyncHandler(consumoBodega.frecuenciaCompra));
+bodega.get('/stock-critico', asyncHandler(consumoBodega.stockCritico));
 
 // noEncontrado corta aquí para que Operaciones no caiga en el gate de solo Admin de abajo.
 router.use('/bodega', ADMIN_Y_OPS, bodega, noEncontrado);

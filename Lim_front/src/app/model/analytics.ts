@@ -130,3 +130,55 @@ export interface DetalleRentabilidad {
   en_perdida: boolean;
   por_periodo: { periodo: string; sueldos: number; epp_insumos: number; otros: number; otros_estimado: number }[];
 }
+
+// RF-BI-03: consumo de bodega (/api/v1/analytics/bodega/*)
+export type AgruparConsumo = 'mes' | 'supervisor' | 'centro_costo';
+
+export interface FilaTopProducto {
+  posicion: number;
+  producto_id: number;
+  producto: string;
+  cantidad_pedida: number;
+  cantidad_entregada: number;
+  solicitudes: number;
+}
+
+export interface FilaConsumoMes {
+  periodo: string;
+  cantidad: number;
+  solicitudes: number;
+}
+
+export interface FilaConsumoGrupo {
+  id: number | null;
+  tipo?: 'TRABAJADOR' | 'USUARIO' | null;
+  etiqueta: string;
+  cantidad: number;
+  solicitudes: number;
+  productos: number;
+}
+
+export interface MetaConsumo {
+  desde: string;
+  hasta: string;
+  agrupar: AgruparConsumo;
+  producto_id: number | null;
+  total: number;
+}
+
+export interface FilaFrecuenciaCompra {
+  producto_id: number;
+  producto: string;
+  ordenes: number;
+  cantidad: number;
+  ultima_compra: string;
+  dias_promedio_entre_compras: number | null;
+}
+
+export interface FilaStockCritico {
+  producto_id: number;
+  producto: string;
+  stock: number;
+  stock_minimo: number;
+  faltante: number;
+}

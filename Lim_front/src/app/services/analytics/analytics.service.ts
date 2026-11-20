@@ -7,6 +7,9 @@ import {
   DetalleRentabilidad, FiltrosAnalytics, FilaGastosGenerales, FilaRentabilidad, MetaAnalytics, MetaRentabilidad, PuntoTendencia,
   RespuestaAnalytics, ResumenFinanciero
 } from '../../model/analytics';
+import {
+  AgruparConsumo, FilaConsumoGrupo, FilaConsumoMes, FilaFrecuenciaCompra, FilaStockCritico, FilaTopProducto, MetaConsumo
+} from '../../model/analytics';
 
 type FilaRankingRentabilidad = FilaRentabilidad | FilaGastosGenerales;
 
@@ -61,5 +64,33 @@ export class AnalyticsService {
 
   rentabilidadDetalle(centroCostoId: number, desde?: string, hasta?: string): Observable<RespuestaAnalytics<DetalleRentabilidad>> {
     return this.obtener<DetalleRentabilidad>('/rentabilidad/' + centroCostoId + '/detalle', { desde: desde, hasta: hasta });
+  }
+
+  // CONSUMO DE BODEGA (RF-BI-03). Parámetros propios (agrupar, producto_id, limite) que obtener() no conoce.
+  private obtenerBodega<T, M = MetaAnalytics>(ruta: string, query: { [clave: string]: string | number | null | undefined }): Observable<RespuestaAnalytics<T, M>> {
+    let params = new HttpParams();
+    Object.keys(query).forEach((clave: string) => {
+      const valor = query[clave];
+      if (valor !== null && valor !== undefined && valor !== '') {
+        params = params.set(clave, String(valor));
+      }
+    });
+    return this.http.get<RespuestaAnalytics<T, M>>(this.url_analytics + '/bodega' + ruta, { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  topProductosBodega(desde: string, hasta: string, limite?: number): Observable<RespuestaAnalytics<FilaTopProducto[]>> {
+    return this.obtenerBodega<FilaTopProducto[]>('/top-productos', { desde: desde, hasta: hasta, limite: limite });
+  }
+
+  consumoBodega<T = FilaConsumoMes[] | FilaConsumoGrupo[]>(agrupar: AgruparConsumo, desde: string, hasta: string, productoId?: number | null): Observable<RespuestaAnalytics<T, MetaConsumo>> {
+    return this.obtenerBodega<T, MetaConsumo>('/consumo', { agrupar: agrupar, desde: desde, hasta: hasta, producto_id: productoId });
+  }
+
+  frecuenciaCompraBodega(desde: string, hasta: string): Observable<RespuestaAnalytics<FilaFrecuenciaCompra[]>> {
+    return this.obtenerBodega<FilaFrecuenciaCompra[]>('/frecuencia-compra', { desde: desde, hasta: hasta });
+  }
+
+  stockCriticoBodega(): Observable<RespuestaAnalytics<FilaStockCritico[]>> {
+    return this.obtenerBodega<FilaStockCritico[]>('/stock-critico', {});
   }
 }
