@@ -3,6 +3,10 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config()
 require('./config/auth').exigirSecreto(); // RNF-SEC-01: sin SECRET_KEY en el entorno el servidor no arranca
+// RNF-SEC-01 (AUT-005 parte 2): Webpay y correo solo desde el entorno. Sin TRANSBANK_ENV el servidor no arranca.
+console.log('[pagos] Webpay en modo: ' + require('./config/transbank').configurarWebpay());
+if (!require('./services/correo/transporte').smtpConfigurado()) console.warn('[correo] SMTP_HOST/SMTP_USER/SMTP_PASS no configurados: los correos fallarán');
+console.log('[seguridad] roles que gestionan usuarios: ' + require('./config/roles').ROLES_GESTION_USUARIOS.join(', ')); // AUT-006
 const path = require('path');
 
 const app = express();
@@ -333,6 +337,10 @@ app.use(process.env.PREFIJO + '/api/v1/public', PublicV1);
 const PublicacionesV1 = require('./api/v1/web/publicaciones/routes');
 app.use(process.env.PREFIJO + '/api/v1/web/publicaciones', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), PublicacionesV1);
 
+// RF-WEB-01: catálogo del sitio (solo Admin); el listado público está en /api/v1/public/catalogo.
+const CatalogoV1 = require('./api/v1/web/catalogo/routes');
+app.use(process.env.PREFIJO + '/api/v1/web/catalogo', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), CatalogoV1);
+
 // RF-PEV-02a: actividades y asignaciones PEV (solo Admin).
 const PevV1 = require('./api/v1/pev/routes');
 // RF-PEV-02c: app laboral y extranet supervisor (token laboral). Se montan ANTES del gate Admin de
@@ -342,6 +350,10 @@ const PevLaboralV1 = require('./api/v1/pev/laboral/routes');
 app.use(process.env.PREFIJO + '/api/v1/pev/trabajador', autenticarLaboral, PevLaboralV1.trabajador);
 app.use(process.env.PREFIJO + '/api/v1/pev/supervisor', autenticarLaboral, exigirSupervisor, PevLaboralV1.supervisor);
 app.use(process.env.PREFIJO + '/api/v1/pev', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), PevV1);
+
+// RF-BI-01a: analytics (solo GET); roles por sub-recurso dentro del router (D-145).
+const AnalyticsV1 = require('./api/v1/analytics/routes');
+app.use(process.env.PREFIJO + '/api/v1/analytics', autenticar, AnalyticsV1);
 
 app.use(process.env.PREFIJO + '/api/v1', require('./middleware/errores').noEncontrado); // RNF-API-02: 404 JSON solo en /api/v1
 app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas

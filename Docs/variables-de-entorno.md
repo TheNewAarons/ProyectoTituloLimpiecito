@@ -13,9 +13,11 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `NODE_ENV` | `development` o `production` | **Sí**: el middleware de errores (RNF-API-02) oculta stack y detalles internos si vale `production` |
 | `SECRET_KEY` | Clave de firma de los JWT (sesiones de los 4 contextos y enlaces de recuperación) | **Sí**, y es **obligatoria**: sin ella el servidor no arranca (`config/auth.js`, AUT-005) |
 | `JWT_EXPIRES_IN` | Duración de las sesiones JWT | **Sí** (`config/auth.js`); por defecto `8h` |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | Correo saliente (Nodemailer) | **Parcial**: el módulo RF-BOD-03 (`services/bodega/correoOrdenCompra.js`) ya las lee del entorno y responde `SMTP_NO_CONFIGURADO` 503 si falta alguna; el resto de controladores legacy sigue con la configuración escrita en el código (D-050) |
+| `ROLES_GESTION_USUARIOS` | Roles que gestionan usuarios del sistema (crear, listar, editar a otros, cambiar rol o estado), separados por coma, sin distinguir mayúsculas. Ej.: `Administrador,RRHH` | **Sí** (`config/roles.js`, AUT-006); vacía = solo `Administrador`. Se aplica al reiniciar; el servidor escribe en el log qué roles quedaron |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | Correo saliente (Nodemailer) | **Sí**: los correos legacy (recuperación, reservas, cron de las 18:00, contacto, cronograma) usan `services/correo/transporte.js` (AUT-005 parte 2) y RF-BOD-03 su propio transporte. Sin `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` el backend arranca con un aviso en el log y los envíos fallan. `SMTP_PORT` por defecto 465; `SMTP_SECURE` vacío = TLS directo en 465 |
 | `EMPRESA_NOMBRE`, `EMPRESA_RUT` | Datos de la empresa en la plantilla de orden de compra (RF-BOD-03) | **Sí** (`renderizarOrden`); tienen default en el código si faltan |
-| `TRANSBANK_ENV`, `TRANSBANK_COMMERCE_CODE`, `TRANSBANK_API_KEY` | Pagos Webpay Plus | **No**: están escritos en `routes/rutas_app/Reserva.js` |
+| `TRANSBANK_ENV`, `TRANSBANK_COMMERCE_CODE`, `TRANSBANK_API_KEY` | Pagos Webpay Plus | **Sí** (`config/transbank.js`, AUT-005 parte 2). `TRANSBANK_ENV` es **obligatoria** (`integration` o `production`): sin ella el servidor no arranca, para que producción nunca quede en modo prueba sin aviso. `production` exige código y llave; `integration` usa las credenciales públicas de prueba del SDK. Al arrancar se escribe `[pagos] Webpay en modo: ...` |
+| `APP_RESERVAS_URL` | Enlace para reservar en la app (p. ej. su página en Google Play) | **Sí** (`services/web/catalogo-app.js`, RF-WEB-01b). Opcional: si está vacía, ningún ítem se ofrece como reservable (`reservable_en_app: false`); la app móvil aún no está operativa |
 
 ## Desarrollo vs producción
 
@@ -25,10 +27,12 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `DATABASE_*` | BD local (`localhost`) | RDS; credenciales solo en el servidor |
 | `SECRET_KEY` | Valor propio, aleatorio y distinto al de producción | Valor aleatorio largo, **rotado** y solo en el servidor |
 | `JWT_EXPIRES_IN` | `8h` | `8h` |
+| `ROLES_GESTION_USUARIOS` | Vacía (solo Administrador) | Vacía, salvo que se confirme otro rol que gestione usuarios |
+| `APP_RESERVAS_URL` | Vacía o un enlace cualquiera para probar | **Vacía** mientras la app móvil no esté operativa; luego, su enlace real |
 | `SMTP_*` | Cuenta de pruebas o vacío (RF-BOD-03 responde `SMTP_NO_CONFIGURADO` 503 si faltan; el envío de orden de compra falla sin tocar la BD). **No usar el SMTP real** con una BD que tenga correos de clientes: el cron de las 18:00 envía correos de verdad | Cuenta real, **rotada** |
 | `EMPRESA_NOMBRE`, `EMPRESA_RUT` | Opcionales: el código usa defaults si faltan | Datos reales de la empresa |
 | `TRANSBANK_ENV` | `integration` (credenciales públicas de pruebas de Transbank) | `production` |
-| `TRANSBANK_COMMERCE_CODE`, `TRANSBANK_API_KEY` | Los de integración | Los reales, solo en el servidor |
+| `TRANSBANK_COMMERCE_CODE`, `TRANSBANK_API_KEY` | Vacías (con `integration` se usan las de prueba del SDK) | Los reales, **rotados**, solo en el servidor |
 
 ## Generar `SECRET_KEY` (obligatoria desde AUT-005)
 
@@ -49,6 +53,16 @@ JWT_EXPIRES_IN=8h
 - **Si ya tienes un `.env`:** `cp .env.example .env` no se vuelve a ejecutar, así que agrega estas dos líneas a mano.
 - **Cambiar la clave** cierra todas las sesiones (los tokens firmados con la anterior dejan de valer): en local no importa;
   en producción hacerlo en una ventana de mantenimiento.
+
+## Variables obligatorias para arrancar
+
+| Variable | Si falta |
+|---|---|
+| `SECRET_KEY` | El backend no arranca |
+| `TRANSBANK_ENV` | El backend no arranca (en local: `TRANSBANK_ENV=integration`) |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | Arranca, avisa en el log y los correos fallan |
+
+**Si ya tienes un `.env`**, agrega a mano las que falten (`TRANSBANK_ENV=integration` en local).
 
 ## Reglas
 

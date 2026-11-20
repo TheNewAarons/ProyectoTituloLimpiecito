@@ -1,0 +1,28 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">insights</i></div>
+            <h4 class="card-title">Analytics</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-lg-6">
+                <app-filtro-periodo [desde]="filtros.desde" [hasta]="filtros.hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-3">
+                <app-selector-centro-costo [valor]="filtros.centroCostoId" (cambio)="cambiarCentro($event)"></app-selector-centro-costo>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-3">
+                <app-selector-cliente [valor]="filtros.clienteId" (cambio)="cambiarCliente($event)"></app-selector-cliente>
+              </div>
+            </div>
+            <p class="text-center">Sin tableros disponibles</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

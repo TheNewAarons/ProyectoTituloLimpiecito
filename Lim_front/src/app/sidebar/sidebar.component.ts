@@ -36,6 +36,12 @@ export const ROUTES: RouteInfo[] = [
     type: 'link',
     icontype: 'savings'
   },
+  {
+    path: '/analytics',
+    title: 'Analytics',
+    type: 'link',
+    icontype: 'insights'
+  },
   ,
   {
     path: '/centro_costos',
@@ -129,6 +135,7 @@ export const ROUTES: RouteInfo[] = [
     icontype: 'public',
     collapse: 'pagina_web',
     children: [
+      { path: 'catalogo', title: 'Catálogo', ab: 'CA' },
       { path: 'anuncios', title: 'Anuncios', ab: 'AN' }
     ]
   },

@@ -1,0 +1,18 @@
+<div class="card card-stats">
+  <div class="card-header card-header-icon card-header-{{ color }}">
+    <div class="card-icon"><i class="material-icons">{{ icono }}</i></div>
+    <p class="card-category">{{ titulo }}</p>
+    <h3 class="card-title" *ngIf="cargando">…</h3>
+    <ng-container *ngIf="!cargando">
+      <h3 class="card-title" *ngIf="valor === null">Sin datos</h3>
+      <ng-container *ngIf="valor !== null" [ngSwitch]="formato">
+        <h3 class="card-title" *ngSwitchCase="'clp'">$ {{ valor | number:'1.0-0':'es-CL' }}</h3>
+        <h3 class="card-title" *ngSwitchCase="'porcentaje'">{{ valor | number:'1.0-1':'es-CL' }} %</h3>
+        <h3 class="card-title" *ngSwitchDefault>{{ valor | number:'1.0-0':'es-CL' }}</h3>
+      </ng-container>
+    </ng-container>
+  </div>
+  <div class="card-footer" *ngIf="detalle">
+    <div class="stats">{{ detalle }}</div>
+  </div>
+</div>

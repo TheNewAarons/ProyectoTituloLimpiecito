@@ -2,6 +2,7 @@ const logicaDB = require('./logica')
 
 //PARA EL CORREO
 const nodemailer = require("nodemailer");
+const { crearTransporte } = require('../../../services/correo/transporte');
 
 const obtenerReservaProceso = async(req,res) => {
     try{
@@ -54,18 +55,7 @@ const aprobarReserva = async(req,res) => {
         let usuario = await logicaDB.obtenerUsuarioIdDB(reserva.usuarioAppId)
         let servicio = await logicaDB.obtenerServicioIdDB(reserva.servicioId)
 
-        const transporter = nodemailer.createTransport({
-            host: 'mail.aseolimpiecito.cl',
-            port: 465,
-            secureConnection:true,
-            auth:{
-              user: 'no-reply@aseolimpiecito.cl',
-              pass: 'limpiecito-2020-noreply'
-            },
-            tls: {
-              rejectUnauthorized: false
-            }
-          })
+        const transporter = crearTransporte()
           const mailOptions = {
               from:"no-reply@aseolimpiecito.cl",
               to: usuario.correo,

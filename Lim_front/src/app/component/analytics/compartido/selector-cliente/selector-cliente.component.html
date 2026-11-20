@@ -1,0 +1,6 @@
+<mat-form-field class="example-full-width">
+  <mat-select placeholder="Cliente" name="cliente" [(ngModel)]="valor" (selectionChange)="cambio.emit(valor)">
+    <mat-option [value]="null">Todos</mat-option>
+    <mat-option *ngFor="let c of clientes" [value]="c.id">{{ c.nombre }}</mat-option>
+  </mat-select>
+</mat-form-field>

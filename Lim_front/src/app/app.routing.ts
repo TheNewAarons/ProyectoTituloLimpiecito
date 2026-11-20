@@ -51,6 +51,12 @@ export const AppRoutes: Routes = [
         loadChildren: './component/caja/caja.module#CajaModule'
       },
       {
+        // Prefijo propio: con path '' el router descargaría chart.js en cualquier navegación.
+        path: 'analytics',
+        canActivate: [RestriccionGuardService, ArchivoGuardService, LvlAppGuardService],
+        loadChildren: './component/analytics/analytics.module#AnalyticsModule'
+      },
+      {
         path: '',
         canActivate: [ArchivoGuardService,LvlAppGuardService],
         loadChildren: './component/centro-costo/centro.module#CentroModule'
@@ -108,6 +114,12 @@ export const AppRoutes: Routes = [
         path: '',
         canActivate: [ArchivoGuardService],
         loadChildren: './component/pagina-web/pagina-web.module#PaginaWebModule'
+      },
+      // RF-WEB-01: catálogo web (mismos guards que Página Web; el backend exige Admin)
+      {
+        path: '',
+        canActivate: [ArchivoGuardService],
+        loadChildren: './component/catalogo-web/catalogo-web.module#CatalogoWebModule'
       },
       {
         path: '',

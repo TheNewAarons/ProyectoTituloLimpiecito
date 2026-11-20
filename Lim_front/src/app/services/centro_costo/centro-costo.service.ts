@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders} from '@angular/common/http'; 
 import { environment } from '../../../environments/environment'
+import { LoginService } from '../login/login.service';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,7 @@ export class CentroCostoService {
 
   public url_backend;
 
-  constructor(private http: HttpClient) { 
+  constructor(private http: HttpClient, private loginService: LoginService) {
     this.url_backend = environment.url;
   }
 
@@ -80,7 +81,8 @@ export class CentroCostoService {
   }
   //ELIMINAR LISTA DE INSUMO
   eliminarLista(idLista){
-    return this.http.delete(this.url_backend+"/detalle/eliminar-lista/"+idLista);
+    // AUT-003: eliminar una lista exige sesión.
+    return this.http.delete(this.url_backend+"/detalle/eliminar-lista/"+idLista, { headers: new HttpHeaders({ 'x-access-token': this.loginService.getToken() || '' }) });
   }
 
 

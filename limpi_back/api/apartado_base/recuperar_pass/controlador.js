@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const atob = require('atob');
 const recuperacion = require('../../../services/seguridad/recuperacion');
 const Usuario = require('../../../modelos/sistema_base/Usuario');
+const { crearTransporte } = require('../../../services/correo/transporte');
 
 const recuperarPassword = async (req, res) => {
   let correo = req.body.correo;
@@ -15,13 +16,7 @@ const recuperarPassword = async (req, res) => {
       let token = recuperacion.firmar(usuario, recuperacion.PROPOSITO.USUARIO);
       // let url = "http://localhost:4200/#/sistema/recuperar-password/"+token
       let url = 'https://www.minda.aseolimpiecito.cl/#/sistema/recuperar-password/' + token;
-      const transporter = nodemailer.createTransport({
-        host: 'mail.aseolimpiecito.cl',
-        port: 465,
-        secureConnection: true,
-        auth: { user: 'no-reply@aseolimpiecito.cl', pass: 'limpiecito-2020-noreply' },
-        tls: { rejectUnauthorized: false }
-      });
+      const transporter = crearTransporte();
       const mailOptions = {
         from: 'no-reply@aseolimpiecito.cl',
         to: correo,
