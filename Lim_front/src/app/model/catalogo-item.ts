@@ -7,7 +7,19 @@ export interface CatalogoItem {
   precio: number | null;
   imagen_url: string | null;
   orden: number;
+  // RF-WEB-01b: vínculo con la app de reservas (solo en la administración)
+  servicio_id?: number | null;
+  servicio_app?: ServicioApp | null;
+  aviso_app?: string | null;
   publicado: boolean;
+}
+
+// RF-WEB-01b: servicio de la app de reservas que se puede vincular a un ítem
+export interface ServicioApp {
+  id: number;
+  nombre: string;
+  precio: number | null;
+  activo: boolean;
 }
 
 export interface RespuestaCatalogo<T> {

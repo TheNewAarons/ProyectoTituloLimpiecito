@@ -10,6 +10,11 @@ const controlador = require('./controlador');
 
 router.get('/', asyncHandler(controlador.listar));
 router.patch('/orden', asyncHandler(controlador.reordenar));
+// RF-WEB-01b: vínculo con la app de reservas (antes de '/:id' para que 'servicios-app' no se lea como id).
+const appControlador = require('./app-controlador');
+router.get('/servicios-app', asyncHandler(appControlador.listarServiciosApp));
+router.post('/importar-servicio', asyncHandler(appControlador.importar));
+router.put('/:id/servicio-app', asyncHandler(appControlador.vincular));
 router.get('/:id', asyncHandler(controlador.obtener));
 router.post('/', subirImagen('imagen'), asyncHandler(controlador.crear));
 router.put('/:id', subirImagen('imagen'), asyncHandler(controlador.editar));

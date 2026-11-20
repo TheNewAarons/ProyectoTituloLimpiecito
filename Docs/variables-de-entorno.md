@@ -17,6 +17,7 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | Correo saliente (Nodemailer) | **Sí**: los correos legacy (recuperación, reservas, cron de las 18:00, contacto, cronograma) usan `services/correo/transporte.js` (AUT-005 parte 2) y RF-BOD-03 su propio transporte. Sin `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` el backend arranca con un aviso en el log y los envíos fallan. `SMTP_PORT` por defecto 465; `SMTP_SECURE` vacío = TLS directo en 465 |
 | `EMPRESA_NOMBRE`, `EMPRESA_RUT` | Datos de la empresa en la plantilla de orden de compra (RF-BOD-03) | **Sí** (`renderizarOrden`); tienen default en el código si faltan |
 | `TRANSBANK_ENV`, `TRANSBANK_COMMERCE_CODE`, `TRANSBANK_API_KEY` | Pagos Webpay Plus | **Sí** (`config/transbank.js`, AUT-005 parte 2). `TRANSBANK_ENV` es **obligatoria** (`integration` o `production`): sin ella el servidor no arranca, para que producción nunca quede en modo prueba sin aviso. `production` exige código y llave; `integration` usa las credenciales públicas de prueba del SDK. Al arrancar se escribe `[pagos] Webpay en modo: ...` |
+| `APP_RESERVAS_URL` | Enlace para reservar en la app (p. ej. su página en Google Play) | **Sí** (`services/web/catalogo-app.js`, RF-WEB-01b). Opcional: si está vacía, ningún ítem se ofrece como reservable (`reservable_en_app: false`); la app móvil aún no está operativa |
 
 ## Desarrollo vs producción
 
@@ -27,6 +28,7 @@ en el código (etapa C2) requiere autorización por modificar código existente.
 | `SECRET_KEY` | Valor propio, aleatorio y distinto al de producción | Valor aleatorio largo, **rotado** y solo en el servidor |
 | `JWT_EXPIRES_IN` | `8h` | `8h` |
 | `ROLES_GESTION_USUARIOS` | Vacía (solo Administrador) | Vacía, salvo que se confirme otro rol que gestione usuarios |
+| `APP_RESERVAS_URL` | Vacía o un enlace cualquiera para probar | **Vacía** mientras la app móvil no esté operativa; luego, su enlace real |
 | `SMTP_*` | Cuenta de pruebas o vacío (RF-BOD-03 responde `SMTP_NO_CONFIGURADO` 503 si faltan; el envío de orden de compra falla sin tocar la BD). **No usar el SMTP real** con una BD que tenga correos de clientes: el cron de las 18:00 envía correos de verdad | Cuenta real, **rotada** |
 | `EMPRESA_NOMBRE`, `EMPRESA_RUT` | Opcionales: el código usa defaults si faltan | Datos reales de la empresa |
 | `TRANSBANK_ENV` | `integration` (credenciales públicas de pruebas de Transbank) | `production` |
