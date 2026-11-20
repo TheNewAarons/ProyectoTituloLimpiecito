@@ -1,0 +1,54 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">attach_money</i></div>
+            <h4 class="card-title">Dashboard financiero <small *ngIf="resumen">{{ resumen.periodo }}</small></h4>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-warning" *ngIf="resumen?.alerta_utilidad.activa">
+              Alerta de utilidad baja
+              ({{ resumen.alerta_utilidad.motivo === 'UTILIDAD_REAL_BAJA' ? 'utilidad real del mes' : 'utilidad proyectada' }}
+              bajo el umbral de $ {{ resumen.alerta_utilidad.umbral | number:'1.0-0':'es-CL' }}).
+            </div>
+            <div class="row">
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Utilidad real del mes" icono="trending_up" color="success" [cargando]="cargando"
+                  [valor]="resumen ? resumen.utilidad_real.utilidad : null"
+                  [detalle]="resumen ? (resumen.utilidad_real.cerrada ? 'Mes cerrado' : 'Mes abierto (provisional)') : ''"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Saldo acumulado" icono="account_balance" color="info" [cargando]="cargando"
+                  [valor]="resumen ? resumen.saldo_acumulado.saldo : null"
+                  [detalle]="resumen && resumen.saldo_acumulado.provisional ? 'Provisional' : ''"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Proyección de utilidad (Estimación)" icono="timeline" color="rose" [cargando]="cargando"
+                  [valor]="proyeccionUtilidad"
+                  [detalle]="resumen ? (resumen.proyeccion.insuficiente ? 'Datos insuficientes' : 'Estimación: promedio móvil de 3 meses') : ''"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Liquidaciones pendientes" icono="receipt" color="warning" [cargando]="cargando"
+                  [valor]="resumen ? resumen.liquidaciones_pendientes.monto : null"
+                  [detalle]="resumen ? resumen.liquidaciones_pendientes.cantidad + ' liquidaciones' : ''"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Por cobrar" icono="call_received" color="info" [cargando]="cargando"
+                  [valor]="resumen ? resumen.por_cobrar.monto : null"
+                  [detalle]="resumen ? resumen.por_cobrar.cantidad + ' docs. · ' + resumen.por_cobrar.nota : ''"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Por pagar" icono="call_made" color="warning" [cargando]="cargando"
+                  [valor]="resumen ? resumen.por_pagar.monto : null"
+                  [detalle]="resumen ? resumen.por_pagar.cantidad + ' documentos' : ''"></app-kpi-card>
+              </div>
+            </div>
+            <app-grafico tipo="line" titulo="Ingresos, egresos y utilidad (últimos 12 meses)" [etiquetas]="etiquetas" [series]="series"></app-grafico>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
