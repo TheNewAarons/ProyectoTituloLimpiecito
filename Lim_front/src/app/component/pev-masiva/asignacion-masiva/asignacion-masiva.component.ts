@@ -144,12 +144,21 @@ export class AsignacionMasivaComponent implements OnInit {
     this.pev.confirmar(this.cuerpo()).subscribe(
       (r) => {
         this.enviando = false;
-        this.alertas.alertaExitoMsj('Asignación realizada', r.data.asignaciones_creadas.length + ' asignaciones creadas para "' + r.data.actividad.nombre + '".');
+        const creadas = r.data.asignaciones_creadas.length;
+        const omitidas = r.data.resumen.ya_asignadas;
+        this.alertas.alertaExitoMsj('Asignación realizada',
+          (creadas === 1 ? '1 asignación creada' : creadas + ' asignaciones creadas') + ' para "' + r.data.actividad.nombre + '".' +
+          (omitidas === 1 ? ' 1 ya estaba asignada y se omitió.' : omitidas > 1 ? ' ' + omitidas + ' ya estaban asignadas y se omitieron.' : ''));
         this.plan = null;
         this.filas.forEach((x) => { x.seleccionado = false; x.area_id = null; });
         this.elegirCliente();
       },
-      (e: HttpErrorResponse) => { this.enviando = false; mostrarError(e, this.alertas, this.loginService); }
+      (e: HttpErrorResponse) => {
+        this.enviando = false;
+        mostrarError(e, this.alertas, this.loginService);
+        // Los datos cambiaron desde la vista previa (otro usuario asignó o cerró algo): se rehace para marcar las filas en rojo.
+        if (e.status === 409 && e.error && e.error.error && e.error.error.code === 'ASIGNACION_MASIVA_INVALIDA') this.vistaPrevia();
+      }
     );
   }
 }
