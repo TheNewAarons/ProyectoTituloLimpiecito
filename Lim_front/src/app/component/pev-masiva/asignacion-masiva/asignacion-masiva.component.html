@@ -1,0 +1,146 @@
+<div class="main-content">
+  <div class="container-fluid">
+
+    <!-- 1. Qué se asigna -->
+    <div class="card">
+      <div class="card-header card-header-rose card-header-icon">
+        <div class="card-icon"><i class="material-icons">group_add</i></div>
+        <h4 class="card-title">Asignación masiva de actividades PEV</h4>
+        <p class="card-category">Elija la actividad y marque los trabajadores: se asigna a todos en una sola acción.</p>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <label class="d-block" for="pev-cliente">Cliente</label>
+            <select id="pev-cliente" class="form-control" [(ngModel)]="clienteId" (ngModelChange)="elegirCliente()">
+              <option [ngValue]="null">— Elija un cliente —</option>
+              <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }}</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-4" *ngIf="opciones">
+            <label class="d-block" for="pev-turno">Turno</label>
+            <select id="pev-turno" class="form-control" [(ngModel)]="turnoId" (ngModelChange)="plan = null">
+              <option [ngValue]="null">— Elija un turno —</option>
+              <option *ngFor="let t of opciones.turnos" [ngValue]="t.id">{{ t.nombre }}</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-4" *ngIf="opciones">
+            <label class="d-block" for="pev-fecha">Desde</label>
+            <input id="pev-fecha" type="date" class="form-control" [(ngModel)]="fechaDesde" (ngModelChange)="plan = null">
+          </div>
+        </div>
+
+        <div class="row mt-3" *ngIf="opciones">
+          <div class="col-12">
+            <mat-radio-group [(ngModel)]="modoActividad" (ngModelChange)="plan = null">
+              <mat-radio-button value="existente" class="mr-3">Actividad existente</mat-radio-button>
+              <mat-radio-button value="nueva">Crear actividad nueva</mat-radio-button>
+            </mat-radio-group>
+          </div>
+          <div class="col-12 col-md-6" *ngIf="modoActividad === 'existente'">
+            <select class="form-control" [(ngModel)]="actividadId" (ngModelChange)="plan = null" aria-label="Actividad">
+              <option [ngValue]="null">— Elija una actividad —</option>
+              <option *ngFor="let a of opciones.actividades" [ngValue]="a.id">{{ a.nombre }}</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-6" *ngIf="modoActividad === 'nueva'">
+            <mat-form-field class="w-100">
+              <input matInput placeholder="Nombre de la actividad (ej. Barrido tribuna norte)" [(ngModel)]="actividadNombre" (ngModelChange)="plan = null" maxlength="100">
+            </mat-form-field>
+          </div>
+        </div>
+        <div class="text-center" *ngIf="cargando"><app-loading></app-loading></div>
+      </div>
+    </div>
+
+    <!-- 2. A quiénes -->
+    <div class="card" *ngIf="opciones">
+      <div class="card-body">
+        <div class="row align-items-end">
+          <div class="col-12 col-md-5">
+            <mat-form-field class="w-100">
+              <input matInput placeholder="Buscar trabajador (nombre, RUT o n° empleado)" [(ngModel)]="filtro">
+            </mat-form-field>
+          </div>
+          <div class="col-12 col-md-5">
+            <label class="d-block" for="pev-area-todos">Área para los seleccionados</label>
+            <select id="pev-area-todos" class="form-control" [(ngModel)]="areaTodos">
+              <option [ngValue]="null">— Elija un área —</option>
+              <option *ngFor="let a of opciones.areas" [ngValue]="a.id">{{ a.sector }} / {{ a.nombre }}</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-2">
+            <button mat-raised-button type="button" class="btn btn-info btn-block" (click)="aplicarAreaATodos()" [disabled]="!areaTodos || seleccionados().length === 0">
+              Aplicar a todos
+            </button>
+          </div>
+        </div>
+
+        <p class="mt-2 mb-1"><strong>{{ seleccionados().length }}</strong> seleccionados (máx. 500)</p>
+        <div class="table-responsive">
+          <table class="table tabla-compacta">
+            <thead>
+              <tr>
+                <th>
+                  <mat-checkbox [checked]="todosVisiblesSeleccionados()" (change)="seleccionarVisibles($event.checked)" aria-label="Seleccionar todos"></mat-checkbox>
+                </th>
+                <th>Trabajador</th>
+                <th>Área</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let f of visibles()">
+                <td><mat-checkbox [(ngModel)]="f.seleccionado" (ngModelChange)="plan = null" [attr.aria-label]="f.trabajador.nombre"></mat-checkbox></td>
+                <td>
+                  {{ f.trabajador.nombre }} {{ f.trabajador.apellido }}
+                  <span class="badge badge-success ml-1" *ngIf="f.trabajador.ya_trabajo_en_cliente" title="Ya trabajó en este cliente">aquí</span>
+                  <div class="text-muted small">N° {{ f.trabajador.n_empleado }}</div>
+                </td>
+                <td>
+                  <select class="form-control" [(ngModel)]="f.area_id" (ngModelChange)="plan = null" [disabled]="!f.seleccionado" [attr.aria-label]="'Área de ' + f.trabajador.nombre">
+                    <option [ngValue]="null">—</option>
+                    <option *ngFor="let a of opciones.areas" [ngValue]="a.id">{{ a.sector }} / {{ a.nombre }}</option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="text-right">
+          <span class="text-muted small mr-2" *ngIf="faltante() as motivo">{{ motivo }}</span>
+          <button mat-raised-button type="button" class="btn btn-default" (click)="vistaPrevia()" [disabled]="enviando || !!faltante()">Vista previa</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Vista previa y confirmación -->
+    <div class="card" *ngIf="plan">
+      <div class="card-body">
+        <h5>Vista previa: "{{ plan.actividad.nombre }}"{{ plan.actividad.nueva ? ' (nueva)' : '' }} · {{ plan.turno.nombre }} · desde {{ plan.fecha_desde }}</h5>
+        <p>
+          <strong>{{ plan.resumen.a_crear }}</strong> se asignarán ·
+          <strong>{{ plan.resumen.ya_asignadas }}</strong> ya estaban asignadas (se omiten) ·
+          <strong [class.text-danger]="plan.resumen.con_error > 0">{{ plan.resumen.con_error }}</strong> con problemas
+        </p>
+        <div class="table-responsive">
+          <table class="table tabla-compacta">
+            <tbody>
+              <tr *ngFor="let f of plan.filas" [class.text-danger]="f.resultado !== 'CREAR' && f.resultado !== 'YA_ASIGNADA'">
+                <td>{{ nombreTrabajador(f.trabajador_id) }}</td>
+                <td>{{ nombreArea(f.area_id) }}</td>
+                <td>{{ etiqueta[f.resultado] || f.resultado }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-danger" *ngIf="plan.resumen.con_error > 0">Corrija las filas marcadas para poder confirmar (no se asigna nada si alguna falla).</p>
+        <div class="text-right">
+          <button mat-raised-button type="button" class="btn btn-success" (click)="confirmar()" [disabled]="enviando || plan.resumen.con_error > 0 || plan.resumen.a_crear === 0">
+            Confirmar asignación
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

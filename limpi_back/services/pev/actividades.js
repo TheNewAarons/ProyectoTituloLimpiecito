@@ -189,4 +189,4 @@ async function vincularTareaLegacy(tareaId, contexto) {
   });
 }
 
-module.exports = { listar: listar, crear: crear, vincularTareaLegacy: vincularTareaLegacy };
+module.exports = { listar: listar, crear: crear, vincularTareaLegacy: vincularTareaLegacy, crearEnTx: crearEnTx };
