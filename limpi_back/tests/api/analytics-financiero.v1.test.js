@@ -7,6 +7,7 @@ const request = require('supertest');
 
 jest.mock('jsonwebtoken', () => ({ verify: jest.fn() }));
 jest.mock('../../modelos/sistema_base/Role', () => ({ findById: jest.fn() }));
+jest.mock('../../modelos/sistema_base/Usuario', () => ({ findById: jest.fn() }));
 jest.mock('../../services/caja/saldo', () => ({
   ...jest.requireActual('../../services/caja/saldo'),
   calcularSaldo: jest.fn()
@@ -16,6 +17,7 @@ jest.mock('../../modelos/sistema_base/Configuracion', () => ({ findOne: jest.fn(
 
 const jwt = require('jsonwebtoken');
 const Role = require('../../modelos/sistema_base/Role');
+const Usuario = require('../../modelos/sistema_base/Usuario');
 const db = require('../../database/database');
 const fecha = require('../../libs/fecha');
 const { calcularSaldo } = require('../../services/caja/saldo');
@@ -46,6 +48,7 @@ beforeEach(() => {
     err.name = 'JsonWebTokenError';
     throw err;
   });
+  Usuario.findById.mockImplementation((id) => Promise.resolve({ id: id, correo: 'a@a.com', roleId: id, estado: 1 }));
   Role.findById.mockImplementation((id) => Promise.resolve(id === 1 ? { id: 1, nombre: 'Administrador' } : null));
   Configuracion.findOne.mockResolvedValue({ valor: '100000' });
   resumenPendientes.mockResolvedValue({
@@ -127,5 +130,46 @@ describe('GET /financiero/tendencia (validacion de rango)', () => {
 
   it('hasta con formato invalido -> 400 PERIODO_INVALIDO', async () => {
     esperarError(await get('/tendencia?desde=2026-01&hasta=03-2026'), 400, 'PERIODO_INVALIDO');
+  });
+});
+
+function getRent(ruta) {
+  return request(buildApp()).get('/api/v1/analytics/rentabilidad' + ruta).set('x-access-token', TOKEN_ADMIN);
+}
+
+describe('GET /rentabilidad (RF-BI-02)', () => {
+  it('sin parametros -> 200 con rango por defecto de 3 meses y fila de gastos generales', async () => {
+    db.sequelize.query.mockResolvedValue([{ monto: 0 }]);
+    const res = await getRent('');
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.meta).toEqual(expect.objectContaining({ desde: '2026-09', hasta: '2026-11' }));
+    expect(res.body.data[res.body.data.length - 1].tipo).toBe('GASTOS_GENERALES');
+  });
+
+  it('formato invalido -> 400 PERIODO_INVALIDO', async () => {
+    esperarError(await getRent('?desde=2026-1'), 400, 'PERIODO_INVALIDO');
+  });
+
+  ['abc', '0', '-1', '1.5'].forEach((id) => {
+    it('detalle con centroCostoId ' + id + ' -> 400 CAMPO_INVALIDO', async () => {
+      esperarError(await getRent('/' + id + '/detalle'), 400, 'CAMPO_INVALIDO');
+    });
+  });
+
+  it('detalle de centro inexistente -> 404 CENTRO_NO_EXISTE', async () => {
+    esperarError(await getRent('/99/detalle'), 404, 'CENTRO_NO_EXISTE');
+  });
+});
+
+describe('D-153: revalidacion del usuario en /analytics', () => {
+  it('admin desactivado (estado 0) con JWT vigente -> 401', async () => {
+    Usuario.findById.mockResolvedValue({ id: 1, correo: 'a@a.com', roleId: 1, estado: 0 });
+    esperarError(await get('/proyeccion'), 401, 'TOKEN_INVALID');
+  });
+
+  it('roleId distinto al del token -> 401', async () => {
+    Usuario.findById.mockResolvedValue({ id: 1, correo: 'a@a.com', roleId: 2, estado: 1 });
+    esperarError(await get('/proyeccion'), 401, 'TOKEN_INVALID');
   });
 });

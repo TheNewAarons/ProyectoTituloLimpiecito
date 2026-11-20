@@ -8,9 +8,11 @@ const request = require('supertest');
 
 jest.mock('jsonwebtoken', () => ({ verify: jest.fn() }));
 jest.mock('../../modelos/sistema_base/Role', () => ({ findById: jest.fn() }));
+jest.mock('../../modelos/sistema_base/Usuario', () => ({ findById: jest.fn() }));
 
 const jwt = require('jsonwebtoken');
 const Role = require('../../modelos/sistema_base/Role');
+const Usuario = require('../../modelos/sistema_base/Usuario');
 const { autenticar } = require('../../middleware/auth');
 const routerAnalytics = require('../../api/v1/analytics/routes');
 const { manejadorErrores, noEncontrado } = require('../../middleware/errores');
@@ -36,6 +38,7 @@ beforeEach(() => {
     err.name = 'JsonWebTokenError';
     throw err;
   });
+  Usuario.findById.mockImplementation((id) => Promise.resolve({ id: id, correo: 'u@u.com', roleId: id, estado: 1 }));
   Role.findById.mockImplementation((id) => Promise.resolve(ROLES[id] ? { id: id, nombre: ROLES[id] } : null));
 });
 
@@ -86,7 +89,7 @@ describe('Operaciones', () => {
 });
 
 describe('Administrador pasa el gate en todo → 404 JSON', () => {
-  ['/bodega/x', '/productividad/x', '/financiero/x', '/rentabilidad', '/demanda/x', '/otra'].forEach((ruta) => {
+  ['/bodega/x', '/productividad/x', '/financiero/x', '/demanda/x', '/otra'].forEach((ruta) => {
     it('GET ' + ruta + ' → 404 NOT_FOUND', async () => {
       esperarError(await get(ruta, 'token-admin'), 404, 'NOT_FOUND');
     });
