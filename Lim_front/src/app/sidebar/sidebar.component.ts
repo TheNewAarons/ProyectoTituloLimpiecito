@@ -143,6 +143,13 @@ export const ROUTES: RouteInfo[] = [
       { path: 'vista_clientes', title: 'Clientes', ab: 'CL' }
     ]
   },
+  // RF-PEV-01: asignación masiva de actividades PEV
+  {
+    path: '/pev/asignacion-masiva',
+    title: 'Asignación PEV',
+    type: 'link',
+    icontype: 'group_add'
+  },
   {
     path:'/cronograma/vista_clientes',
     title: 'Cronograma',

@@ -120,6 +120,12 @@ export const AppRoutes: Routes = [
         canActivate: [LvlAppGuardService,ArchivoGuardService,RestriccionGuardService],
         loadChildren: './component/carpeta/carpeta.module#CarpetaModule'
       },
+      // RF-PEV-01: asignación masiva PEV (el backend exige Admin)
+      {
+        path: '',
+        canActivate: [ArchivoGuardService],
+        loadChildren: './component/pev-masiva/pev-masiva.module#PevMasivaModule'
+      },
       {
         path:'',
         loadChildren: './component/cronograma/cronograma.module#CronogramaModule'
