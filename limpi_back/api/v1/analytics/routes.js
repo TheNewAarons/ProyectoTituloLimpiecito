@@ -6,9 +6,10 @@
 
 const express = require('express');
 const router = express.Router();
-const { requerirRol } = require('../../../middleware/auth');
+const { requerirRol, revalidarUsuario } = require('../../../middleware/auth');
 const { noEncontrado, asyncHandler } = require('../../../middleware/errores');
 const financiero = require('./financiero');
+const rentabilidad = require('./rentabilidad');
 const { ROL_ADMIN_NOMBRES, ROL_OPERACIONES_NOMBRES } = require('../../../services/constantes');
 
 const ADMIN = requerirRol.apply(null, ROL_ADMIN_NOMBRES);
@@ -21,10 +22,12 @@ const productividad = express.Router(); // RF-BI-04: sus GET se agregan aquí
 router.use('/bodega', ADMIN_Y_OPS, bodega, noEncontrado);
 router.use('/productividad', ADMIN_Y_OPS, productividad, noEncontrado);
 
-router.use(ADMIN); // RF-BI-01 /financiero, RF-BI-02 /rentabilidad, RF-BI-05 /demanda y cualquier otra subruta
+router.use(ADMIN, revalidarUsuario); // D-153: revalida el usuario en BD antes de datos financieros; RF-BI-01 /financiero, RF-BI-02 /rentabilidad, RF-BI-05 /demanda y cualquier otra subruta
 // los GET de BI-01/02/05 se agregan debajo de esta línea
 router.get('/financiero/resumen', asyncHandler(financiero.resumen));
 router.get('/financiero/tendencia', asyncHandler(financiero.tendencia));
 router.get('/financiero/proyeccion', asyncHandler(financiero.proyeccion));
+router.get('/rentabilidad', asyncHandler(rentabilidad.listar));
+router.get('/rentabilidad/:centroCostoId/detalle', asyncHandler(rentabilidad.detalle));
 
 module.exports = router;

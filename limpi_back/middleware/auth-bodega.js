@@ -15,9 +15,8 @@ const jwt = require('jsonwebtoken');
 
 const AppError = require('../libs/app-error');
 const { asyncHandler } = require('./errores');
-const { autenticar } = require('./auth');
+const { autenticar, usuarioVigente } = require('./auth');
 const Trabajadore = require('../modelos/sistema_base/Trabajadore');
-const Usuario = require('../modelos/sistema_base/Usuario');
 const AccesoLaboral = require('../modelos/sistema_intranet/acceso_laboral');
 const { TIPO_ACCESO_SUPERVISOR } = require('../services/bodega/constantes');
 
@@ -54,10 +53,8 @@ const supervisor = asyncHandler(async (req, res, next) => {
 
 const confirmarUsuario = asyncHandler(async (req, res, next) => {
   const payload = req.tokenBodega;
-  const u = await Usuario.findById(req.usuario.id, { attributes: ['id', 'correo', 'roleId', 'estado'] });
   delete req.tokenBodega; // el payload de usuarios trae el hash de password: no se deja en req
-  // estado 1 = activo (mismo criterio que el login de usuarios)
-  if (!u || Number(u.estado) !== 1 || u.correo !== payload.correo || Number(u.roleId) !== Number(payload.roleId)) throw noAutorizado();
+  if (!(await usuarioVigente(req.usuario.id, payload.correo, payload.roleId))) throw noAutorizado();
   req.usuario.es_supervisor = false;
   next();
 });
