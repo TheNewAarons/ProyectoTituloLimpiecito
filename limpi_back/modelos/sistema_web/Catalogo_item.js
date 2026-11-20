@@ -35,6 +35,11 @@ module.exports = db.sequelize.define(
       allowNull: false,
       defaultValue: false
     },
+    // RF-WEB-01b: vínculo opcional con un servicio de la app de reservas (migración 20261120003306).
+    servicio_id: {
+      type: Sequelize.INTEGER,
+      allowNull: true
+    },
     orden: {
       type: Sequelize.INTEGER,
       allowNull: false,

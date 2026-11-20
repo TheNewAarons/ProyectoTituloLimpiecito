@@ -1,0 +1,5 @@
+<h4 class="card-title" *ngIf="titulo">{{ titulo }}</h4>
+<div class="grafico-contenedor" *ngIf="datasets.length; else vacio">
+  <canvas baseChart [datasets]="datasets" [labels]="etiquetas" [options]="opciones" [chartType]="tipo" [legend]="true"></canvas>
+</div>
+<ng-template #vacio><p class="text-center">Sin datos</p></ng-template>
