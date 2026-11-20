@@ -16,8 +16,11 @@ const resumen = async (req, res) => {
 
 const tendencia = async (req, res) => {
   const hasta = req.query.hasta === undefined ? financiero.mesActual() : req.query.hasta;
+  if (!fecha.esPeriodoValido(hasta)) {
+    throw new AppError('PERIODO_INVALIDO', 'hasta invalido, formato esperado YYYY-MM', 400, { hasta: hasta });
+  }
   // default: 12 meses terminando en `hasta`
-  const desde = req.query.desde === undefined && fecha.esPeriodoValido(hasta)
+  const desde = req.query.desde === undefined
     ? financiero.indiceAPeriodo(financiero.periodoAIndice(hasta) - 11)
     : req.query.desde;
   const data = await financiero.tendencia(desde, hasta);

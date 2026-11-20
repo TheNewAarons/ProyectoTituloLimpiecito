@@ -11,7 +11,7 @@
             <div class="alert alert-warning" *ngIf="resumen?.alerta_utilidad.activa">
               Alerta de utilidad baja
               ({{ resumen.alerta_utilidad.motivo === 'UTILIDAD_REAL_BAJA' ? 'utilidad real del mes' : 'utilidad proyectada' }}
-              bajo el umbral de $ {{ resumen.alerta_utilidad.umbral | number:'1.0-0':'es-CL' }}).
+              bajo el umbral de {{ resumen.alerta_utilidad.umbral | currency:'CLP':'symbol':'1.0-0' }}).
             </div>
             <div class="row">
               <div class="col-12 col-sm-6 col-lg-4">

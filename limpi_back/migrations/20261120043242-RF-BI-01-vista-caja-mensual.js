@@ -13,7 +13,8 @@ const VISTA = 'v_bi_caja_mensual';
 module.exports = {
   up: async (queryInterface) => {
     await queryInterface.sequelize.query(
-      'CREATE OR REPLACE VIEW `' + VISTA + '` AS ' +
+      // INVOKER: la vista no depende de que exista el usuario que corrio la migracion en RDS
+      'CREATE OR REPLACE SQL SECURITY INVOKER VIEW `' + VISTA + '` AS ' +
       'SELECT c.id AS caja_id, c.periodo, c.estado, c.saldo_inicial, c.saldo_final, ' +
       'c.total_ingreso, c.total_egreso, ' +
       '(c.saldo_final - c.saldo_inicial) AS utilidad_caja, ' +
