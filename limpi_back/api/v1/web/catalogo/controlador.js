@@ -8,6 +8,9 @@ const CatalogoItem = require('../../../../modelos/sistema_web/Catalogo_item');
 const AppError = require('../../../../libs/app-error');
 const servicio = require('../../../../services/web/catalogo');
 const { validarMagicBytes, borrarImagen } = require('../../../../libs/multer_publicaciones');
+const { enriquecer } = require('../../../../services/web/catalogo-app');
+// RF-WEB-01b: proyección de admin con los datos de la app (precio en vivo, servicio vinculado y aviso).
+const aAdminConApp = (filas) => enriquecer(filas, servicio.aAdmin, { admin: true });
 
 const ORDEN = [['orden', 'ASC'], ['id', 'ASC']];
 
@@ -26,11 +29,11 @@ async function buscar(texto) {
 
 const listar = async (req, res) => {
   const filas = await CatalogoItem.findAll({ order: ORDEN });
-  res.json({ ok: true, data: filas.map(servicio.aAdmin), meta: { total: filas.length } });
+  res.json({ ok: true, data: await aAdminConApp(filas), meta: { total: filas.length } });
 };
 
 const obtener = async (req, res) => {
-  res.json({ ok: true, data: servicio.aAdmin(await buscar(req.params.id)), meta: {} });
+  res.json({ ok: true, data: (await aAdminConApp([await buscar(req.params.id)]))[0], meta: {} });
 };
 
 const crear = async (req, res) => {
@@ -55,6 +58,10 @@ const editar = async (req, res) => {
   try {
     const item = await buscar(req.params.id);
     const campos = servicio.validarPayload(req.body || {}, { parcial: true });
+    // RF-WEB-01b: el precio de un ítem vinculado viene de la app; no se acepta uno propio.
+    if (item.servicio_id && campos.precio !== undefined && campos.precio !== null) {
+      throw new AppError('PRECIO_DESDE_APP', 'el precio de este ítem viene de la app de reservas; desvincúlalo para fijar uno propio', 400, { campo: 'precio' });
+    }
     const imagenAnterior = item.imagen;
     if (req.file) {
       await validarMagicBytes(req.file.path);
@@ -89,7 +96,7 @@ const reordenar = async (req, res) => {
     }
   });
   const filas = await CatalogoItem.findAll({ order: ORDEN });
-  res.json({ ok: true, data: filas.map(servicio.aAdmin), meta: { total: filas.length } });
+  res.json({ ok: true, data: await aAdminConApp(filas), meta: { total: filas.length } });
 };
 
 module.exports = { listar, obtener, crear, editar, despublicar, reordenar };

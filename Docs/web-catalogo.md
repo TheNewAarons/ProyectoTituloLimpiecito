@@ -80,3 +80,27 @@ con imagen. Usable a 360 px (flechas apiladas y precio bajo el nombre en pantall
 ## Despliegue
 
 `db:migrate` antes de reiniciar el backend; backend y front juntos. Sin variables de entorno nuevas.
+
+## RF-WEB-01b · Vínculo con la app de reservas (2026-11-20, AUT-007)
+
+Respuestas del dueño: la web muestra servicios de la app **y** otros; quiere poder ir a reservar en la app; el precio debe
+cambiar solo. Rama `feature/RF-WEB-01b-catalogo-app-bastian`.
+
+- **Migración `20261120003306`:** `catalogo_items.servicio_id` opcional, FK a `servicios(id)` con `ON DELETE SET NULL`
+  (borrar un servicio de la app solo desvincula el ítem). Ítems existentes quedan sin vínculo.
+- **Precio en vivo (D-WEB-01-6):** un ítem vinculado a un servicio **activo** (`servicios.estado = 1`) muestra el precio
+  actual de la app en el admin y en la web; si el servicio está inactivo, sin precio y no reservable (el admin ve un aviso).
+  Al vincular se borra el precio propio, y un ítem vinculado no acepta precio propio (`400 PRECIO_DESDE_APP`).
+  Nombre, descripción, categoría e imagen siguen siendo del catálogo.
+- **Público:** solo los ítems vinculados agregan `reservable_en_app` y `reserva_url`; los propios de la web conservan la forma
+  de RF-WEB-01. Nunca se exponen `servicio_id` ni el estado interno de la app. **Reservable solo si `APP_RESERVAS_URL` tiene
+  un enlace** (D-WEB-01-7): la app móvil aún no está operativa, así que mientras la variable esté vacía nadie ve la opción de
+  reservar; el precio en vivo sí se muestra (los servicios se administran en el ERP, *Adm Servicios*).
+- **Administración (Admin):** `GET /servicios-app` (id, nombre, precio, activo), `PUT /:id/servicio-app`
+  (`{ servicio_id }` o `null`) y `POST /importar-servicio` (`{ servicio_id }`: crea un borrador vinculado copiando nombre,
+  descripción e imagen; la imagen se **copia** solo si está en `uploads/` y es una imagen real; la app no se modifica).
+  El listado admin trae `servicio_id`, `servicio_app` y `aviso_app`.
+- **Pantalla:** selector "Servicio de la app de reservas" en el formulario (precio en solo lectura si está vinculado),
+  botón "Importar datos desde la app" al crear, distintivo "App" y aviso en la lista.
+- **Variable nueva:** `APP_RESERVAS_URL` (opcional). Pendiente: conseguir el enlace de la app (tienda o página de descarga).
+- **Despliegue:** `db:migrate` (requiere que la migración `RF-PEV-02b` aplique antes: si falla, se detiene la cadena).
