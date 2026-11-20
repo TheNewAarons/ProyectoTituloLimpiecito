@@ -53,8 +53,12 @@ const eliminarLineaCronograma = async(req,res) => {
     let cronogramaId = req.params.cronogramaId
     let sectoreId = req.params.sectoreId
     try{
-        let filas = await logicaDB.eliminarLineaCronogramaDB(id_linea_cronograma)
         let listas_pev = await logicaDB.obtenerListasPevPorCronogramaYSectorDB(cronogramaId,sectoreId)
+        // RF-PEV-02c (C7): no borrar historial de cumplimiento enlazado a una asignación.
+        if (await logicaDB.hayLineasConMarcaAsignacion(listas_pev.map(l => l.id), {tareaId})) {
+            return res.status(200).json({estado:false, mensaje:'No se puede eliminar: existen líneas de cumplimiento enlazadas a una asignación.'})
+        }
+        let filas = await logicaDB.eliminarLineaCronogramaDB(id_linea_cronograma)
         if(listas_pev.length != 0){
             for(let index = 0;index < listas_pev.length; index++){
                 await logicaDB.eliminarLineaListaPevDB(listas_pev[index].id,tareaId)
@@ -196,6 +200,11 @@ const finalizarCronograma = async(req,res) => {
 const eliminarCronograma = async(req,res) => {
     let id_cronograma = req.params.id_cronograma
     try{
+        let res_obt_listas_pev = await logicaDB.obtenerListasPevTrabajadorDB(id_cronograma)
+        // RF-PEV-02c (C7): no borrar historial de cumplimiento enlazado a una asignación.
+        if (await logicaDB.hayLineasConMarcaAsignacion(res_obt_listas_pev.map(l => l.id), {incluirSupervisor:true})) {
+            return res.status(200).json({estado:false, mensaje:'No se puede eliminar: existen líneas de cumplimiento enlazadas a una asignación.'})
+        }
         let res_eliminar_trabajador_cronograma = await logicaDB.eliminarTrabajadoresCronogramaDB(id_cronograma)
         let res_obt_lineas_cronograma = await logicaDB.obtenerLineasCronogramaDB(id_cronograma)
         for(let i = 0; i < res_obt_lineas_cronograma.length; i++){
@@ -203,7 +212,6 @@ const eliminarCronograma = async(req,res) => {
         }
         let res_eliminar_linea_cronograma = await logicaDB.eliminarLineasCronogramaDB(id_cronograma)
 
-        let res_obt_listas_pev = await logicaDB.obtenerListasPevTrabajadorDB(id_cronograma)
         for(let p = 0; p < res_obt_listas_pev.length; p++){
             let res_obt_listas_super = await logicaDB.obtenerListasSuperDB(res_obt_listas_pev[p].dataValues.id)
             for(let n = 0; n < res_obt_listas_super.length; n++){

@@ -343,6 +343,12 @@ app.use(process.env.PREFIJO + '/api/v1/web/catalogo', autenticar, requerirRol.ap
 
 // RF-PEV-02a: actividades y asignaciones PEV (solo Admin).
 const PevV1 = require('./api/v1/pev/routes');
+// RF-PEV-02c: app laboral y extranet supervisor (token laboral). Se montan ANTES del gate Admin de
+// /api/v1/pev para que /pev/trabajador y /pev/supervisor no caigan en autenticar + requerirRol(Admin).
+const { autenticarLaboral, exigirSupervisor } = require('./middleware/auth-laboral');
+const PevLaboralV1 = require('./api/v1/pev/laboral/routes');
+app.use(process.env.PREFIJO + '/api/v1/pev/trabajador', autenticarLaboral, PevLaboralV1.trabajador);
+app.use(process.env.PREFIJO + '/api/v1/pev/supervisor', autenticarLaboral, exigirSupervisor, PevLaboralV1.supervisor);
 app.use(process.env.PREFIJO + '/api/v1/pev', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), PevV1);
 
 // RF-BI-01a: analytics (solo GET); roles por sub-recurso dentro del router (D-145).
