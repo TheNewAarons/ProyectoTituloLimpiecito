@@ -83,7 +83,7 @@ function armarRentabilidad(e) {
 
   const filas = Object.keys(porCliente).map(function (k) { return calcularMargen(porCliente[k]); });
   filas.sort(function (a, b) {
-    return b.margen_con_estimado - a.margen_con_estimado || String(a.cliente_id).localeCompare(String(b.cliente_id));
+    return b.margen_con_estimado - a.margen_con_estimado || String(a.cliente_id || a.cliente).localeCompare(String(b.cliente_id || b.cliente));
   });
   filas.forEach(function (f, i) { f.posicion = i + 1; });
 
