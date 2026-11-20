@@ -19,6 +19,13 @@ export class GraficoComponent implements OnChanges {
   datasets: ChartDataSets[] = [];
   opciones: ChartOptions = { responsive: true, maintainAspectRatio: false };
 
+  // RF-BI-03: eje Y solo con enteros desde 0 (cantidades/unidades); opcional, sin efecto si no se usa.
+  @Input() set enteros(valor: boolean) {
+    if (valor) {
+      this.opciones = Object.assign({}, this.opciones, { scales: { yAxes: [{ ticks: { beginAtZero: true, precision: 0 } }] } });
+    }
+  }
+
   ngOnChanges(): void {
     this.datasets = (this.series || []).map((s: SerieGrafico): ChartDataSets => ({ label: s.etiqueta, data: s.datos, fill: false }));
   }
