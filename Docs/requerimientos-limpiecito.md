@@ -40,7 +40,7 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 | RF-WEB-03 | Publicaciones y anuncios desde el sistema | Web | 🟢 Baja | S | Feature nueva | 4 | — | Implementado – pendiente verificación/PR |
 | RF-PEV-01 | Asignación masiva de actividades PEV | PEV/Cronograma | 🟠 Media-Alta | L | Mejora | 5 | Reunión técnica | 🔒 Bloqueado |
 | RF-PEV-02 | Escalabilidad de tareas PEV (1 tarea → N trabajadores) | PEV/Cronograma | 🟠 Media-Alta | XL | Refactor | 5 | Reunión técnica | En progreso (02a implementado: esquema + API admin; 02b implementado: migración de datos + dual-write, PR pendiente, requiere verificación en copia de producción; 02c implementado en rama: app laboral, verificación del supervisor y guard de borrado legacy; revisión C5 aplicada; pendiente: pruebas contra MySQL real (C4) y PR) |
-| RF-BI-01 | Dashboard financiero (utilidad, tendencias, proyección) | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-01/02, FAC-01 | Sin empezar (base 01a implementada: módulo Analytics, router `/api/v1/analytics` y componentes base; PR pendiente) |
+| RF-BI-01 | Dashboard financiero (utilidad, tendencias, proyección) | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-01/02, FAC-01 | Implementado (PR pendiente) |
 | RF-BI-02 | Rentabilidad por cliente / centro de costo | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-02, FAC-01, BOD-04 | Sin empezar |
 | RF-BI-03 | Análisis de consumo de bodega | BI/Analytics | 🟠 Media-Alta | M | Feature nueva | 6 | BOD-01..04 | Sin empezar |
 | RF-BI-04 | Productividad de trabajadores/supervisores PEV | BI/Analytics | 🟡 Media | M | Feature nueva | 7 | PEV-01/02 | 🔒 Condicionado |
@@ -596,7 +596,7 @@ Visualización de calendario de servicios (FullCalendar ya disponible), prioriza
 - Endpoints bajo `/api/v1/analytics/*`, sólo lectura, rol Admin (Operaciones sólo BI-03 y BI-04).
 - Agregaciones en MySQL (`GROUP BY`, `SUM`, `AVG`) mediante **vistas SQL** creadas por migración; nada de agregar en memoria miles de filas en Node.
 - Frontend: nuevo `AnalyticsModule` de Angular con carga diferida (lazy loading), gráficos con `chart.js@2.9` + `ng2-charts@2.x`.
-- Todos los cálculos financieros usan la **regla de impacto en caja** (sólo pagados, por `fecha_pago`).
+- Todos los cálculos financieros usan la **regla de impacto en caja** (sólo pagados, por `fecha_pago`) (implementado vía cajaId → periodo, ver D-155).
 - Filtros comunes: rango de períodos (`desde`, `hasta` en `YYYY-MM`), centro de costo, cliente.
 
 ### RF-BI-01 · Dashboard financiero
@@ -616,7 +616,7 @@ Visualización de calendario de servicios (FullCalendar ya disponible), prioriza
 
 Umbral configurable: tabla `configuracion (clave, valor)` o la que exista.
 **Endpoints:** `GET /api/v1/analytics/financiero/resumen?periodo=` · `GET /api/v1/analytics/financiero/tendencia?desde=&hasta=` · `GET /api/v1/analytics/financiero/proyeccion`.
-**Criterios:** [ ] ≥ 5 KPIs visibles (meta del indicador). [ ] La utilidad calculada coincide con la caja del mes. [ ] Con menos de 3 meses de historia, la proyección muestra "datos insuficientes" en vez de un número.
+**Criterios:** [x] ≥ 5 KPIs visibles (meta del indicador): `tests/services/analytics/financiero.test.js` «expone los 7 bloques de KPI» y `tests/api/analytics-financiero.v1.test.js` «Admin con periodo valido -> 200 … al menos 5 KPIs». [x] La utilidad calculada coincide con la caja del mes: `financiero.test.js` «mes cerrado: utilidad_real.utilidad == saldo_final - saldo_inicial de la caja» y «mes abierto: utilidad == ingresos - egresos de calcularSaldo». [x] Con menos de 3 meses de historia, la proyección muestra "datos insuficientes" en vez de un número: `financiero.test.js` «con 0/1/2 meses de historia -> insuficiente, sin numeros» y `analytics-financiero.v1.test.js` «con menos de 3 cajas cerradas -> insuficiente, sin numeros».
 
 ### RF-BI-02 · Rentabilidad por cliente / centro de costo
 **Prioridad:** 🔴 Alta · **Esfuerzo:** L (3 pts) · **Sprint:** 6
