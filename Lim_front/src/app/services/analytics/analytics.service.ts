@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginService } from '../login/login.service';
-import { FiltrosAnalytics, RespuestaAnalytics } from '../../model/analytics';
+import { FiltrosAnalytics, PuntoTendencia, RespuestaAnalytics, ResumenFinanciero } from '../../model/analytics';
 
 // ANALYTICS (RF-BI-01a) — /api/v1/analytics, formato { ok, data, meta }. Cada BI-0x agrega su método tipado sobre obtener<T>().
 @Injectable({
@@ -38,5 +38,14 @@ export class AnalyticsService {
       }
     });
     return this.http.get<RespuestaAnalytics<T>>(this.url_analytics + ruta, { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  //DASHBOARD FINANCIERO (RF-BI-01)
+  resumenFinanciero(periodo?: string): Observable<RespuestaAnalytics<ResumenFinanciero>> {
+    return this.obtener<ResumenFinanciero>('/financiero/resumen', { periodo: periodo });
+  }
+
+  tendenciaFinanciera(desde?: string, hasta?: string): Observable<RespuestaAnalytics<PuntoTendencia[]>> {
+    return this.obtener<PuntoTendencia[]>('/financiero/tendencia', { desde: desde, hasta: hasta });
   }
 }

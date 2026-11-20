@@ -10,6 +10,7 @@ const CcIngreso = require('../../../modelos/sistema_base/CcIngreso');
 const Egreso = require('../../../modelos/sistema_base/Egreso');
 const CcEgreso = require('../../../modelos/sistema_base/CcEgreso');
 const pagoService = require('../../../services/facturas/pago');
+const pendientes = require('../../../services/facturas/pendientes');
 
 const ESTADOS_PAGO_VALIDOS = ['PENDIENTE', 'PAGADA', 'ANULADA'];
 
@@ -144,22 +145,11 @@ const resumen = async (req, res) => {
   const periodo = req.query.periodo;
   validarPeriodoQuery(periodo);
 
-  const where = { estado_pago: 'PENDIENTE' };
-  const whereConPeriodo = Object.assign({}, where, periodo ? { fecha_emision: filtroPeriodo('fecha_emision', periodo) } : {});
-
-  const [ingresos, egresosCaja, egresosCc] = await Promise.all([
-    CcIngreso.findAll({ where: whereConPeriodo, attributes: ['monto'] }),
-    Egreso.findAll({ where: whereConPeriodo, attributes: ['monto'] }),
-    CcEgreso.findAll({ where: whereConPeriodo, attributes: ['monto'] })
-  ]);
-  const sumar = function (filas) { return filas.reduce(function (acc, f) { return acc + Number(f.monto || 0); }, 0); };
+  const data = await pendientes.resumenPendientes({ periodo: periodo });
 
   return res.json({
     ok: true,
-    data: {
-      por_cobrar: { cantidad: ingresos.length, monto_total: sumar(ingresos) },
-      por_pagar: { cantidad: egresosCaja.length + egresosCc.length, monto_total: sumar(egresosCaja) + sumar(egresosCc) }
-    },
+    data: data,
     meta: { periodo: periodo || null }
   });
 };

@@ -341,6 +341,10 @@ app.use(process.env.PREFIJO + '/api/v1/web/publicaciones', autenticar, requerirR
 const CatalogoV1 = require('./api/v1/web/catalogo/routes');
 app.use(process.env.PREFIJO + '/api/v1/web/catalogo', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), CatalogoV1);
 
+// RF-PEV-01: asignación masiva (solo Admin). Va antes de /api/v1/pev para que ese router no la capture.
+const PevMasivaV1 = require('./api/v1/pev/masiva/routes');
+app.use(process.env.PREFIJO + '/api/v1/pev/asignaciones-masivas', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), PevMasivaV1);
+
 // RF-PEV-02a: actividades y asignaciones PEV (solo Admin).
 const PevV1 = require('./api/v1/pev/routes');
 // RF-PEV-02c: app laboral y extranet supervisor (token laboral). Se montan ANTES del gate Admin de

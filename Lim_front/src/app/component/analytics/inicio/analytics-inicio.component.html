@@ -19,7 +19,10 @@
                 <app-selector-cliente [valor]="filtros.clienteId" (cambio)="cambiarCliente($event)"></app-selector-cliente>
               </div>
             </div>
-            <p class="text-center">Sin tableros disponibles</p>
+            <a mat-raised-button routerLink="../financiero" class="btn btn-info btn-sm">
+              <span class="btn-label"><i class="material-icons">attach_money</i></span>
+              Dashboard financiero
+            </a>
           </div>
         </div>
       </div>
