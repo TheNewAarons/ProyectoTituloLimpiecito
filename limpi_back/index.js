@@ -345,6 +345,10 @@ app.use(process.env.PREFIJO + '/api/v1/web/catalogo', autenticar, requerirRol.ap
 const PevV1 = require('./api/v1/pev/routes');
 app.use(process.env.PREFIJO + '/api/v1/pev', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), PevV1);
 
+// RF-BI-01a: analytics (solo GET); roles por sub-recurso dentro del router (D-145).
+const AnalyticsV1 = require('./api/v1/analytics/routes');
+app.use(process.env.PREFIJO + '/api/v1/analytics', autenticar, AnalyticsV1);
+
 app.use(process.env.PREFIJO + '/api/v1', require('./middleware/errores').noEncontrado); // RNF-API-02: 404 JSON solo en /api/v1
 app.use(require('./middleware/errores').manejadorErrores); // RNF-API-02: debe ir después de las rutas
 

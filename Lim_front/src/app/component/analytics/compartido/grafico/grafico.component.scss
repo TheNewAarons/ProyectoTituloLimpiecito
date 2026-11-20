@@ -1,0 +1,6 @@
+// chart.js con maintainAspectRatio:false necesita un contenedor de alto fijo (no hay clase Bootstrap de alto).
+.grafico-contenedor {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
