@@ -1,0 +1,6 @@
+<mat-form-field class="example-full-width">
+  <mat-select placeholder="Centro De Costo" name="centroCosto" [(ngModel)]="valor" (selectionChange)="cambio.emit(valor)">
+    <mat-option [value]="null">Todos</mat-option>
+    <mat-option *ngFor="let c of centros" [value]="c.id">{{ etiquetaCentro(c) }}</mat-option>
+  </mat-select>
+</mat-form-field>

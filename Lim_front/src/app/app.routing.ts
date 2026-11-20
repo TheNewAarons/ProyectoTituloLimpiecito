@@ -51,6 +51,12 @@ export const AppRoutes: Routes = [
         loadChildren: './component/caja/caja.module#CajaModule'
       },
       {
+        // Prefijo propio: con path '' el router descargaría chart.js en cualquier navegación.
+        path: 'analytics',
+        canActivate: [RestriccionGuardService, ArchivoGuardService, LvlAppGuardService],
+        loadChildren: './component/analytics/analytics.module#AnalyticsModule'
+      },
+      {
         path: '',
         canActivate: [ArchivoGuardService,LvlAppGuardService],
         loadChildren: './component/centro-costo/centro.module#CentroModule'

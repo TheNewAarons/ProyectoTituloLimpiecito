@@ -1,0 +1,19 @@
+<div class="row">
+  <div class="col-12 col-sm-6">
+    <mat-form-field class="example-full-width">
+      <mat-select placeholder="Desde" name="desde" [(ngModel)]="desde" (selectionChange)="emitir()">
+        <mat-option *ngFor="let m of meses" [value]="m">{{ m }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+  <div class="col-12 col-sm-6">
+    <mat-form-field class="example-full-width">
+      <mat-select placeholder="Hasta" name="hasta" [(ngModel)]="hasta" (selectionChange)="emitir()">
+        <mat-option *ngFor="let m of meses" [value]="m">{{ m }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+  <div class="col-12" *ngIf="invalido">
+    <small class="text-danger">El desde debe ser anterior al hasta</small>
+  </div>
+</div>
