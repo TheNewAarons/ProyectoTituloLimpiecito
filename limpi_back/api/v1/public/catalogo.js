@@ -5,11 +5,13 @@
 
 const CatalogoItem = require('../../../modelos/sistema_web/Catalogo_item');
 const { aPublico } = require('../../../services/web/catalogo');
+const { enriquecer } = require('../../../services/web/catalogo-app');
 
 const listarCatalogo = async (req, res) => {
   const filas = await CatalogoItem.findAll({ where: { publicado: true }, order: [['orden', 'ASC'], ['id', 'ASC']] });
   res.set('Cache-Control', 'public, max-age=60');
-  return res.json({ ok: true, data: filas.map(aPublico), meta: { total: filas.length } });
+  // RF-WEB-01b: ítems vinculados a la app muestran su precio en vivo y si son reservables.
+  return res.json({ ok: true, data: await enriquecer(filas, aPublico), meta: { total: filas.length } });
 };
 
 module.exports = { listarCatalogo };

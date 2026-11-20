@@ -12,6 +12,7 @@ const AppError = require('../../libs/app-error');
 const fecha = require('../../libs/fecha');
 const { auditar } = require('../auditoria');
 const { reintentarTransaccion } = require('../caja/cierre');
+const { fechaLinea } = require('./backfill');
 const Actividad = require('../../modelos/apartado_listas_pev/actividad');
 const ActividadAsignacion = require('../../modelos/apartado_listas_pev/actividadAsignacion');
 const Area = require('../../modelos/apartado_listas_pev/area');
@@ -333,6 +334,30 @@ async function tieneHistorial(id, t) {
   return Number(filas[0].total) > 0;
 }
 
+// RF-PEV-02c (D-136): líneas con asignacionId = id y fecha D-117 > fecha_hasta. Solo se cuentan, no se tocan.
+async function contarLineasPosteriores(id, fechaHasta, t) {
+  const sqlPev =
+    'SELECT DATE_FORMAT(lp.fecha_chequeo, \'%Y-%m-%dT%H:%i:%sZ\') AS fecha_utc, HOUR(lp.fecha_chequeo) AS hora_utc ' +
+    'FROM linea_lista_pev_trabajadores l JOIN listas_pev_trabajadores lp ON lp.id = l.listasPevTrabajadoreId ' +
+    'WHERE l.asignacionId = :id';
+  const sqlSuper =
+    'SELECT DATE_FORMAT(lp.fecha_chequeo, \'%Y-%m-%dT%H:%i:%sZ\') AS fecha_utc, HOUR(lp.fecha_chequeo) AS hora_utc ' +
+    'FROM linea_lista_super_trabajadores ls ' +
+    'JOIN listas_super_trabajadores st ON st.id = ls.listasSuperTrabajadoreId ' +
+    'JOIN listas_pev_trabajadores lp ON lp.id = st.listasPevTrabajadoreId ' +
+    'WHERE ls.asignacionId = :id';
+  const contar = function (filas) {
+    return filas.filter(function (f) {
+      const hora = f.hora_utc === null || f.hora_utc === undefined ? null : Number(f.hora_utc);
+      const fecha = fechaLinea(f.fecha_utc, hora);
+      return fecha !== null && fecha > fechaHasta;
+    }).length;
+  };
+  const pev = await db.sequelize.query(sqlPev, { replacements: { id: id }, type: Sequelize.QueryTypes.SELECT, transaction: t });
+  const sup = await db.sequelize.query(sqlSuper, { replacements: { id: id }, type: Sequelize.QueryTypes.SELECT, transaction: t });
+  return contar(pev) + contar(sup);
+}
+
 /**
  * @param {number} id
  * @param {{fecha_hasta?: string, motivo?: string}} datos
@@ -385,7 +410,9 @@ async function cerrar(id, datos, contexto) {
         ip: ip
       });
 
-      return asignacion.get({ plain: true });
+      const plano = asignacion.get({ plain: true });
+      plano.lineas_posteriores = await contarLineasPosteriores(id, fechaHasta, t);
+      return plano;
     });
   });
 }

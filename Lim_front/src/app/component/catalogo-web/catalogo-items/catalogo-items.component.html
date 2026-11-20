@@ -9,6 +9,24 @@
       </div>
       <div class="card-body">
         <form #f="ngForm" (ngSubmit)="f.valid && guardar()">
+          <!-- RF-WEB-01b: vínculo opcional con un servicio de la app de reservas -->
+          <div class="row align-items-end" *ngIf="serviciosApp.length > 0">
+            <div class="col-12 col-md-6">
+              <label class="d-block" for="servicio-app">Servicio de la app de reservas (opcional)</label>
+              <select id="servicio-app" class="form-control" name="servicio_id" [(ngModel)]="form.servicio_id">
+                <option [ngValue]="null">— Ítem propio de la web (sin vínculo) —</option>
+                <option *ngFor="let s of serviciosApp" [ngValue]="s.id">{{ s.nombre }}{{ s.activo ? '' : ' (inactivo en la app)' }}</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-6" *ngIf="!form.id && servicioElegido()">
+              <button mat-raised-button type="button" class="btn btn-info" (click)="importarDesdeApp()" [disabled]="guardando">
+                <span class="btn-label"><i class="material-icons">get_app</i></span> Importar datos desde la app
+              </button>
+            </div>
+            <div class="col-12 text-muted small mt-1" *ngIf="servicioElegido()">
+              Vinculado: el precio y la opción de reservar vienen de la app y se actualizan solos.
+            </div>
+          </div>
           <div class="row">
             <div class="col-12 col-md-6">
               <mat-form-field class="w-100">
@@ -23,9 +41,15 @@
                 <option *ngFor="let c of categorias" [value]="c"></option>
               </datalist>
             </div>
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-3" *ngIf="!servicioElegido()">
               <mat-form-field class="w-100">
                 <input matInput placeholder="Precio CLP (opcional)" name="precio" [(ngModel)]="form.precio" inputmode="numeric" pattern="[0-9.]*">
+              </mat-form-field>
+            </div>
+            <div class="col-12 col-md-3" *ngIf="servicioElegido() as s">
+              <mat-form-field class="w-100">
+                <input matInput placeholder="Precio (desde la app)" readonly
+                       [value]="s.activo && s.precio !== null ? (s.precio | currency:'CLP':'symbol-narrow':'1.0-0':'es-CL') : 'Sin precio (servicio inactivo)'">
               </mat-form-field>
             </div>
             <div class="col-12">
@@ -98,6 +122,8 @@
                 <td>
                   <img *ngIf="urlImagen(item)" [src]="urlImagen(item)" alt="" width="48" height="48" style="object-fit: cover;" class="mr-2 rounded">
                   <strong>{{ item.nombre }}</strong>
+                  <span class="badge badge-info ml-1" *ngIf="item.servicio_id" title="Vinculado a la app de reservas: precio en vivo">App</span>
+                  <i class="material-icons text-warning align-middle ml-1" *ngIf="item.aviso_app" [title]="item.aviso_app" [attr.aria-label]="item.aviso_app">warning</i>
                   <div class="text-muted small" *ngIf="item.categoria">{{ item.categoria }}</div>
                   <div class="small d-sm-none" *ngIf="item.precio !== null">{{ item.precio | currency:'CLP':'symbol-narrow':'1.0-0':'es-CL' }}</div>
                 </td>
