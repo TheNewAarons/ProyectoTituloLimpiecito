@@ -6,7 +6,11 @@ const mock = { actividades: [], areas: [], sectores: [], turnos: [], trabajadore
 const porId = (lista) => jest.fn(async (id) => mock[lista].find((x) => x.id === id) || null);
 const enIds = (lista) => jest.fn(async ({ where }) => mock[lista].filter((x) => where.id.includes(x.id)));
 jest.mock('../../../database/database', () => ({ sequelize: { transaction: jest.fn(async (o, cb) => cb({ LOCK: { UPDATE: 'UPDATE' } })) } }));
-jest.mock('../../../modelos/apartado_listas_pev/actividad', () => ({ findById: porId('actividades') }));
+jest.mock('../../../modelos/apartado_listas_pev/actividad', () => ({
+  findById: porId('actividades'),
+  findOne: jest.fn(async ({ where }) => mock.actividades.find((x) => x.cliente_id === where.cliente_id && x.nombre === where.nombre) || null)
+}));
+jest.mock('../../../services/caja/cierre', () => ({ reintentarTransaccion: jest.fn((fn) => fn()) }));
 jest.mock('../../../modelos/apartado_listas_pev/turno', () => ({ findById: porId('turnos') }));
 jest.mock('../../../modelos/apartado_listas_pev/area', () => ({ findAll: enIds('areas') }));
 jest.mock('../../../modelos/apartado_listas_pev/sector', () => ({ findAll: enIds('sectores') }));
@@ -26,7 +30,7 @@ beforeEach(() => {
     turnos: [{ id: 10, nombre: 'Mañana', clienteId: 1 }, { id: 20, nombre: 'Otro', clienteId: 2 }],
     sectores: [{ id: 1, clienteId: 1 }, { id: 2, clienteId: 2 }],
     areas: [{ id: 11, sectoreId: 1 }, { id: 12, sectoreId: 1 }, { id: 21, sectoreId: 2 }],
-    trabajadores: [{ id: 1 }, { id: 2 }, { id: 3 }],
+    trabajadores: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
     asignaciones: [
       { actividad_id: 100, turno_id: 10, trabajador_id: 1, area_id: 11, estado: 'ACTIVA', fecha_hasta: null },
       { actividad_id: 100, turno_id: 10, trabajador_id: 2, area_id: 12, estado: 'CERRADA', fecha_hasta: '2026-11-30' }
@@ -51,6 +55,13 @@ describe('normalizar', () => {
     const filas = Array.from({ length: 501 }, (_, i) => ({ trabajador_id: i + 1, area_id: 11 }));
     expect((await detalles(() => s.normalizar(base(filas)))).details.filas).toMatch(/500/);
   });
+
+  it('un área por trabajador (D-PEV-01-2) y nombre nuevo de máximo 100 caracteres (como actividades.crear)', async () => {
+    expect((await detalles(() => s.normalizar(base([{ trabajador_id: 3, area_id: 11 }, { trabajador_id: 3, area_id: 12 }])))).details['filas.1']).toMatch(/dos áreas/);
+    const largo = await detalles(() => s.normalizar(base([{ trabajador_id: 3, area_id: 11 }], { actividad_id: null, actividad_nombre: 'x'.repeat(101) })));
+    expect(largo.details.actividad).toMatch(/100/);
+    expect(s.normalizar(base([{ trabajador_id: 3, area_id: 11 }], { actividad_id: null, actividad_nombre: 'x'.repeat(100) })).actividad_nombre).toHaveLength(100);
+  });
 });
 
 describe('previsualizar', () => {
@@ -59,9 +70,9 @@ describe('previsualizar', () => {
       { trabajador_id: 3, area_id: 11 }, // nueva
       { trabajador_id: 1, area_id: 11 }, // ya ACTIVA
       { trabajador_id: 2, area_id: 12 }, // CERRADA que cubre la fecha
-      { trabajador_id: 3, area_id: 21 }, // área de otro cliente
+      { trabajador_id: 4, area_id: 21 }, // área de otro cliente
       { trabajador_id: 9, area_id: 12 }, // trabajador inexistente
-      { trabajador_id: 3, area_id: 99 } // área inexistente
+      { trabajador_id: 5, area_id: 99 } // área inexistente
     ]));
     expect(p.filas.map((f) => f.resultado)).toEqual(['CREAR', 'YA_ASIGNADA', 'VIGENCIA_SOLAPADA', 'AREA_CLIENTE_DISTINTO', 'TRABAJADOR_NO_EXISTE', 'AREA_NO_EXISTE']);
     expect(p.resumen).toEqual({ a_crear: 1, ya_asignadas: 1, con_error: 4, repetidas_en_la_seleccion: 0 });
@@ -76,6 +87,13 @@ describe('previsualizar', () => {
     const p = await s.previsualizar(base([{ trabajador_id: 1, area_id: 11 }], { actividad_id: null, actividad_nombre: 'Uso de EPP' }));
     expect(p.actividad).toEqual({ id: null, nombre: 'Uso de EPP', nueva: true });
     expect(p.filas[0].resultado).toBe('CREAR');
+  });
+
+  it('actividad nueva con nombre ya usado en el cliente: ACTIVIDAD_DUPLICADA ya en la vista previa', async () => {
+    const r = await detalles(() => s.previsualizar(base([{ trabajador_id: 1, area_id: 11 }], { actividad_id: null, actividad_nombre: 'Barrido' })));
+    expect(r).toMatchObject({ code: 'ACTIVIDAD_DUPLICADA', status: 409 });
+    // El mismo nombre en otro cliente sí se permite.
+    expect((await s.previsualizar(base([{ trabajador_id: 1, area_id: 11 }], { actividad_id: null, actividad_nombre: 'Otra' }))).actividad.nueva).toBe(true);
   });
 
   it('rechaza actividad inactiva, de otro cliente, o turno de otro cliente', async () => {
@@ -98,11 +116,12 @@ describe('ejecutar', () => {
 
   it('crea solo las filas nuevas, omite las ya asignadas y usa una transacción', async () => {
     const d = fakes();
-    const r = await s.ejecutar(base([{ trabajador_id: 3, area_id: 11 }, { trabajador_id: 1, area_id: 11 }, { trabajador_id: 3, area_id: 12 }]), ctx, d);
+    const r = await s.ejecutar(base([{ trabajador_id: 3, area_id: 11 }, { trabajador_id: 1, area_id: 11 }, { trabajador_id: 4, area_id: 12 }]), ctx, d);
     expect(d.crearAsignacionEnTx).toHaveBeenCalledTimes(2);
     expect(d.crearAsignacionEnTx.mock.calls[0][1]).toEqual({ actividad_id: 100, area_id: 11, trabajador_id: 3, turno_id: 10, fecha_desde: '2026-11-20' });
     expect(d.crearAsignacionEnTx.mock.calls[0][2]).toBe(ctx);
-    expect(r.asignaciones_creadas).toEqual([1003, 1003]);
+    expect(r.asignaciones_creadas).toEqual([1003, 1004]);
+    expect(require('../../../services/caja/cierre').reintentarTransaccion).toHaveBeenCalled();
     expect(r.resumen).toMatchObject({ a_crear: 2, ya_asignadas: 1 });
     expect(require('../../../database/database').sequelize.transaction).toHaveBeenCalled();
   });
@@ -117,9 +136,9 @@ describe('ejecutar', () => {
 
   it('si alguna fila tiene error no crea nada (todo o nada) y devuelve el detalle', async () => {
     const d = fakes();
-    const r = await detalles(() => s.ejecutar(base([{ trabajador_id: 3, area_id: 11 }, { trabajador_id: 3, area_id: 21 }]), ctx, d));
+    const r = await detalles(() => s.ejecutar(base([{ trabajador_id: 3, area_id: 11 }, { trabajador_id: 4, area_id: 21 }]), ctx, d));
     expect(r).toMatchObject({ code: 'ASIGNACION_MASIVA_INVALIDA', status: 409 });
-    expect(r.details.filas).toEqual([{ trabajador_id: 3, area_id: 21, resultado: 'AREA_CLIENTE_DISTINTO' }]);
+    expect(r.details.filas).toEqual([{ trabajador_id: 4, area_id: 21, resultado: 'AREA_CLIENTE_DISTINTO' }]);
     expect(d.crearAsignacionEnTx).not.toHaveBeenCalled();
     expect(d.crearActividadEnTx).not.toHaveBeenCalled();
   });

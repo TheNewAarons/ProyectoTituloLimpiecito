@@ -7,7 +7,7 @@ const servicio = require('../../../../services/pev/asignacion-masiva');
 
 const contexto = (req) => ({ usuario: { id: req.usuario.id, contexto: req.usuario.contexto }, ip: req.ip });
 
-// Funciones de services/pev con transacción externa (AUT-008). Se leen al llamar: hasta conectarlas, ejecutar responde 503.
+// Funciones de services/pev con transacción externa (AUT-008). Si alguna faltara, ejecutar responde 503 NO_DISPONIBLE.
 const deps = () => ({
   crearActividadEnTx: require('../../../../services/pev/actividades').crearEnTx,
   crearAsignacionEnTx: require('../../../../services/pev/asignaciones').crearEnTx

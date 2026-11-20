@@ -11,6 +11,7 @@ const Sequelize = require('sequelize');
 const db = require('../../database/database');
 const AppError = require('../../libs/app-error');
 const fecha = require('../../libs/fecha');
+const { reintentarTransaccion } = require('../caja/cierre');
 const Actividad = require('../../modelos/apartado_listas_pev/actividad');
 const ActividadAsignacion = require('../../modelos/apartado_listas_pev/actividadAsignacion');
 const Area = require('../../modelos/apartado_listas_pev/area');
@@ -49,7 +50,8 @@ function normalizar(body) {
   const tieneId = b.actividad_id !== undefined && b.actividad_id !== null && b.actividad_id !== '';
   if (tieneId === !!nombre) errores.actividad = 'indique actividad_id (existente) o actividad_nombre (nueva), uno solo';
   else if (tieneId && !entero(b.actividad_id)) errores.actividad = 'actividad_id debe ser un entero mayor que 0';
-  else if (nombre && nombre.length > 150) errores.actividad = 'actividad_nombre supera 150 caracteres';
+  // Mismo largo que actividades.crear (LARGO_NOMBRE, columna STRING(100)).
+  else if (nombre && nombre.length > 100) errores.actividad = 'actividad_nombre supera 100 caracteres';
 
   let fechaDesde = null;
   if (b.fecha_desde !== undefined && b.fecha_desde !== null && b.fecha_desde !== '') {
@@ -64,6 +66,7 @@ function normalizar(body) {
   else if (b.filas.length > TOPE) errores.filas = 'máximo ' + TOPE + ' asignaciones por operación';
   else {
     const vistas = new Set();
+    const areaDe = {};
     b.filas.forEach(function (f, i) {
       if (!f || !entero(f.trabajador_id) || !entero(f.area_id)) {
         errores['filas.' + i] = 'cada fila necesita trabajador_id y area_id enteros';
@@ -71,6 +74,12 @@ function normalizar(body) {
       }
       const clave = Number(f.trabajador_id) + '-' + Number(f.area_id);
       if (vistas.has(clave)) { repetidas++; return; }
+      // D-PEV-01-2: un área por trabajador en cada operación.
+      if (areaDe[f.trabajador_id] !== undefined) {
+        errores['filas.' + i] = 'el trabajador ' + f.trabajador_id + ' aparece con dos áreas; elija una';
+        return;
+      }
+      areaDe[f.trabajador_id] = Number(f.area_id);
       vistas.add(clave);
       filas.push({ trabajador_id: Number(f.trabajador_id), area_id: Number(f.area_id) });
     });
@@ -103,6 +112,14 @@ async function clasificar(e, t) {
     if (Number(actividad.cliente_id) !== e.cliente_id) {
       throw new AppError('ACTIVIDAD_CLIENTE_DISTINTO', 'la actividad no pertenece al cliente elegido', 409, { actividad_id: actividad.id });
     }
+  } else {
+    // Igual que actividades.crear: no se repite el nombre dentro del cliente.
+    const misma = await Actividad.findOne(Object.assign({ where: { cliente_id: e.cliente_id, nombre: e.actividad_nombre }, attributes: ['id'] }, opc));
+    if (misma) {
+      throw new AppError('ACTIVIDAD_DUPLICADA', 'ya existe una actividad con ese nombre para el cliente; elíjala como existente', 409, {
+        cliente_id: e.cliente_id, nombre: e.actividad_nombre
+      });
+    }
   }
 
   const turno = plano(await Turno.findById(e.turno_id, opc));
@@ -118,7 +135,7 @@ async function clasificar(e, t) {
   const trabajadores = (await Trabajadore.findAll(Object.assign({ where: { id: idsTrab }, attributes: ['id'] }, opc))).map(plano);
   const existentes = actividad ? (await ActividadAsignacion.findAll(Object.assign({
     where: { actividad_id: actividad.id, turno_id: e.turno_id, trabajador_id: idsTrab, area_id: idsArea }
-  }, t ? { transaction: t, lock: t.LOCK.UPDATE } : {}))).map(plano) : [];
+  }, opc))).map(plano) : []; // sin lock: la actividad ya está bloqueada y crearEnTx bloquea cada clave en su orden
 
   const clientePorSector = {};
   sectores.forEach((s) => { clientePorSector[s.id] = Number(s.clienteId); });
@@ -170,7 +187,8 @@ async function ejecutar(body, contexto, deps) {
     throw new AppError('NO_DISPONIBLE', 'la asignación masiva aún no está conectada a la creación de asignaciones', 503);
   }
   const e = normalizar(body);
-  return db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async function (t) {
+  // Mismo reintento que asignaciones.crear ante deadlock/lock timeout (la transacción entera se revierte).
+  return reintentarTransaccion(() => db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async function (t) {
     const plan = await clasificar(e, t);
     if (plan.resumen.con_error > 0) {
       throw new AppError('ASIGNACION_MASIVA_INVALIDA', 'hay filas que no se pueden asignar; revise la vista previa', 409, {
@@ -192,7 +210,7 @@ async function ejecutar(body, contexto, deps) {
       creadas.push(a.id);
     }
     return Object.assign(plan, { asignaciones_creadas: creadas });
-  });
+  }));
 }
 
 /**

@@ -165,13 +165,24 @@ async function resolverTareaPuente(actividad, area, turnoId, usuario, ip, t, tar
  * @returns {Promise<object>} asignación creada (plana)
  */
 async function crear(entrada, contexto) {
+  return reintentarTransaccion(function () {
+    return db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, function (t) {
+      return crearEnTx(t, entrada, contexto);
+    });
+  });
+}
+
+/**
+ * RF-PEV-01 (AUT-008): mismo alta que crear() pero dentro de una transacción ya abierta,
+ * para que la asignación masiva cree N asignaciones todo-o-nada.
+ * @param {object} t transacción activa
+ */
+async function crearEnTx(t, entrada, contexto) {
   const e = entrada || {};
   const usuario = contexto.usuario;
   const ip = contexto.ip;
   const fechaDesde = e.fecha_desde || fecha.hoySantiago();
 
-  return reintentarTransaccion(function () {
-    return db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async function (t) {
       // 1) Lock de la actividad (serializa todas las altas de esa actividad).
       const actividad = await Actividad.findById(e.actividad_id, { transaction: t, lock: t.LOCK.UPDATE });
       if (!actividad) {
@@ -310,8 +321,6 @@ async function crear(entrada, contexto) {
       });
 
       return asignacion.get({ plain: true });
-    });
-  });
 }
 
 /**
@@ -480,6 +489,7 @@ async function anular(id, datos, contexto) {
 module.exports = {
   listar: listar,
   crear: crear,
+  crearEnTx: crearEnTx,
   cerrar: cerrar,
   anular: anular,
   ESTADOS: ESTADOS
