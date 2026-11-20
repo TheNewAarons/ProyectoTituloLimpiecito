@@ -86,7 +86,7 @@ describe('Operaciones', () => {
 });
 
 describe('Administrador pasa el gate en todo → 404 JSON', () => {
-  ['/bodega/x', '/productividad/x', '/financiero/resumen', '/rentabilidad', '/demanda/x', '/otra'].forEach((ruta) => {
+  ['/bodega/x', '/productividad/x', '/financiero/x', '/rentabilidad', '/demanda/x', '/otra'].forEach((ruta) => {
     it('GET ' + ruta + ' → 404 NOT_FOUND', async () => {
       esperarError(await get(ruta, 'token-admin'), 404, 'NOT_FOUND');
     });

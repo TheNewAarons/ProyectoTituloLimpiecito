@@ -216,9 +216,10 @@ describe('API /api/v1 (facturas: ingresos/egresos/resumen)', () => {
 
   describe('GET /facturas/resumen', () => {
     it('separa por_cobrar (cc_ingresos PENDIENTE) de por_pagar (egresos + cc_egresos PENDIENTE), fuera del saldo de caja', async () => {
-      CcIngreso.findAll.mockResolvedValue([{ monto: 10000 }, { monto: 5000 }]);
-      Egreso.findAll.mockResolvedValue([{ monto: 20000 }]);
-      CcEgreso.findAll.mockResolvedValue([{ monto: 3000 }]);
+      // el resumen agrega con COUNT/SUM en BD: findAll devuelve una fila agregada
+      CcIngreso.findAll.mockResolvedValue([{ cantidad: 2, monto: 15000 }]);
+      Egreso.findAll.mockResolvedValue([{ cantidad: 1, monto: 20000 }]);
+      CcEgreso.findAll.mockResolvedValue([{ cantidad: 1, monto: 3000 }]);
 
       const res = await request(app).get('/api/v1/facturas/resumen').set('x-access-token', TOKEN_ADMIN);
 
