@@ -1,0 +1,69 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">assessment</i></div>
+            <h4 class="card-title">Kardex Valorizado {{ kardex?.producto.nombre ? '· ' + kardex.producto.nombre : '' }}</h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Volver" class="btn btn-rose btn-sm" (click)="volver()">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div *ngIf="!loading && kardex">
+              <p>
+                <strong>Stock:</strong> {{ kardex.saldo.stock | number:'1.0-0' }} ·
+                <strong>Valor en bodega:</strong> {{ kardex.saldo.valor_saldo === null ? '—' : (kardex.saldo.valor_saldo | currency:'CLP':'symbol':'1.0-0') }} ·
+                <strong>Costo promedio:</strong> {{ kardex.saldo.costo_promedio === null ? '—' : (kardex.saldo.costo_promedio | currency:'CLP':'symbol':'1.0-0') }}
+              </p>
+              <p class="text-warning" *ngIf="kardex.saldo.cuadrado === false">
+                El stock del producto ({{ kardex.saldo.stock }}) no coincide con el kardex ({{ kardex.saldo.stock_kardex }}): el próximo movimiento registrará un ajuste de descuadre.
+              </p>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Fecha</th>
+                      <th>Tipo</th>
+                      <th>Referencia</th>
+                      <th class="text-right">Cantidad</th>
+                      <th class="text-right">Costo Unitario</th>
+                      <th class="text-right">Valor</th>
+                      <th class="text-right">Stock</th>
+                      <th class="text-right">Saldo Valorizado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="kardex.movimientos.length === 0">
+                      <td colspan="8" class="text-center">Sin registros</td>
+                    </tr>
+                    <tr *ngFor="let m of kardex.movimientos">
+                      <td class="text-left">{{ m.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td>{{ nombreTipo(m.tipo) }}<br *ngIf="m.motivo" /><small *ngIf="m.motivo">{{ m.motivo }}</small></td>
+                      <td>{{ referencia(m) }}</td>
+                      <td class="text-right" [class.text-success]="m.cantidad > 0" [class.text-danger]="m.cantidad < 0">
+                        {{ m.cantidad > 0 ? '+' : '' }}{{ m.cantidad | number:'1.0-0' }}
+                      </td>
+                      <td class="text-right">{{ m.costo_unitario === null ? '—' : (m.costo_unitario | currency:'CLP':'symbol':'1.0-0') }}</td>
+                      <td class="text-right">{{ m.valor_movimiento === null ? '—' : (m.valor_movimiento | currency:'CLP':'symbol':'1.0-0') }}</td>
+                      <td class="text-right">{{ m.stock_resultante === null ? '—' : (m.stock_resultante | number:'1.0-0') }}</td>
+                      <td class="text-right">{{ m.valor_saldo_resultante === null ? '—' : (m.valor_saldo_resultante | currency:'CLP':'symbol':'1.0-0') }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <small>Movimientos anteriores al kardex valorizado se muestran sin costo (—).</small>
+            </div>
+          </div>
+          <div class="card-footer" *ngIf="total > pageSize">
+            <ngb-pagination [(page)]="page" [pageSize]="pageSize" [collectionSize]="total" [maxSize]="5" [boundaryLinks]="true" (pageChange)="cargar()"></ngb-pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

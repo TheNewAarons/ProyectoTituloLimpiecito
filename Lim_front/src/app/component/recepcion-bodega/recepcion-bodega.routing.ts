@@ -4,6 +4,7 @@ import { OrdenesCompraListaComponent } from './ordenes-compra-lista/ordenes-comp
 import { OrdenRecepcionComponent } from './orden-recepcion/orden-recepcion.component';
 import { MovimientosBodegaComponent } from './movimientos-bodega/movimientos-bodega.component';
 import { FormatoEntregaComponent } from './formato-entrega/formato-entrega.component';
+import { KardexProductoComponent } from './kardex-producto/kardex-producto.component';
 
 // 'bodega/solicitudes/:id/formato' tiene un segmento más que 'bodega/solicitudes/:id' (RF-BOD-01): no chocan.
 export const RecepcionBodegaRoutes: Routes = [
@@ -13,6 +14,7 @@ export const RecepcionBodegaRoutes: Routes = [
       { path: 'bodega/ordenes-compra', component: OrdenesCompraListaComponent },
       { path: 'bodega/ordenes-compra/:id', component: OrdenRecepcionComponent },
       { path: 'bodega/movimientos', component: MovimientosBodegaComponent },
+      { path: 'bodega/productos/:id/kardex', component: KardexProductoComponent },
       { path: 'bodega/solicitudes/:id/formato', component: FormatoEntregaComponent }
     ]
   }
