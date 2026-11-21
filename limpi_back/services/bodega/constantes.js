@@ -14,7 +14,10 @@ const TIPOS_MOVIMIENTO = {
   ENTRADA_COMPRA: 'ENTRADA_COMPRA',
   SALIDA_SOLICITUD: 'SALIDA_SOLICITUD',
   AJUSTE: 'AJUSTE',
-  REVERSA: 'REVERSA'
+  REVERSA: 'REVERSA',
+  // RF-BOD-06: punto de partida del kardex valorizado y entradas sin orden de compra (stock rápido)
+  SALDO_INICIAL: 'SALDO_INICIAL',
+  ENTRADA_MANUAL: 'ENTRADA_MANUAL'
 };
 
 module.exports = {

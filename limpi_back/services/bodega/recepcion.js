@@ -17,7 +17,7 @@ const { auditar } = require('../auditoria');
 const { reintentarTransaccion } = require('../caja/cierre');
 const Solicitud = require('../../modelos/sistema_bodega/Solicitud_bodega');
 const Item = require('../../modelos/sistema_bodega/Solicitud_item');
-const Movimiento = require('../../modelos/sistema_bodega/Movimiento_bodega');
+const kardex = require('./kardex');
 const Producto = require('../../modelos/sistema_base/Producto');
 const Orden_compra = require('../../modelos/sistema_bodega/Orden_compra');
 const Orden_compra_item = require('../../modelos/sistema_bodega/Orden_compra_item');
@@ -101,13 +101,16 @@ async function recibir(ordenId, entradas, contexto) {
     for (const id of productoIds) {
       const producto = productos[id];
       if (!producto) throw new AppError('PRODUCTO_NO_EXISTE', 'el producto ' + id + ' de la orden no existe', 409, { producto_id: id });
-      const cambios = { stock: Number(producto.stock || 0) + recibidoPorProducto[id] };
-      if (costoPorProducto[id] !== undefined) cambios.costo_unitario = costoPorProducto[id];
-      await producto.update(cambios, { transaction: t });
-      await Movimiento.create({
-        producto_id: id, tipo: M.ENTRADA_COMPRA, cantidad: recibidoPorProducto[id],
-        referencia_tipo: 'ordenes_compra', referencia_id: orden.id, usuario_id: usuario.id, contexto_usuario: usuario.contexto
-      }, { transaction: t });
+      if (costoPorProducto[id] !== undefined) await producto.update({ costo_unitario: costoPorProducto[id] }, { transaction: t });
+    }
+    // RF-BOD-06: una entrada por línea, valorizada al costo de esa línea (sin costo: promedio vigente)
+    for (const r of recepcion) {
+      const costo = r.linea.costo_unitario;
+      await kardex.registrar({
+        transaction: t, producto: productos[r.linea.producto_id], tipo: M.ENTRADA_COMPRA, cantidad: r.cantidad,
+        costoUnitario: costo === null || costo === undefined ? undefined : Number(costo),
+        referenciaTipo: 'ordenes_compra', referenciaId: orden.id, referenciaLineaId: r.linea.id, usuario: usuario
+      });
     }
 
     // Asignación FIFO a faltantes
@@ -126,11 +129,10 @@ async function recibir(ordenId, entradas, contexto) {
           const asignar = Math.min(disponible(producto), faltante);
           if (asignar <= 0) continue;
           await item.update({ cantidad_asignada: Number(item.cantidad_asignada) + asignar, cantidad_faltante: faltante - asignar }, { transaction: t });
-          await producto.update({ stock: Number(producto.stock) - asignar }, { transaction: t });
-          await Movimiento.create({
-            producto_id: producto.id, tipo: M.SALIDA_SOLICITUD, cantidad: -asignar,
-            referencia_tipo: 'solicitudes_bodega', referencia_id: solicitud.id, usuario_id: usuario.id, contexto_usuario: usuario.contexto
-          }, { transaction: t });
+          await kardex.registrar({
+            transaction: t, producto: producto, tipo: M.SALIDA_SOLICITUD, cantidad: -asignar,
+            referenciaTipo: 'solicitudes_bodega', referenciaId: solicitud.id, referenciaLineaId: item.id, usuario: usuario
+          });
           asignaciones.push({ solicitud_id: solicitud.id, producto_id: producto.id, cantidad: asignar });
         }
         if (propios.every((i) => (Number(i.cantidad_faltante) || 0) === 0)) {
