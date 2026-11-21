@@ -96,7 +96,17 @@ describe('POST /ordenes-compra/:id/recepcion', () => {
   it('sin items recibe todo lo pendiente (pasa null al servicio) y responde { ok, data, meta }', async () => {
     const r = await llamar('post', '/ordenes-compra/10/recepcion', ADMIN, {});
     expect(r.body).toEqual({ ok: true, data: { orden_id: 10, estado: 'RECIBIDA' }, meta: {} });
-    expect(recepcion.recibir).toHaveBeenCalledWith(10, null, expect.objectContaining({ usuario: { id: 1, contexto: 'usuarios' } }));
+    expect(recepcion.recibir).toHaveBeenCalledWith(10, null, expect.objectContaining({ usuario: { id: 1, contexto: 'usuarios' } }),
+      { documento_tipo: null, documento_numero: null, observacion: null });
+  });
+
+  it('RF-BOD-04b: costo real por línea y documento de respaldo', async () => {
+    await llamar('post', '/ordenes-compra/10/recepcion', ADMIN, {
+      items: [{ item_id: 100, cantidad_recibida: 2, costo_unitario: 1200 }], documento_tipo: 'FACTURA', documento_numero: ' 901 ', observacion: 'llegó caja dañada'
+    });
+    const args = recepcion.recibir.mock.calls[0];
+    expect(args[1]).toEqual([{ item_id: 100, cantidad_recibida: 2, costo_unitario: 1200 }]);
+    expect(args[3]).toEqual({ documento_tipo: 'FACTURA', documento_numero: '901', observacion: 'llegó caja dañada' });
   });
 
   it('acepta 0 por línea', async () => {
@@ -110,7 +120,12 @@ describe('POST /ordenes-compra/:id/recepcion', () => {
     ['cantidad como texto', { items: [{ item_id: 100, cantidad_recibida: '3' }] }],
     ['item_id repetido', { items: [{ item_id: 100, cantidad_recibida: 1 }, { item_id: 100, cantidad_recibida: 2 }] }],
     ['item_id inválido', { items: [{ item_id: 'x', cantidad_recibida: 1 }] }],
-    ['items vacío', { items: [] }]
+    ['items vacío', { items: [] }],
+    ['costo negativo', { items: [{ item_id: 100, cantidad_recibida: 1, costo_unitario: -5 }] }],
+    ['costo decimal', { items: [{ item_id: 100, cantidad_recibida: 1, costo_unitario: 10.5 }] }],
+    ['documento_tipo desconocido', { documento_tipo: 'BOLETA', documento_numero: '1' }],
+    ['documento sin número', { documento_tipo: 'GUIA' }],
+    ['número sin tipo', { documento_numero: '12' }]
   ])('%s -> 400 VALIDATION_ERROR sin llamar al servicio', async (nombre, body) => {
     const r = await llamar('post', '/ordenes-compra/10/recepcion', ADMIN, body);
     expect(r.status).toBe(400);
