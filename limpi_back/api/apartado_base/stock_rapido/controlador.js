@@ -9,6 +9,8 @@ const { reintentarTransaccion } = require('../../../services/caja/cierre')
 const Stock = require('../../../modelos/sistema_base/Stock_rapido')
 const Producto = require('../../../modelos/sistema_base/Producto')
 const logicaDB = require('./logica')
+const kardex = require('../../../services/bodega/kardex')
+const { TIPOS_MOVIMIENTO: M } = require('../../../services/bodega/constantes')
 
 const crearStock = async(req,res) => {
     const stocks = JSON.parse(req.body.stocks);
@@ -26,6 +28,7 @@ const crearStock = async(req,res) => {
                 ids.sort(function (a, b) { return a - b; });
 
                 const stockPrevio = {};
+                const productos = {};
                 if (ids.length) {
                     const bloqueados = await Producto.findAll({
                         where: { id: { [Op.in]: ids } },
@@ -35,6 +38,7 @@ const crearStock = async(req,res) => {
                     });
                     for (let i = 0; i < bloqueados.length; i++) {
                         stockPrevio[bloqueados[i].id] = bloqueados[i].stock;
+                        productos[bloqueados[i].id] = bloqueados[i];
                     }
                 }
 
@@ -47,7 +51,10 @@ const crearStock = async(req,res) => {
                     };
                     const stock = await logicaDB.crearStockDB(stockData, t)
                     if (stock) {
-                        await logicaDB.aumentarCantidadProductoDB(stocks[i].productoId, stocks[i].cantidad, t)
+                        await kardex.registrar({
+                            transaction: t, producto: productos[stocks[i].productoId], tipo: M.ENTRADA_MANUAL, cantidad: Number(stocks[i].cantidad),
+                            referenciaTipo: 'stock_rapidos', referenciaId: stock.id, motivo: stocks[i].comentario, usuario: usuario
+                        })
                         await auditar({
                             transaction: t,
                             usuario: usuario,
@@ -119,7 +126,12 @@ const eliminarStock = async(req,res) => {
                 });
 
                 await logicaDB.eliminarStockDB(req.params.id, t)
-                await logicaDB.disminuirCantidadProductoDB(stock.productoId, stock.cantidad, t)
+                if (bloqueados.length) {
+                    await kardex.registrar({
+                        transaction: t, producto: bloqueados[0], tipo: M.AJUSTE, cantidad: -Number(stock.cantidad),
+                        referenciaTipo: 'stock_rapidos', referenciaId: stock.id, motivo: 'Eliminación de entrada de stock rápido', usuario: usuario
+                    })
+                }
 
                 const releidos = await Producto.findAll({
                     where: { id: { [Op.in]: [stock.productoId] } },

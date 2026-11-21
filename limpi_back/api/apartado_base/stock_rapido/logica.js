@@ -6,24 +6,6 @@ Stock.belongsTo(Producto, { as: 'producto' });
 
 /** PERTENECE A PRODUCTO */
 
-const aumentarCantidadProductoDB = async(id,cantidad,t) => {
-    let respuesta = await Producto.increment('stock', {
-        by:cantidad,
-        where: {id},
-        transaction: t
-      });
-    return respuesta
-}
-
-const disminuirCantidadProductoDB = async(id,cantidad,t) => {
-    let respuesta = await Producto.decrement('stock', {
-        by:cantidad,
-        where: {id},
-        transaction: t
-      });
-    return respuesta
-}
-
 const crearStockDB = async(stock,t) => {
     let respuesta = await Stock.create(stock, { transaction: t })
     return respuesta
@@ -51,8 +33,6 @@ const obtenerTodosStockDB = async() => {
 }
 
 module.exports = {
-    aumentarCantidadProductoDB,
-    disminuirCantidadProductoDB,
     crearStockDB,
     buscarStockIdDB,
     eliminarStockDB,

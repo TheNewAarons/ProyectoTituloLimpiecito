@@ -47,6 +47,10 @@ jest.mock('../../modelos/sistema_base/Producto', () => ({
   update: jest.fn(async (cambios, o) => { mockDatos.updates.push({ id: Number(o.where.id), cambios: cambios }); return [1]; }),
   increment: jest.fn(async (campo, o) => { mockDatos.increments.push({ id: o.where.id, by: o.by }); const p = mockDatos.productos.find((x) => x.id === o.where.id); p.stock += o.by; })
 }));
+// RF-BOD-06: legacy y v1 mueven el stock con el kardex; se registra igual que un increment para compararlos
+jest.mock('../../services/bodega/kardex', () => ({
+  registrar: jest.fn(async (o) => { mockDatos.increments.push({ id: o.producto.id, by: o.cantidad }); mockDatos.productos.find((x) => x.id === o.producto.id).stock += o.cantidad; return {}; })
+}));
 jest.mock('../../modelos/sistema_base/Stock_rapido', () => ({
   belongsTo: jest.fn(),
   findAll: jest.fn(async () => mockDatos.stock.slice().sort((a, b) => b.id - a.id).map((s) => Object.assign({}, s))),

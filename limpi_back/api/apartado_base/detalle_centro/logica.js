@@ -8,6 +8,9 @@ const CentroCosto = require('../../../modelos/sistema_base/Centro_costo')
 const Liquidacion = require('../../../modelos/sistema_base/Liquidacion')
 const db = require('../../../database/database')
 const { auditar } = require('../../../services/auditoria')
+const kardex = require('../../../services/bodega/kardex')
+const Movimiento = require('../../../modelos/sistema_bodega/Movimiento_bodega')
+const { TIPOS_MOVIMIENTO: M } = require('../../../services/bodega/constantes')
 
 //RELACIONES 1-1 *-* 1-*
 Lista_insumo.hasMany(Linea_insumo);
@@ -15,22 +18,6 @@ Linea_insumo.belongsTo(Producto);
 
 // RNF-SEC-02: motivo de las anulaciones por borrado fisico legacy (D-075).
 const MOTIVO_BORRADO = 'BORRADO_FISICO_LEGACY'
-
-const aumentarCantidadProductoDB = async (id, cantidad) => {
-    let respuesta = await Producto.increment('stock', {
-        by: cantidad,
-        where: { id }
-    });
-    return respuesta
-}
-
-const disminuirCantidadProductoDB = async (id, cantidad) => {
-    let respuesta = await Producto.decrement('stock', {
-        by: cantidad,
-        where: { id }
-    });
-    return respuesta
-}
 
 const crearCentroTrabajadorDB = async (asociacion) => {
     let respuesta = await Centro_trabajador.create(asociacion)
@@ -138,15 +125,19 @@ const eliminarLineaInsumoDB = async (id_lista_insumo) => {
 }
 
 // B10: bloquea los productos en orden id ASC antes de mover stock para evitar deadlocks.
+// Devuelve las instancias bloqueadas por id para moverlas con el kardex (RF-BOD-06).
 const bloquearProductosDB = async (idsProductos, t) => {
+    const porId = {}
     if (idsProductos.length) {
-        await Producto.findAll({
+        const filas = await Producto.findAll({
             where: { id: idsProductos },
             transaction: t,
             lock: t.LOCK.UPDATE,
             order: [['id', 'ASC']]
         })
+        filas.forEach((p) => { porId[p.id] = p })
     }
+    return porId
 }
 
 // B10 crear: crea la lista y sus lineas, descuenta stock de los productos y audita CREAR.
@@ -157,11 +148,10 @@ const crearListaInsumoCompletoDB = async (listaData, lineasInsumos, ctx) => {
     return db.sequelize.transaction(async (t) => {
         const lista = await Lista_insumo.create(listaData, { transaction: t })
         const idsProductos = lineasInsumos.map((l) => l.productoId).sort((a, b) => a - b)
-        await bloquearProductosDB(idsProductos, t)
+        const productos = await bloquearProductosDB(idsProductos, t)
         const lineas = []
         for (let i = 0; i < lineasInsumos.length; i++) {
             const linea = lineasInsumos[i]
-            await Producto.decrement('stock', { by: linea.cantidad, where: { id: linea.productoId }, transaction: t })
             const creada = await Linea_insumo.create({
                 cantidad: linea.cantidad,
                 precio: linea.precio,
@@ -169,6 +159,11 @@ const crearListaInsumoCompletoDB = async (listaData, lineasInsumos, ctx) => {
                 listaInsumoId: lista.id,
                 productoId: linea.productoId
             }, { transaction: t })
+            if (!productos[linea.productoId]) throw new Error('PRODUCTO_NO_EXISTE: ' + linea.productoId)
+            await kardex.registrar({
+                transaction: t, producto: productos[linea.productoId], tipo: M.SALIDA_SOLICITUD, cantidad: -Number(linea.cantidad),
+                referenciaTipo: 'lista_insumos', referenciaId: lista.id, referenciaLineaId: creada.id, usuario: usuario
+            })
             lineas.push(creada && creada.get ? creada.get({ plain: true }) : creada)
         }
         const despues = Object.assign({}, lista && lista.get ? lista.get({ plain: true }) : lista, { lineas: lineas })
@@ -210,9 +205,19 @@ const eliminarListaInsumoCompletoDB = async (id, ctx) => {
             })
         }
         const idsProductos = lineas.map((l) => l.productoId).sort((a, b) => a - b)
-        await bloquearProductosDB(idsProductos, t)
+        const productos = await bloquearProductosDB(idsProductos, t)
+        // RF-BOD-06: repone cada línea con su salida original y su mismo valor; sin salida registrada, a costo promedio
+        const salidas = await Movimiento.findAll({
+            where: { tipo: M.SALIDA_SOLICITUD, referencia_tipo: 'lista_insumos', referencia_id: id }, transaction: t
+        })
         for (let i = 0; i < lineas.length; i++) {
-            await Producto.increment('stock', { by: lineas[i].cantidad, where: { id: lineas[i].productoId }, transaction: t })
+            const producto = productos[lineas[i].productoId]
+            if (!producto || !Number(lineas[i].cantidad)) continue
+            const original = salidas.find((s) => s.referencia_linea_id === lineas[i].id && Number(s.cantidad) === -Number(lineas[i].cantidad))
+            await kardex.registrar({
+                transaction: t, producto: producto, tipo: M.REVERSA, cantidad: Number(lineas[i].cantidad), revierte: original,
+                referenciaTipo: 'lista_insumos', referenciaId: id, referenciaLineaId: lineas[i].id, motivo: 'Eliminación de lista de insumos', usuario: usuario
+            })
         }
         await Linea_insumo.destroy({ where: { listaInsumoId: id }, transaction: t })
         const numero_eliminado = await Lista_insumo.destroy({ where: { id }, transaction: t })
@@ -331,8 +336,6 @@ const disminuirPrecioServicioCentroCostoDB = async (id, precio_servicio) => {
 
 
 module.exports = {
-    aumentarCantidadProductoDB,
-    disminuirCantidadProductoDB,
     crearCentroTrabajadorDB,
     obtenerCentroTrabajadorIdDB,
     eliminarCentroTrabajadorDB,
