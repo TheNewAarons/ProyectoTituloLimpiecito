@@ -60,6 +60,7 @@ router.post('/ordenes-compra/:id/recepcion', admin, asyncHandler(recepcionBodega
 router.post('/solicitudes/:id/entregar', admin, asyncHandler(recepcionBodega.entregar));
 router.get('/solicitudes/:id/formato-entrega', admin, asyncHandler(recepcionBodega.formatoEntrega));
 router.get('/movimientos', admin, asyncHandler(recepcionBodega.listarMovimientos));
+router.get('/productos/:id/kardex', admin, asyncHandler(recepcionBodega.kardexProducto));
 router.get('/ordenes-compra', admin, asyncHandler(recepcionBodega.listarOrdenes));
 router.get('/ordenes-compra/:id/recepcion', admin, asyncHandler(recepcionBodega.detalleRecepcion));
 

@@ -12,7 +12,10 @@ jest.mock('../../services/bodega/entrega', () => ({
   entregar: jest.fn(async (id) => ({ id: id, estado: 'ENTREGADA' })),
   formatoEntrega: jest.fn(async (id) => ({ numero: id, items: [] }))
 }));
-jest.mock('../../services/bodega/movimientos', () => ({ listar: jest.fn(async (f) => ({ data: [], meta: { page: f.page, limit: f.limit, total: 0 } })) }));
+jest.mock('../../services/bodega/movimientos', () => ({
+  listar: jest.fn(async (f) => ({ data: [], meta: { page: f.page, limit: f.limit, total: 0 } })),
+  kardex: jest.fn(async (id, f) => ({ data: { producto: { id: id }, saldo: {}, movimientos: [] }, meta: { page: f.page, limit: f.limit, total: 0 } }))
+}));
 jest.mock('../../services/bodega/ordenesConsulta', () => ({
   listar: jest.fn(async (f) => ({ data: [], meta: { page: f.page, limit: f.limit, total: 0 } })),
   detalleRecepcion: jest.fn(async (id) => ({ id: id, items: [] }))
@@ -67,7 +70,8 @@ const RUTAS = [
   ['post', '/ordenes-compra/10/recepcion'],
   ['post', '/solicitudes/1/entregar'],
   ['get', '/solicitudes/1/formato-entrega'],
-  ['get', '/movimientos']
+  ['get', '/movimientos'],
+  ['get', '/productos/5/kardex']
 ];
 
 describe('permisos (Admin y Operaciones)', () => {
@@ -146,6 +150,20 @@ describe('GET /ordenes-compra (listado y detalle para recepción)', () => {
     const r = await llamar('get', '/ordenes-compra/10/recepcion', ADMIN);
     expect(r.body.data).toEqual({ id: 10, items: [] });
     expect(ordenesConsulta.detalleRecepcion).toHaveBeenCalledWith(10);
+  });
+});
+
+describe('GET /productos/:id/kardex (RF-BOD-06)', () => {
+  it('pasa id y paginación al servicio y responde { ok, data, meta }', async () => {
+    const r = await llamar('get', '/productos/5/kardex?page=2&limit=10', ADMIN);
+    expect(r.status).toBe(200);
+    expect(movimientos.kardex).toHaveBeenCalledWith(5, { page: 2, limit: 10 });
+    expect(r.body).toMatchObject({ ok: true, data: { producto: { id: 5 } }, meta: { page: 2, limit: 10 } });
+  });
+
+  it.each(['/productos/abc/kardex', '/productos/0/kardex', '/productos/5/kardex?page=0'])('%s -> 400', async (ruta) => {
+    expect((await llamar('get', ruta, ADMIN)).status).toBe(400);
+    expect(movimientos.kardex).not.toHaveBeenCalled();
   });
 });
 
