@@ -52,6 +52,49 @@ module.exports = db.sequelize.define(
         contexto_usuario:{
             type: Sequelize.STRING(30),
             allowNull: false
+        },
+        // RF-BOD-06: saldos y valorización CPP (D-175, D-176). NULL en movimientos previos al SALDO_INICIAL.
+        stock_anterior:{
+            type: Sequelize.INTEGER,
+            allowNull: true
+        },
+        stock_resultante:{
+            type: Sequelize.INTEGER,
+            allowNull: true
+        },
+        costo_unitario:{
+            type: Sequelize.DECIMAL(14, 0),
+            allowNull: true
+        },
+        // Con signo, igual que cantidad
+        valor_movimiento:{
+            type: Sequelize.DECIMAL(14, 0),
+            allowNull: true
+        },
+        valor_saldo_anterior:{
+            type: Sequelize.DECIMAL(14, 0),
+            allowNull: true
+        },
+        valor_saldo_resultante:{
+            type: Sequelize.DECIMAL(14, 0),
+            allowNull: true
+        },
+        referencia_linea_id:{
+            type: Sequelize.INTEGER,
+            allowNull: true
+        },
+        motivo:{
+            type: Sequelize.STRING(255),
+            allowNull: true
+        },
+        movimiento_revertido_id:{
+            type: Sequelize.INTEGER,
+            allowNull: true
+        },
+        estado:{
+            type: Sequelize.STRING(20),
+            allowNull: false,
+            defaultValue: 'CONFIRMADO'
         }
     },
     {
