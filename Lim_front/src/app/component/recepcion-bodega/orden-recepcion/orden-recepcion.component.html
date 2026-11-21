@@ -21,6 +21,28 @@
               </p>
               <p class="text-warning" *ngIf="!orden.recibible">Solo se puede recibir una orden Enviada o Recibida parcial.</p>
 
+              <div class="row" *ngIf="orden.recibible">
+                <div class="col-md-3">
+                  <mat-form-field class="example-full-width">
+                    <mat-select placeholder="Documento" name="documento_tipo" [(ngModel)]="documento.documento_tipo">
+                      <mat-option [value]="null">Sin documento</mat-option>
+                      <mat-option *ngFor="let d of documentos" [value]="d.valor">{{ d.nombre }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-3">
+                  <mat-form-field class="example-full-width">
+                    <input matInput placeholder="N° Documento" name="documento_numero" maxlength="50" [(ngModel)]="documento.documento_numero">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-6">
+                  <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Observación" name="observacion" maxlength="255" [(ngModel)]="documento.observacion">
+                  </mat-form-field>
+                </div>
+                <div class="col-12"><small class="text-danger" *ngIf="errorDocumento()">{{ errorDocumento() }}</small></div>
+              </div>
+
               <div class="table-responsive">
                 <table class="table tabla-compacta">
                   <thead>
@@ -29,6 +51,7 @@
                       <th class="text-right">Pedido</th>
                       <th class="text-right">Recibido</th>
                       <th class="text-right">Recibir Ahora</th>
+                      <th class="text-right">Costo Unitario</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -46,6 +69,18 @@
                           <small class="text-danger" *ngIf="errorLinea(l.item_id, l.pendiente)">{{ errorLinea(l.item_id, l.pendiente) }}</small>
                         </div>
                       </td>
+                      <td class="text-right">
+                        <span *ngIf="l.pendiente === 0 || !orden.recibible">{{ l.costo_unitario === null ? '—' : (l.costo_unitario | currency:'CLP':'symbol':'1.0-0') }}</span>
+                        <div *ngIf="l.pendiente > 0 && orden.recibible">
+                          <mat-form-field class="example-full-width">
+                            <input matInput type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1"
+                              [placeholder]="l.costo_unitario === null ? 'Costo real' : 'OC ' + (l.costo_unitario | currency:'CLP':'symbol':'1.0-0')"
+                              [name]="'costo' + l.item_id" [(ngModel)]="costos[l.item_id]">
+                          </mat-form-field>
+                          <small class="text-danger" *ngIf="errorCosto(l.item_id)">{{ errorCosto(l.item_id) }}</small>
+                          <small class="text-warning" *ngIf="!errorCosto(l.item_id) && difiereDeOrden(l.item_id, l.costo_unitario)">Distinto al de la orden</small>
+                        </div>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -53,6 +88,9 @@
 
               <div *ngIf="resultado" class="mt-3">
                 <h5>Resultado De La Última Recepción</h5>
+                <p class="text-warning" *ngFor="let d of resultado.diferencias_precio">
+                  {{ nombreProducto(d.producto_id) }}: costo real {{ d.costo_real | currency:'CLP':'symbol':'1.0-0' }} distinto al de la orden ({{ d.costo_oc | currency:'CLP':'symbol':'1.0-0' }}).
+                </p>
                 <p *ngIf="resultado.asignaciones.length === 0">Lo recibido quedó como stock libre (no había faltantes pendientes).</p>
                 <ul *ngIf="resultado.asignaciones.length">
                   <li *ngFor="let a of resultado.asignaciones">
@@ -61,6 +99,41 @@
                     <span *ngIf="resultado.solicitudes_listas.indexOf(a.solicitud_id) !== -1" class="text-success"> — lista para entrega</span>
                   </li>
                 </ul>
+              </div>
+
+              <div *ngIf="orden.recepciones?.length" class="mt-3">
+                <h5>Recepciones De La Orden</h5>
+                <div class="table-responsive">
+                  <table class="table tabla-compacta">
+                    <thead>
+                      <tr>
+                        <th class="text-left">N°</th>
+                        <th class="text-left">Fecha</th>
+                        <th class="text-left">Documento</th>
+                        <th class="text-left">Producto</th>
+                        <th class="text-right">Cantidad</th>
+                        <th class="text-right">Costo Unitario</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <ng-container *ngFor="let r of orden.recepciones">
+                        <tr *ngFor="let li of r.items; let primera = first">
+                          <td class="text-left">{{ primera ? r.id : '' }}</td>
+                          <td class="text-left">{{ primera ? (r.fecha_recepcion | date:'dd/MM/yyyy HH:mm') : '' }}</td>
+                          <td class="text-left">
+                            <span *ngIf="primera">
+                              {{ r.documento_tipo ? nombreDocumento(r.documento_tipo) + ' ' + r.documento_numero : (r.historica ? 'Histórica (aproximada)' : '—') }}
+                              <br *ngIf="r.observacion" /><small *ngIf="r.observacion">{{ r.observacion }}</small>
+                            </span>
+                          </td>
+                          <td class="text-left">{{ li.producto || ('Producto ' + li.producto_id) }}</td>
+                          <td class="text-right">{{ li.cantidad | number:'1.0-0' }}</td>
+                          <td class="text-right">{{ li.costo_unitario === null ? '—' : (li.costo_unitario | currency:'CLP':'symbol':'1.0-0') }}</td>
+                        </tr>
+                      </ng-container>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

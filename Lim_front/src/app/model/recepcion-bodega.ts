@@ -48,6 +48,29 @@ export interface LineaRecepcion {
   costo_unitario: number;
 }
 
+// RF-BOD-04b: documento de respaldo y historial de recepciones de una orden
+export const DOCUMENTOS_RECEPCION: { valor: string, nombre: string }[] = [
+  { valor: 'GUIA', nombre: 'Guía de despacho' },
+  { valor: 'FACTURA', nombre: 'Factura' }
+];
+
+export interface DocumentoRecepcion {
+  documento_tipo: string;
+  documento_numero: string;
+  observacion: string;
+}
+
+export interface RecepcionHistorial {
+  id: number;
+  fecha_recepcion: string;
+  documento_tipo: string;
+  documento_numero: string;
+  observacion: string;
+  estado: string;
+  historica: boolean;
+  items: { item_id: number, producto_id: number, producto: string, cantidad: number, costo_unitario: number }[];
+}
+
 export interface OrdenRecepcion {
   id: number;
   estado: EstadoOrden;
@@ -55,12 +78,15 @@ export interface OrdenRecepcion {
   enviada_at: string;
   recibible: boolean;
   items: LineaRecepcion[];
+  recepciones: RecepcionHistorial[];
 }
 
 export interface ResultadoRecepcion {
   orden_id: number;
+  recepcion_id: number;
   estado: EstadoOrden;
   recibidos: { producto_id: number, cantidad: number, costo_unitario: number }[];
+  diferencias_precio: { item_id: number, producto_id: number, costo_oc: number, costo_real: number }[];
   asignaciones: { solicitud_id: number, producto_id: number, cantidad: number }[];
   solicitudes_listas: number[];
 }

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginService } from '../login/login.service';
 import { RespuestaBodega, SolicitudBodega } from '../../model/solicitud-bodega';
-import { OrdenResumen, OrdenRecepcion, ResultadoRecepcion, FormatoEntrega, MovimientoBodega, KardexProducto } from '../../model/recepcion-bodega';
+import { OrdenResumen, OrdenRecepcion, ResultadoRecepcion, DocumentoRecepcion, FormatoEntrega, MovimientoBodega, KardexProducto } from '../../model/recepcion-bodega';
 
 // RECEPCIÓN, ENTREGA Y MOVIMIENTOS DE BODEGA (RF-BOD-04) — /api/v1/bodega, formato { ok, data, meta }
 @Injectable({
@@ -35,8 +35,11 @@ export class RecepcionBodegaService {
   }
 
   //CONFIRMAR RECEPCION POR LINEA
-  recibir(id: number, items: { item_id: number, cantidad_recibida: number }[]): Observable<RespuestaBodega<ResultadoRecepcion>> {
-    return this.http.post<RespuestaBodega<ResultadoRecepcion>>(this.url_bodega + '/ordenes-compra/' + id + '/recepcion', { items: items }, { headers: this.obtenerCabeceras() });
+  recibir(
+    id: number, items: { item_id: number, cantidad_recibida: number, costo_unitario?: number }[], documento: DocumentoRecepcion
+  ): Observable<RespuestaBodega<ResultadoRecepcion>> {
+    const body = Object.assign({ items: items }, documento);
+    return this.http.post<RespuestaBodega<ResultadoRecepcion>>(this.url_bodega + '/ordenes-compra/' + id + '/recepcion', body, { headers: this.obtenerCabeceras() });
   }
 
   //ENTREGAR SOLICITUD (NO MUEVE STOCK; REGISTRA CONSUMO EN EL CENTRO DE COSTO)
