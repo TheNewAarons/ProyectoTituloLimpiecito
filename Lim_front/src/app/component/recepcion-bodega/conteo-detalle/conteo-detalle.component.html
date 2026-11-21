@@ -1,0 +1,114 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">fact_check</i></div>
+            <h4 class="card-title">Conteo Físico N° {{ conteo?.id }}</h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Volver" class="btn btn-rose btn-sm" (click)="volver()">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div *ngIf="!loading && conteo">
+              <p>
+                <strong>Fecha:</strong> {{ conteo.fecha | date:'dd/MM/yyyy HH:mm' }} ·
+                <strong>Estado:</strong> <span [class]="badge[conteo.estado]">{{ etiqueta[conteo.estado] }}</span> ·
+                <strong>Contados:</strong> {{ conteo.items_contados }} / {{ conteo.items_total }} ·
+                <strong>Exactitud:</strong> {{ conteo.exactitud === null ? '—' : (conteo.exactitud | number:'1.0-2') + ' %' }}
+              </p>
+              <p *ngIf="conteo.observacion"><strong>Observación:</strong> {{ conteo.observacion }}</p>
+              <p *ngIf="conteo.aprobado_at"><strong>Aprobado:</strong> {{ conteo.aprobado_at | date:'dd/MM/yyyy HH:mm' }}</p>
+              <p class="text-info" *ngIf="editable">
+                Deje en blanco los productos que no contó: no se ajustan. Al aprobar, la diferencia se calcula contra el stock de ese momento.
+              </p>
+
+              <div *ngIf="resultado?.recalculados.length" class="mt-2">
+                <p class="text-warning" *ngFor="let rc of resultado.recalculados">
+                  {{ nombreProducto(rc.producto_id) }}: el stock cambió durante el conteo ({{ rc.cantidad_teorica }} → {{ rc.stock_actual }}); el ajuste se calculó contra {{ rc.stock_actual }}.
+                </p>
+              </div>
+
+              <div class="row">
+                <div class="col-12 col-md-4">
+                  <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Buscar producto" name="filtro" [(ngModel)]="filtro">
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table tabla-compacta">
+                  <thead>
+                    <tr>
+                      <th class="text-left">Producto</th>
+                      <th class="text-right">Teórico</th>
+                      <th class="text-right">Contado</th>
+                      <th class="text-right">Diferencia</th>
+                      <th class="text-left">Motivo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="itemsVisibles.length === 0">
+                      <td colspan="5" class="text-center">Sin registros</td>
+                    </tr>
+                    <tr *ngFor="let i of itemsVisibles">
+                      <td class="text-left">
+                        <a href="javascript:void(0)" (click)="verKardex(i.producto_id)">{{ i.producto || ('Producto ' + i.producto_id) }}</a>
+                      </td>
+                      <td class="text-right">{{ i.cantidad_teorica | number:'1.0-0' }}</td>
+                      <td class="text-right">
+                        <span *ngIf="!editable">{{ i.cantidad_contada === null ? '—' : (i.cantidad_contada | number:'1.0-0') }}</span>
+                        <div *ngIf="editable">
+                          <mat-form-field class="example-full-width">
+                            <input matInput type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1" placeholder="Sin contar"
+                              [name]="'contada' + i.item_id" [(ngModel)]="contadas[i.item_id]">
+                          </mat-form-field>
+                          <small class="text-danger" *ngIf="errorLinea(i.item_id)">{{ errorLinea(i.item_id) }}</small>
+                        </div>
+                      </td>
+                      <td class="text-right">
+                        <span *ngIf="diferencia(i) === null">—</span>
+                        <span *ngIf="diferencia(i) !== null" [class.text-danger]="diferencia(i) < 0" [class.text-success]="diferencia(i) > 0">
+                          {{ diferencia(i) > 0 ? '+' : '' }}{{ diferencia(i) | number:'1.0-0' }}
+                        </span>
+                      </td>
+                      <td class="text-left">
+                        <span *ngIf="!editable">{{ i.motivo || '—' }}</span>
+                        <mat-form-field class="example-full-width" *ngIf="editable">
+                          <input matInput placeholder="Motivo" maxlength="255" [name]="'motivo' + i.item_id" [(ngModel)]="motivos[i.item_id]">
+                        </mat-form-field>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer" *ngIf="!loading && editable">
+            <div class="row w-100">
+              <div class="col-12 text-right">
+                <button mat-raised-button type="button" class="btn btn-danger mb-2" [disabled]="enviando" (click)="anular()">
+                  <span class="btn-label"><i class="material-icons">block</i></span>
+                  Anular
+                </button>
+                <button mat-raised-button type="button" class="btn btn-info mb-2" [disabled]="!puedeGuardar()" (click)="guardar()">
+                  <span class="btn-label"><i class="material-icons">save</i></span>
+                  Guardar
+                </button>
+                <button mat-raised-button type="button" class="btn btn-success mb-2" *ngIf="esAdmin" [disabled]="!puedeGuardar()" (click)="aprobar()">
+                  <span class="btn-label"><i class="material-icons">done_all</i></span>
+                  Aprobar Y Ajustar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
