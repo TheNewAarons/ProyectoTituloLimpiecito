@@ -5,7 +5,9 @@
  * Valorización: costo promedio ponderado móvil derivado de valor_saldo / stock, montos CLP enteros.
  */
 
-const Op = require('sequelize').Op;
+const Sequelize = require('sequelize');
+
+const Op = Sequelize.Op;
 
 const Movimiento = require('../../modelos/sistema_bodega/Movimiento_bodega');
 const AppError = require('../../libs/app-error');
@@ -44,9 +46,12 @@ function valorizar(stock, valor, cantidad, costoEntrada) {
   return { costo_unitario: Math.round(v / sale), valor_movimiento: v ? -v : 0, valor_saldo_resultante: valor - v };
 }
 
+// Lectura bloqueante (QA-01 T1b): en REPEATABLE READ una lectura simple ve el snapshot previo al lock del producto
+// y omite los movimientos de transacciones concurrentes ya confirmadas -> AJUSTE de descuadre fantasma.
 async function ultimoSaldo(productoId, t) {
   const m = await Movimiento.findOne({
-    where: { producto_id: productoId, stock_resultante: { [Op.ne]: null } }, order: [['id', 'DESC']], transaction: t
+    where: { producto_id: productoId, stock_resultante: { [Op.ne]: null } }, order: [['id', 'DESC']], transaction: t,
+    lock: Sequelize.Transaction.LOCK.SHARE
   });
   return m && !nulo(m.stock_resultante) ? { stock: numero(m.stock_resultante), valor: numero(m.valor_saldo_resultante) } : null;
 }

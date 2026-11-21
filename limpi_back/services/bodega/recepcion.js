@@ -114,7 +114,6 @@ async function recibir(ordenId, entradas, contexto, documento) {
     for (const id of productoIds) {
       const producto = productos[id];
       if (!producto) throw new AppError('PRODUCTO_NO_EXISTE', 'el producto ' + id + ' de la orden no existe', 409, { producto_id: id });
-      if (costoPorProducto[id] !== undefined) await producto.update({ costo_unitario: costoPorProducto[id] }, { transaction: t });
     }
     // RF-BOD-04b: la recepción como evento; RF-BOD-06: una entrada por línea al costo real (sin costo: promedio vigente)
     const cabecera = await Recepcion_compra.create({
@@ -132,6 +131,10 @@ async function recibir(ordenId, entradas, contexto, documento) {
         referenciaTipo: 'recepciones_compra', referenciaId: cabecera.id, referenciaLineaId: linea.id, usuario: usuario
       });
       await linea.update({ movimiento_id: mov.id }, { transaction: t });
+    }
+    // QA-01 T2: el costo se actualiza después del kardex; antes, un SALDO_INICIAL automático se valorizaba al costo nuevo
+    for (const id of productoIds) {
+      if (costoPorProducto[id] !== undefined) await productos[id].update({ costo_unitario: costoPorProducto[id] }, { transaction: t });
     }
 
     // Asignación FIFO a faltantes
