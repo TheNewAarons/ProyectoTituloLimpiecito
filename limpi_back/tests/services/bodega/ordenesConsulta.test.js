@@ -4,6 +4,8 @@
 jest.mock('../../../modelos/sistema_bodega/Orden_compra', () => require('../../helpers/bd-memoria-bodega').modelo('ordenes'));
 jest.mock('../../../modelos/sistema_bodega/Orden_compra_item', () => require('../../helpers/bd-memoria-bodega').modelo('orden_items'));
 jest.mock('../../../modelos/sistema_bodega/Proveedor', () => require('../../helpers/bd-memoria-bodega').modelo('proveedores'));
+jest.mock('../../../modelos/sistema_bodega/Recepcion_compra', () => require('../../helpers/bd-memoria-bodega').modelo('recepciones'));
+jest.mock('../../../modelos/sistema_bodega/Recepcion_item', () => require('../../helpers/bd-memoria-bodega').modelo('recepcion_items'));
 jest.mock('../../../modelos/sistema_base/Producto', () => require('../../helpers/bd-memoria-bodega').modelo('productos'));
 
 const { reiniciar } = require('../../helpers/bd-memoria-bodega');
@@ -21,7 +23,9 @@ beforeEach(() => reiniciar({
     { id: 100, orden_id: 10, producto_id: 5, cantidad: 10, cantidad_recibida: 4, costo_unitario: 900 },
     { id: 101, orden_id: 10, producto_id: 6, cantidad: 3, cantidad_recibida: 0, costo_unitario: null },
     { id: 102, orden_id: 11, producto_id: 5, cantidad: 2, cantidad_recibida: 2, costo_unitario: 900 }
-  ]
+  ],
+  recepciones: [{ id: 1, orden_id: 10, fecha_recepcion: '2026-11-20', documento_tipo: 'GUIA', documento_numero: '55', observacion: null, estado: 'CONFIRMADA', historica: 0 }],
+  recepcion_items: [{ id: 1, recepcion_id: 1, orden_item_id: 100, producto_id: 5, cantidad: 4, costo_unitario: '950', movimiento_id: 7 }]
 }));
 
 it('lista filtrando por estados, con proveedor y avance', async () => {
@@ -42,6 +46,15 @@ it('detalle para recepción: nombre, recibido y pendiente por línea', async () 
     { item_id: 100, producto_id: 5, producto: 'Guantes', cantidad: 10, cantidad_recibida: 4, pendiente: 6, costo_unitario: 900 },
     { item_id: 101, producto_id: 6, producto: 'Cloro', cantidad: 3, cantidad_recibida: 0, pendiente: 3, costo_unitario: null }
   ]);
+});
+
+it('RF-BOD-04b: detalle incluye el historial de recepciones con su costo real', async () => {
+  const d = await consulta.detalleRecepcion(10);
+  expect(d.recepciones).toEqual([{
+    id: 1, fecha_recepcion: '2026-11-20', documento_tipo: 'GUIA', documento_numero: '55', observacion: null, estado: 'CONFIRMADA', historica: false,
+    items: [{ item_id: 100, producto_id: 5, producto: 'Guantes', cantidad: 4, costo_unitario: 950 }]
+  }]);
+  expect((await consulta.detalleRecepcion(11)).recepciones).toEqual([]);
 });
 
 it('una orden RECIBIDA o BORRADOR no es recibible; inexistente -> 404', async () => {
