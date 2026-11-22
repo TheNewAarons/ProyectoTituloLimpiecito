@@ -86,6 +86,7 @@ export class MovimientosBodegaComponent implements OnInit {
   referencia(m: MovimientoBodega): string {
     if (m.referencia_tipo === 'ordenes_compra') { return 'Orden de compra N° ' + m.referencia_id; }
     if (m.referencia_tipo === 'solicitudes_bodega') { return 'Solicitud N° ' + m.referencia_id; }
+    if (m.referencia_tipo === 'recepciones_compra') { return 'Recepción N° ' + m.referencia_id; }
     if (m.referencia_tipo === 'migracion_RF-BOD-06') { return 'Carga inicial del kardex'; }
     return m.referencia_tipo ? m.referencia_tipo + (m.referencia_id ? ' ' + m.referencia_id : '') : '—';
   }

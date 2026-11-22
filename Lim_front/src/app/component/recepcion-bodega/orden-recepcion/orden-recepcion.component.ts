@@ -6,10 +6,13 @@ import swal from 'sweetalert2';
 import { RecepcionBodegaService } from '../../../services/recepcion-bodega/recepcion-bodega.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { LoginService } from '../../../services/login/login.service';
-import { OrdenRecepcion, ResultadoRecepcion, ETIQUETA_ORDEN, BADGE_ORDEN } from '../../../model/recepcion-bodega';
+import {
+  OrdenRecepcion, ResultadoRecepcion, DocumentoRecepcion, ETIQUETA_ORDEN, BADGE_ORDEN, DOCUMENTOS_RECEPCION
+} from '../../../model/recepcion-bodega';
 import { mostrarErrorBodega } from '../../solicitudes-bodega/solicitudes-bodega.errores';
 
 // RF-BOD-04: confirmar la recepción de una orden por línea (por defecto, lo pendiente de cada línea)
+// RF-BOD-04b: cada confirmación es una recepción con documento de respaldo y costo real por línea
 @Component({
   selector: 'app-orden-recepcion',
   templateUrl: './orden-recepcion.component.html',
@@ -18,6 +21,9 @@ import { mostrarErrorBodega } from '../../solicitudes-bodega/solicitudes-bodega.
 export class OrdenRecepcionComponent implements OnInit {
   orden: OrdenRecepcion = null;
   cantidades: { [itemId: number]: number } = {};
+  costos: { [itemId: number]: number } = {};
+  documento: DocumentoRecepcion = { documento_tipo: null, documento_numero: '', observacion: '' };
+  documentos = DOCUMENTOS_RECEPCION;
   resultado: ResultadoRecepcion = null;
   etiqueta = ETIQUETA_ORDEN;
   badge = BADGE_ORDEN;
@@ -43,7 +49,12 @@ export class OrdenRecepcionComponent implements OnInit {
       (r) => {
         this.orden = r.data;
         this.cantidades = {};
-        this.orden.items.forEach((l) => { this.cantidades[l.item_id] = l.pendiente; });
+        this.costos = {};
+        this.orden.items.forEach((l) => {
+          this.cantidades[l.item_id] = l.pendiente;
+          this.costos[l.item_id] = l.costo_unitario;
+        });
+        this.documento = { documento_tipo: null, documento_numero: '', observacion: '' };
         this.loading = false;
       },
       (error: HttpErrorResponse) => {
@@ -63,20 +74,52 @@ export class OrdenRecepcionComponent implements OnInit {
     return '';
   }
 
+  //COSTO REAL OPCIONAL: VACIO = COSTO DE LA ORDEN; SI SE INGRESA, ENTERO >= 0 (CLP)
+  errorCosto(itemId: number): string {
+    const costo = this.costos[itemId];
+    if (costo === null || costo === undefined || String(costo) === '') { return ''; }
+    return Number.isInteger(Number(costo)) && Number(costo) >= 0 ? '' : 'Ingrese un monto entero en pesos';
+  }
+
+  difiereDeOrden(itemId: number, costoOrden: number): boolean {
+    const costo = this.costos[itemId];
+    return costoOrden !== null && costo !== null && costo !== undefined && String(costo) !== '' && Number(costo) !== costoOrden;
+  }
+
+  //TIPO Y NUMERO DE DOCUMENTO VAN JUNTOS (AMBOS O NINGUNO)
+  errorDocumento(): string {
+    const numero = (this.documento.documento_numero || '').trim();
+    if (!!this.documento.documento_tipo !== !!numero) { return 'Indique tipo y número del documento'; }
+    return numero.length > 50 ? 'El número admite hasta 50 caracteres' : '';
+  }
+
   get totalARecibir(): number {
     return this.orden ? this.orden.items.reduce((a, l) => a + (Number(this.cantidades[l.item_id]) || 0), 0) : 0;
   }
 
   puedeConfirmar(): boolean {
     return !!this.orden && this.orden.recibible && !this.enviando && this.totalARecibir > 0
-      && this.orden.items.every((l) => l.pendiente === 0 || !this.errorLinea(l.item_id, l.pendiente));
+      && !this.errorDocumento()
+      && this.orden.items.every((l) => l.pendiente === 0 || (!this.errorLinea(l.item_id, l.pendiente) && !this.errorCosto(l.item_id)));
   }
 
   confirmar() {
     if (!this.puedeConfirmar()) { return; }
     const items = this.orden.items
       .filter((l) => l.pendiente > 0)
-      .map((l) => ({ item_id: l.item_id, cantidad_recibida: Number(this.cantidades[l.item_id]) }));
+      .map((l) => {
+        const linea: { item_id: number, cantidad_recibida: number, costo_unitario?: number } = {
+          item_id: l.item_id, cantidad_recibida: Number(this.cantidades[l.item_id])
+        };
+        const costo = this.costos[l.item_id];
+        if (costo !== null && costo !== undefined && String(costo) !== '') { linea.costo_unitario = Number(costo); }
+        return linea;
+      });
+    const documento: DocumentoRecepcion = {
+      documento_tipo: this.documento.documento_tipo || null,
+      documento_numero: (this.documento.documento_numero || '').trim() || null,
+      observacion: (this.documento.observacion || '').trim() || null
+    };
     swal.fire({
       title: '¿Confirmar recepción?',
       text: 'Se sumarán ' + this.totalARecibir + ' unidades al stock y se asignarán a las solicitudes pendientes más antiguas.',
@@ -91,11 +134,12 @@ export class OrdenRecepcionComponent implements OnInit {
     }).then((resultado) => {
       if (!resultado.value) { return; }
       this.enviando = true;
-      this.recepcionService.recibir(this.orden.id, items).subscribe(
+      this.recepcionService.recibir(this.orden.id, items, documento).subscribe(
         (r) => {
           this.enviando = false;
           this.resultado = r.data;
-          this.alertas.alertaExitoMsj('Recepción registrada', 'La orden quedó ' + this.etiqueta[r.data.estado] + '.');
+          this.alertas.alertaExitoMsj('Recepción N° ' + r.data.recepcion_id + ' registrada',
+            'La orden quedó ' + this.etiqueta[r.data.estado] + '.');
           this.cargar();
         },
         (error: HttpErrorResponse) => {
@@ -104,6 +148,16 @@ export class OrdenRecepcionComponent implements OnInit {
         }
       );
     });
+  }
+
+  nombreProducto(productoId: number): string {
+    const linea = this.orden ? this.orden.items.filter((l) => l.producto_id === productoId)[0] : null;
+    return linea && linea.producto ? linea.producto : 'Producto ' + productoId;
+  }
+
+  nombreDocumento(tipo: string): string {
+    const d = this.documentos.filter((x) => x.valor === tipo)[0];
+    return d ? d.nombre : tipo;
   }
 
   verSolicitud(id: number) {

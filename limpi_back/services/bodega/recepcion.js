@@ -2,7 +2,8 @@
  * RF-BOD-04 — Recepción de una orden de compra (Docs/bodega-solicitudes.md, "RF-BOD-04").
  * Una sola transacción. Orden de locks (igual que crear/anular, para no cruzarse):
  *   orden de compra -> solicitudes FIFO (id ASC) -> productos (id ASC).
- * Recibido: stock += cantidad (ENTRADA_COMPRA) y costo_unitario = último costo de la orden.
+ * Recibido: stock += cantidad (ENTRADA_COMPRA) y costo_unitario = último costo real recibido.
+ * RF-BOD-04b: cada llamada crea una recepción (recepciones_compra + recepcion_items); cantidad_recibida es caché.
  * Asignación FIFO: el stock disponible cubre faltantes de solicitudes PARCIAL, la más antigua primero
  * (SALIDA_SOLICITUD); las que quedan sin faltante pasan a LISTA_ENTREGA. El excedente queda libre.
  */
@@ -21,6 +22,8 @@ const kardex = require('./kardex');
 const Producto = require('../../modelos/sistema_base/Producto');
 const Orden_compra = require('../../modelos/sistema_bodega/Orden_compra');
 const Orden_compra_item = require('../../modelos/sistema_bodega/Orden_compra_item');
+const Recepcion_compra = require('../../modelos/sistema_bodega/Recepcion_compra');
+const Recepcion_item = require('../../modelos/sistema_bodega/Recepcion_item');
 const { ESTADOS_SOLICITUD: E, TIPOS_MOVIMIENTO: M } = require('./constantes');
 
 const ESTADOS_RECIBIBLES = ['ENVIADA', 'RECIBIDA_PARCIAL'];
@@ -28,16 +31,19 @@ const ESTADOS_RECIBIBLES = ['ENVIADA', 'RECIBIDA_PARCIAL'];
 const porId = (filas) => filas.reduce((m, f) => { m[f.id] = f; return m; }, {});
 const unicos = (lista) => Array.from(new Set(lista.filter((v) => v !== null && v !== undefined)));
 const ascendente = (a, b) => a - b;
+const nulo = (v) => v === null || v === undefined;
 // Mismo criterio que cruceStock (D-054): stock NULL o negativo = 0 disponible.
 const disponible = (p) => { const s = Number(p.stock); return Number.isFinite(s) && s > 0 ? s : 0; };
 
 /**
- * Cantidades a recibir por línea. Sin `entradas`, recibe todo lo pendiente de cada línea.
- * @returns {{linea: object, cantidad: number}[]}
+ * Cantidades y costo real a recibir por línea. Sin `entradas`, recibe todo lo pendiente de cada línea.
+ * RF-BOD-04b: el costo real por línea es opcional; sin él se usa el costo de la OC.
+ * @returns {{linea: object, cantidad: number, costo: number|null}[]}
  */
 function resolverCantidades(lineas, entradas) {
   const pendiente = (l) => Math.max(Number(l.cantidad) - Number(l.cantidad_recibida || 0), 0);
-  if (!entradas) return lineas.map((l) => ({ linea: l, cantidad: pendiente(l) }));
+  const costoOc = (l) => nulo(l.costo_unitario) ? null : Number(l.costo_unitario);
+  if (!entradas) return lineas.map((l) => ({ linea: l, cantidad: pendiente(l), costo: costoOc(l) }));
   const lineasPorId = porId(lineas);
   return entradas.map((e) => {
     const linea = lineasPorId[e.item_id];
@@ -46,18 +52,21 @@ function resolverCantidades(lineas, entradas) {
       throw new AppError('CANTIDAD_EXCEDE_PENDIENTE', 'la cantidad recibida supera lo pendiente de la linea', 400,
         { item_id: linea.id, pendiente: pendiente(linea), cantidad_recibida: e.cantidad_recibida });
     }
-    return { linea: linea, cantidad: e.cantidad_recibida };
+    return { linea: linea, cantidad: e.cantidad_recibida, costo: nulo(e.costo_unitario) ? costoOc(linea) : e.costo_unitario };
   });
 }
 
 /**
- * POST /ordenes-compra/:id/recepcion
+ * POST /ordenes-compra/:id/recepcion. RF-BOD-04b: cada llamada es una recepción (cabecera + líneas)
+ * y cada línea genera su ENTRADA_COMPRA enlazada.
  * @param {number} ordenId
- * @param {{item_id:number, cantidad_recibida:number}[]|null} entradas validadas en el controlador (enteros >= 0, sin repetidos)
+ * @param {{item_id:number, cantidad_recibida:number, costo_unitario?:number}[]|null} entradas validadas en el controlador (enteros >= 0, sin repetidos)
  * @param {{usuario:{id:number, contexto:string}, ip?:string}} contexto
+ * @param {{documento_tipo?:string, documento_numero?:string, observacion?:string}} [documento]
  */
-async function recibir(ordenId, entradas, contexto) {
+async function recibir(ordenId, entradas, contexto, documento) {
   const usuario = contexto.usuario;
+  const doc = documento || {};
   return reintentarTransaccion(() => db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async (t) => {
     // 1) Orden de compra
     const orden = await Orden_compra.findById(ordenId, { transaction: t, lock: t.LOCK.UPDATE });
@@ -71,9 +80,13 @@ async function recibir(ordenId, entradas, contexto) {
 
     const recibidoPorProducto = {};
     const costoPorProducto = {};
+    const diferencias = [];
     recepcion.forEach((r) => {
       recibidoPorProducto[r.linea.producto_id] = (recibidoPorProducto[r.linea.producto_id] || 0) + r.cantidad;
-      if (r.linea.costo_unitario !== null && r.linea.costo_unitario !== undefined) costoPorProducto[r.linea.producto_id] = Number(r.linea.costo_unitario);
+      if (r.costo !== null) costoPorProducto[r.linea.producto_id] = r.costo;
+      if (r.costo !== null && !nulo(r.linea.costo_unitario) && r.costo !== Number(r.linea.costo_unitario)) {
+        diferencias.push({ item_id: r.linea.id, producto_id: r.linea.producto_id, costo_oc: Number(r.linea.costo_unitario), costo_real: r.costo });
+      }
     });
     const productoIds = Object.keys(recibidoPorProducto).map(Number).sort(ascendente);
 
@@ -103,14 +116,22 @@ async function recibir(ordenId, entradas, contexto) {
       if (!producto) throw new AppError('PRODUCTO_NO_EXISTE', 'el producto ' + id + ' de la orden no existe', 409, { producto_id: id });
       if (costoPorProducto[id] !== undefined) await producto.update({ costo_unitario: costoPorProducto[id] }, { transaction: t });
     }
-    // RF-BOD-06: una entrada por línea, valorizada al costo de esa línea (sin costo: promedio vigente)
+    // RF-BOD-04b: la recepción como evento; RF-BOD-06: una entrada por línea al costo real (sin costo: promedio vigente)
+    const cabecera = await Recepcion_compra.create({
+      orden_id: orden.id, fecha_recepcion: new Date(), documento_tipo: doc.documento_tipo || null,
+      documento_numero: doc.documento_numero || null, observacion: doc.observacion || null, estado: 'CONFIRMADA',
+      historica: false, created_by: usuario.id, contexto_usuario: usuario.contexto
+    }, { transaction: t });
     for (const r of recepcion) {
-      const costo = r.linea.costo_unitario;
-      await kardex.registrar({
+      const linea = await Recepcion_item.create({
+        recepcion_id: cabecera.id, orden_item_id: r.linea.id, producto_id: r.linea.producto_id, cantidad: r.cantidad, costo_unitario: r.costo
+      }, { transaction: t });
+      const mov = await kardex.registrar({
         transaction: t, producto: productos[r.linea.producto_id], tipo: M.ENTRADA_COMPRA, cantidad: r.cantidad,
-        costoUnitario: costo === null || costo === undefined ? undefined : Number(costo),
-        referenciaTipo: 'ordenes_compra', referenciaId: orden.id, referenciaLineaId: r.linea.id, usuario: usuario
+        costoUnitario: r.costo === null ? undefined : r.costo,
+        referenciaTipo: 'recepciones_compra', referenciaId: cabecera.id, referenciaLineaId: linea.id, usuario: usuario
       });
+      await linea.update({ movimiento_id: mov.id }, { transaction: t });
     }
 
     // Asignación FIFO a faltantes
@@ -155,10 +176,15 @@ async function recibir(ordenId, entradas, contexto) {
     const recibidos = productoIds.map((id) => ({ producto_id: id, cantidad: recibidoPorProducto[id], costo_unitario: costoPorProducto[id] !== undefined ? costoPorProducto[id] : null }));
     await auditar({
       transaction: t, usuario: usuario, entidad: 'ordenes_compra', entidad_id: orden.id, accion: 'RECEPCION',
-      antes: ordenAntes, despues: { estado: orden.estado, recibidos: recibidos, asignaciones: asignaciones }, ip: contexto.ip
+      antes: ordenAntes,
+      despues: { estado: orden.estado, recepcion_id: cabecera.id, recibidos: recibidos, diferencias_precio: diferencias, asignaciones: asignaciones },
+      motivo: diferencias.length ? 'DIFERENCIA_PRECIO' : null, ip: contexto.ip
     });
 
-    return { orden_id: orden.id, estado: orden.estado, recibidos: recibidos, asignaciones: asignaciones, solicitudes_listas: completas };
+    return {
+      orden_id: orden.id, recepcion_id: cabecera.id, estado: orden.estado, recibidos: recibidos,
+      diferencias_precio: diferencias, asignaciones: asignaciones, solicitudes_listas: completas
+    };
   }));
 }
 

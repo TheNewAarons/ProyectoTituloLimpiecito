@@ -2,6 +2,7 @@
  * RF-BOD-04 — Consultas de órdenes de compra para la pantalla de recepción (solo lectura).
  * GET /ordenes-compra (listado con avance) y GET /ordenes-compra/:id/recepcion (líneas con nombre y pendiente).
  * El GET /ordenes-compra/:id de RF-BOD-03 no trae nombres de producto ni pendientes.
+ * RF-BOD-04b: el detalle incluye el historial de recepciones (documento, fecha, líneas y costo real).
  */
 
 const Op = require('sequelize').Op;
@@ -11,8 +12,11 @@ const Orden_compra = require('../../modelos/sistema_bodega/Orden_compra');
 const Orden_compra_item = require('../../modelos/sistema_bodega/Orden_compra_item');
 const Proveedor = require('../../modelos/sistema_bodega/Proveedor');
 const Producto = require('../../modelos/sistema_base/Producto');
+const Recepcion_compra = require('../../modelos/sistema_bodega/Recepcion_compra');
+const Recepcion_item = require('../../modelos/sistema_bodega/Recepcion_item');
 
 const porId = (filas) => filas.reduce((m, f) => { m[f.id] = f; return m; }, {});
+const numeroONulo = (v) => v === null || v === undefined ? null : Number(v);
 const pendiente = (l) => Math.max(Number(l.cantidad) - Number(l.cantidad_recibida || 0), 0);
 
 /**
@@ -45,13 +49,25 @@ async function detalleRecepcion(id) {
   const lineas = await Orden_compra_item.findAll({ where: { orden_id: id }, order: [['id', 'ASC']] });
   const productos = porId(await Producto.findAll({ where: { id: { [Op.in]: lineas.map((l) => l.producto_id) } }, attributes: ['id', 'nombre'] }));
   const proveedor = await Proveedor.findById(orden.proveedor_id, { attributes: ['id', 'nombre'] });
+  const recepciones = await Recepcion_compra.findAll({ where: { orden_id: id }, order: [['id', 'ASC']] });
+  const lineasRecepcion = recepciones.length
+    ? await Recepcion_item.findAll({ where: { recepcion_id: { [Op.in]: recepciones.map((r) => r.id) } }, order: [['id', 'ASC']] })
+    : [];
   return {
     id: orden.id, estado: orden.estado, proveedor: proveedor ? proveedor.nombre : null, enviada_at: orden.enviada_at,
     recibible: orden.estado === 'ENVIADA' || orden.estado === 'RECIBIDA_PARCIAL',
     items: lineas.map((l) => ({
       item_id: l.id, producto_id: l.producto_id, producto: productos[l.producto_id] ? productos[l.producto_id].nombre : null,
       cantidad: Number(l.cantidad), cantidad_recibida: Number(l.cantidad_recibida || 0), pendiente: pendiente(l),
-      costo_unitario: l.costo_unitario === null || l.costo_unitario === undefined ? null : Number(l.costo_unitario)
+      costo_unitario: numeroONulo(l.costo_unitario)
+    })),
+    recepciones: recepciones.map((r) => ({
+      id: r.id, fecha_recepcion: r.fecha_recepcion, documento_tipo: r.documento_tipo, documento_numero: r.documento_numero,
+      observacion: r.observacion, estado: r.estado, historica: Boolean(r.historica),
+      items: lineasRecepcion.filter((li) => li.recepcion_id === r.id).map((li) => ({
+        item_id: li.orden_item_id, producto_id: li.producto_id, producto: productos[li.producto_id] ? productos[li.producto_id].nombre : null,
+        cantidad: Number(li.cantidad), costo_unitario: numeroONulo(li.costo_unitario)
+      }))
     }))
   };
 }
