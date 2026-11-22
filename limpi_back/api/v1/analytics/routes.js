@@ -22,6 +22,10 @@ bodega.get('/top-productos', asyncHandler(consumoBodega.topProductos));
 bodega.get('/consumo', asyncHandler(consumoBodega.consumo));
 bodega.get('/frecuencia-compra', asyncHandler(consumoBodega.frecuenciaCompra));
 bodega.get('/stock-critico', asyncHandler(consumoBodega.stockCritico));
+const productividadPev = require('./productividad'); // RF-BI-04
+productividad.get('/trabajadores', asyncHandler(productividadPev.trabajadores));
+productividad.get('/supervisores', asyncHandler(productividadPev.supervisores));
+productividad.get('/sectores', asyncHandler(productividadPev.sectores));
 
 // noEncontrado corta aquí para que Operaciones no caiga en el gate de solo Admin de abajo.
 router.use('/bodega', ADMIN_Y_OPS, bodega, noEncontrado);
