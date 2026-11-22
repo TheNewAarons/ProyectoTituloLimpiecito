@@ -11,10 +11,10 @@ jest.mock('../../modelos/sistema_base/Stock_rapido', () => ({
   belongsTo: jest.fn()
 }));
 jest.mock('../../modelos/sistema_base/Producto', () => ({
-  findAll: jest.fn(),
-  increment: jest.fn(),
-  decrement: jest.fn()
+  findAll: jest.fn()
 }));
+// RF-BOD-06: el stock se mueve con el kardex (probado en tests/services/bodega/kardex.test.js)
+jest.mock('../../services/bodega/kardex', () => ({ registrar: jest.fn() }));
 jest.mock('../../services/auditoria', () => ({ auditar: jest.fn() }));
 jest.mock('../../services/caja/cierre', () => ({ reintentarTransaccion: (f) => f() }));
 
@@ -23,6 +23,7 @@ const db = require('../../database/database');
 const Stock = require('../../modelos/sistema_base/Stock_rapido');
 const Producto = require('../../modelos/sistema_base/Producto');
 const { auditar } = require('../../services/auditoria');
+const kardex = require('../../services/bodega/kardex');
 const controlador = require('../../api/apartado_base/stock_rapido/controlador');
 
 const t = { LOCK: { UPDATE: 'UPDATE' } };
@@ -98,20 +99,10 @@ beforeEach(() => {
     return Promise.resolve(filas);
   });
 
-  Producto.increment.mockImplementation((campo, opts) => {
-    const id = opts.where.id;
-    if (mem.productos[id] !== undefined) {
-      mem.productos[id].stock = (Number(mem.productos[id].stock) || 0) + Number(opts.by);
-    }
-    return Promise.resolve([1]);
-  });
-
-  Producto.decrement.mockImplementation((campo, opts) => {
-    const id = opts.where.id;
-    if (mem.productos[id] !== undefined) {
-      mem.productos[id].stock = (Number(mem.productos[id].stock) || 0) - Number(opts.by);
-    }
-    return Promise.resolve([1]);
+  kardex.registrar.mockImplementation((o) => {
+    const id = o.producto.id;
+    mem.productos[id].stock = (Number(mem.productos[id].stock) || 0) + o.cantidad;
+    return Promise.resolve({});
   });
 });
 
@@ -141,7 +132,7 @@ describe('stock_rapidos: crearStock (B8)', () => {
 
     // todas las escrituras con transaction t
     Stock.create.mock.calls.forEach((c) => expect(c[1]).toEqual({ transaction: t }));
-    Producto.increment.mock.calls.forEach((c) => expect(c[1].transaction).toBe(t));
+    kardex.registrar.mock.calls.forEach((c) => expect(c[0]).toMatchObject({ transaction: t, tipo: 'ENTRADA_MANUAL', referenciaTipo: 'stock_rapidos' }));
 
     const crea = auditar.mock.calls.filter((c) => c[0].accion === 'CREAR');
     expect(crea).toHaveLength(3);
@@ -233,7 +224,8 @@ describe('stock_rapidos: eliminarStock (B9)', () => {
     expect(mem.stockRapidos[7]).toBeUndefined();
 
     // decrement
-    expect(Producto.decrement).toHaveBeenCalledWith('stock', { by: 3, where: { id: 5 }, transaction: t });
+    expect(kardex.registrar).toHaveBeenCalledWith(expect.objectContaining({ transaction: t, tipo: 'AJUSTE', cantidad: -3, referenciaId: 7 }));
+    expect(kardex.registrar.mock.calls[0][0].producto.id).toBe(5);
     expect(mem.productos[5].stock).toBe(5);
 
     // AJUSTE con antes/despues
@@ -253,7 +245,7 @@ describe('stock_rapidos: eliminarStock (B9)', () => {
     expect(String(res.send.mock.calls[0][0]).startsWith('error')).toBe(true);
     expect(res.json).not.toHaveBeenCalled();
     expect(Stock.destroy).not.toHaveBeenCalled();
-    expect(Producto.decrement).not.toHaveBeenCalled();
+    expect(kardex.registrar).not.toHaveBeenCalled();
     expect(auditar).not.toHaveBeenCalled();
   });
 

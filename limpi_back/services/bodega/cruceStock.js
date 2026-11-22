@@ -21,6 +21,7 @@ const Proveedor = require('../../modelos/sistema_bodega/Proveedor');
 const Orden_compra = require('../../modelos/sistema_bodega/Orden_compra');
 const Orden_compra_item = require('../../modelos/sistema_bodega/Orden_compra_item');
 const { ESTADOS_SOLICITUD: E, TIPOS_MOVIMIENTO: M } = require('./constantes');
+const kardex = require('./kardex');
 
 const ESTADOS_ORDEN_PENDIENTE = ['ENVIADA', 'RECIBIDA_PARCIAL'];
 
@@ -63,16 +64,10 @@ async function cruzar(solicitud, items, productosLock, usuario, t, ip) {
     await item.update({ cantidad_asignada: asignada, cantidad_faltante: faltante }, { transaction: t });
 
     if (asignada > 0) {
-      await producto.update({ stock: Number(producto.stock) - asignada }, { transaction: t });
-      await Movimiento.create({
-        producto_id: producto.id,
-        tipo: M.SALIDA_SOLICITUD,
-        cantidad: -asignada,
-        referencia_tipo: 'solicitudes_bodega',
-        referencia_id: solicitud.id,
-        usuario_id: usuario.id,
-        contexto_usuario: usuario.contexto
-      }, { transaction: t });
+      await kardex.registrar({
+        transaction: t, producto: producto, tipo: M.SALIDA_SOLICITUD, cantidad: -asignada,
+        referenciaTipo: 'solicitudes_bodega', referenciaId: solicitud.id, referenciaLineaId: item.id, usuario: usuario
+      });
     }
   }
 
@@ -99,6 +94,7 @@ async function cruzar(solicitud, items, productosLock, usuario, t, ip) {
 async function revertir(solicitud, items, productosLock, usuario, t, ip) {
   const productos = porId(productosLock);
   const repuestos = [];
+  const revertidas = new Set();
 
   for (const item of items) {
     const asignada = Number(item.cantidad_asignada) || 0;
@@ -107,16 +103,30 @@ async function revertir(solicitud, items, productosLock, usuario, t, ip) {
     if (!producto) {
       throw new AppError('PRODUCTO_NO_BLOQUEADO', 'el producto ' + item.producto_id + ' no fue bloqueado para la reversa', 500, { producto_id: item.producto_id });
     }
-    await producto.update({ stock: Number(producto.stock || 0) + asignada }, { transaction: t });
-    await Movimiento.create({
-      producto_id: producto.id,
-      tipo: M.REVERSA,
-      cantidad: asignada,
-      referencia_tipo: 'solicitudes_bodega',
-      referencia_id: solicitud.id,
-      usuario_id: usuario.id,
-      contexto_usuario: usuario.contexto
-    }, { transaction: t });
+    // RF-BOD-06: una reversa por cada salida original, con su mismo valor (lo asignado puede venir del cruce y
+    // de varias recepciones). Lo no cubierto por salidas registradas (datos previos al kardex) entra a costo promedio.
+    const salidas = await Movimiento.findAll({
+      where: { producto_id: producto.id, tipo: M.SALIDA_SOLICITUD, referencia_tipo: 'solicitudes_bodega', referencia_id: solicitud.id },
+      order: [['id', 'ASC']], transaction: t
+    });
+    let pendiente = asignada;
+    for (const salida of salidas) {
+      const cantidad = -Number(salida.cantidad);
+      const deOtroItem = salida.referencia_linea_id !== null && salida.referencia_linea_id !== undefined && salida.referencia_linea_id !== item.id;
+      if (revertidas.has(salida.id) || deOtroItem || cantidad <= 0 || cantidad > pendiente) continue;
+      revertidas.add(salida.id);
+      await kardex.registrar({
+        transaction: t, producto: producto, tipo: M.REVERSA, cantidad: cantidad, revierte: salida,
+        referenciaTipo: 'solicitudes_bodega', referenciaId: solicitud.id, referenciaLineaId: item.id, usuario: usuario
+      });
+      pendiente -= cantidad;
+    }
+    if (pendiente > 0) {
+      await kardex.registrar({
+        transaction: t, producto: producto, tipo: M.REVERSA, cantidad: pendiente,
+        referenciaTipo: 'solicitudes_bodega', referenciaId: solicitud.id, referenciaLineaId: item.id, usuario: usuario
+      });
+    }
     repuestos.push({ producto_id: producto.id, cantidad: asignada });
   }
 

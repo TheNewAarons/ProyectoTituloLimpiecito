@@ -77,6 +77,16 @@ async function listarMovimientos(req, res) {
   return res.json({ ok: true, data: r.data, meta: r.meta });
 }
 
+// RF-BOD-06: kardex valorizado de un producto (costos: solo Admin y Operaciones, ver routes.js).
+async function kardexProducto(req, res) {
+  const q = req.query;
+  const r = await servicio('movimientos').kardex(entero(req.params.id, 'id', 1), {
+    page: q.page === undefined ? 1 : entero(q.page, 'page', 1, PAGE_MAX),
+    limit: q.limit === undefined ? LIMIT_DEFECTO : entero(q.limit, 'limit', 1, LIMIT_MAX)
+  });
+  return res.json({ ok: true, data: r.data, meta: r.meta });
+}
+
 const ESTADOS_ORDEN = ['BORRADOR', 'ENVIADA', 'RECIBIDA_PARCIAL', 'RECIBIDA', 'ANULADA'];
 
 async function listarOrdenes(req, res) {
@@ -99,4 +109,4 @@ async function detalleRecepcion(req, res) {
   return res.json({ ok: true, data: data, meta: {} });
 }
 
-module.exports = { recibir, entregar, formatoEntrega, listarMovimientos, listarOrdenes, detalleRecepcion, validarRecepcion };
+module.exports = { recibir, entregar, formatoEntrega, listarMovimientos, kardexProducto, listarOrdenes, detalleRecepcion, validarRecepcion };

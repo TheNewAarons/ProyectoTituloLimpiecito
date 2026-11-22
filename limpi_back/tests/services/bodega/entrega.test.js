@@ -64,6 +64,21 @@ describe('entregar', () => {
     expect(tabla('auditoria').map((a) => a.accion)).toEqual(['ENTREGA']);
   });
 
+  it('RF-BOD-06: imputa al centro el valor con que el kardex sacó lo asignado (cruce + recepción)', async () => {
+    tabla('movimientos').push(
+      { id: 10, producto_id: 1, tipo: 'SALIDA_SOLICITUD', cantidad: -3, valor_movimiento: -2700, referencia_tipo: 'solicitudes_bodega', referencia_id: 1, referencia_linea_id: 1 },
+      { id: 11, producto_id: 1, tipo: 'SALIDA_SOLICITUD', cantidad: -2, valor_movimiento: -2001, referencia_tipo: 'solicitudes_bodega', referencia_id: 1, referencia_linea_id: 1 },
+      // salida previa al kardex (sin valor): el ítem 2 vuelve al costo de referencia
+      { id: 12, producto_id: 2, tipo: 'SALIDA_SOLICITUD', cantidad: -3, valor_movimiento: null, referencia_tipo: 'solicitudes_bodega', referencia_id: 1, referencia_linea_id: 2 }
+    );
+    await entrega.entregar(1, ADMIN);
+    expect(tabla('lineas')).toEqual([
+      expect.objectContaining({ productoId: 1, cantidad: 5, precio: 940, total_linea: 4701 }),
+      expect.objectContaining({ productoId: 2, cantidad: 3, precio: 800, total_linea: 2400 })
+    ]);
+    expect(tabla('listas')[0].total).toBe(4701 + 2400);
+  });
+
   it('NO vuelve a descontar stock ni crea movimientos (ya se descontó en el cruce/recepción)', async () => {
     await entrega.entregar(1, ADMIN);
     expect(fila('productos', 1).stock).toBe(20);

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginService } from '../login/login.service';
 import { RespuestaBodega, SolicitudBodega } from '../../model/solicitud-bodega';
-import { OrdenResumen, OrdenRecepcion, ResultadoRecepcion, FormatoEntrega, MovimientoBodega } from '../../model/recepcion-bodega';
+import { OrdenResumen, OrdenRecepcion, ResultadoRecepcion, FormatoEntrega, MovimientoBodega, KardexProducto } from '../../model/recepcion-bodega';
 
 // RECEPCIÓN, ENTREGA Y MOVIMIENTOS DE BODEGA (RF-BOD-04) — /api/v1/bodega, formato { ok, data, meta }
 @Injectable({
@@ -57,5 +57,11 @@ export class RecepcionBodegaService {
     if (filtros.desde) { params = params.set('desde', filtros.desde); }
     if (filtros.hasta) { params = params.set('hasta', filtros.hasta); }
     return this.http.get<RespuestaBodega<MovimientoBodega[]>>(this.url_bodega + '/movimientos', { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  //KARDEX VALORIZADO DE UN PRODUCTO (RF-BOD-06)
+  kardex(productoId: number, page: number, limit: number): Observable<RespuestaBodega<KardexProducto>> {
+    const params = new HttpParams().set('page', String(page)).set('limit', String(limit));
+    return this.http.get<RespuestaBodega<KardexProducto>>(this.url_bodega + '/productos/' + productoId + '/kardex', { headers: this.obtenerCabeceras(), params: params });
   }
 }

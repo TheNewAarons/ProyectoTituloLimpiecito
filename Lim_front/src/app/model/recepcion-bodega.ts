@@ -22,7 +22,9 @@ export const TIPOS_MOVIMIENTO: { valor: string, nombre: string }[] = [
   { valor: 'ENTRADA_COMPRA', nombre: 'Entrada por compra' },
   { valor: 'SALIDA_SOLICITUD', nombre: 'Salida a solicitud' },
   { valor: 'REVERSA', nombre: 'Reversa (anulación)' },
-  { valor: 'AJUSTE', nombre: 'Ajuste' }
+  { valor: 'AJUSTE', nombre: 'Ajuste' },
+  { valor: 'SALDO_INICIAL', nombre: 'Saldo inicial' },
+  { valor: 'ENTRADA_MANUAL', nombre: 'Entrada manual (stock rápido)' }
 ];
 
 export interface OrdenResumen {
@@ -90,4 +92,20 @@ export interface MovimientoBodega {
   contexto_usuario: string;
   usuario_id: number;
   created_at: string;
+  // RF-BOD-06: kardex valorizado (null en movimientos previos al kardex)
+  stock_anterior?: number;
+  stock_resultante?: number;
+  costo_unitario?: number;
+  valor_movimiento?: number;
+  valor_saldo_anterior?: number;
+  valor_saldo_resultante?: number;
+  movimiento_revertido_id?: number;
+  motivo?: string;
+}
+
+// RF-BOD-06: GET /bodega/productos/:id/kardex
+export interface KardexProducto {
+  producto: { id: number, nombre: string };
+  saldo: { stock: number, stock_kardex: number, valor_saldo: number, costo_promedio: number, cuadrado: boolean };
+  movimientos: MovimientoBodega[];
 }

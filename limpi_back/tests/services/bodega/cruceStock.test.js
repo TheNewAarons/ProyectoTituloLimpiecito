@@ -24,7 +24,9 @@ jest.mock('../../../modelos/sistema_bodega/Solicitud_item', () => ({
   findAll: jest.fn()
 }));
 jest.mock('../../../modelos/sistema_bodega/Movimiento_bodega', () => ({
-  create: jest.fn()
+  create: jest.fn(),
+  findOne: jest.fn(),
+  findAll: jest.fn()
 }));
 jest.mock('../../../modelos/sistema_base/Producto', () => ({
   findAll: jest.fn()
@@ -83,7 +85,12 @@ const usuario = { id: 1, contexto: 'usuarios' };
 beforeEach(() => {
   jest.clearAllMocks();
   auditar.mockResolvedValue({ id: 1 });
+  // Kardex vacío: registrar() deja un SALDO_INICIAL antes del primer movimiento (RF-BOD-06)
+  Movimiento.findOne.mockResolvedValue(null);
+  Movimiento.findAll.mockResolvedValue([]);
 });
+
+const movimientosDe = (tipo) => Movimiento.create.mock.calls.map((c) => c[0]).filter((m) => m.tipo === tipo);
 
 describe('cruzar', () => {
   it('ejemplo de referencia A-B-C-D (spec §RF-BOD-02): a comprar 2,0,1,20 y stock final 0,3,0,0', async () => {
@@ -135,7 +142,7 @@ describe('cruzar', () => {
 
     await cruceStock.cruzar(solicitud, items, productosLock, usuario, t, '::1');
 
-    expect(Movimiento.create).toHaveBeenCalledTimes(1);
+    expect(movimientosDe(M.SALIDA_SOLICITUD)).toHaveLength(1);
     expect(Movimiento.create).toHaveBeenCalledWith(
       expect.objectContaining({ producto_id: 1, tipo: M.SALIDA_SOLICITUD, cantidad: -4, referencia_tipo: 'solicitudes_bodega', referencia_id: 9 }),
       expect.objectContaining({ transaction: t })
@@ -208,7 +215,7 @@ describe('revertir', () => {
 
     expect(productosLock[0].stock).toBe(5); // 2 + 3 repuestos, no 2 + 1 pedido restante
     expect(productosLock[1].update).not.toHaveBeenCalled();
-    expect(Movimiento.create).toHaveBeenCalledTimes(1);
+    expect(movimientosDe(M.REVERSA)).toHaveLength(1);
     expect(Movimiento.create).toHaveBeenCalledWith(
       expect.objectContaining({ producto_id: 1, tipo: M.REVERSA, cantidad: 3, referencia_tipo: 'solicitudes_bodega', referencia_id: 5 }),
       expect.objectContaining({ transaction: t })
@@ -239,7 +246,25 @@ describe('revertir', () => {
     // no debe invocar revertir dos veces para la misma solicitud.
     await cruceStock.revertir(solicitud, items, [producto], usuario, t, '::1');
     expect(producto.stock).toBe(8);
-    expect(Movimiento.create).toHaveBeenCalledTimes(2);
+    expect(movimientosDe(M.REVERSA)).toHaveLength(2);
+  });
+
+  it('RF-BOD-06: una reversa por cada salida original, enlazada y con su mismo valor', async () => {
+    const producto = instanciaProducto({ id: 1, stock: 0, costo_unitario: 900 });
+    const items = [instanciaItem({ id: 7, producto_id: 1, cantidad_asignada: 5, cantidad_faltante: 0 })];
+    const solicitud = instanciaSolicitud({ id: 5 });
+    Movimiento.findOne.mockResolvedValue({ stock_resultante: 0, valor_saldo_resultante: 0 });
+    Movimiento.findAll.mockResolvedValue([
+      { id: 40, cantidad: -3, costo_unitario: 1000, valor_movimiento: -3000, referencia_linea_id: 7 }, // cruce
+      { id: 41, cantidad: -2, costo_unitario: 1200, valor_movimiento: -2400, referencia_linea_id: 7 } // recepción FIFO
+    ]);
+
+    await cruceStock.revertir(solicitud, items, [producto], usuario, t, '::1');
+
+    const reversas = movimientosDe(M.REVERSA);
+    expect(reversas.map((r) => [r.movimiento_revertido_id, r.cantidad, r.costo_unitario, r.valor_movimiento]))
+      .toEqual([[40, 3, 1000, 3000], [41, 2, 1200, 2400]]);
+    expect(producto.stock).toBe(5);
   });
 });
 
