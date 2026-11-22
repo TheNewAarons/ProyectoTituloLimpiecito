@@ -135,3 +135,52 @@ export interface KardexProducto {
   saldo: { stock: number, stock_kardex: number, valor_saldo: number, costo_promedio: number, cuadrado: boolean };
   movimientos: MovimientoBodega[];
 }
+
+// RF-BOD-07: conteo físico de inventario (BORRADOR -> APROBADO | ANULADO)
+export const FILTROS_CONTEO: { valor: string, nombre: string }[] = [
+  { valor: 'BORRADOR', nombre: 'En curso' },
+  { valor: 'APROBADO', nombre: 'Aprobados' },
+  { valor: 'ANULADO', nombre: 'Anulados' },
+  { valor: '', nombre: 'Todos' }
+];
+
+export const ETIQUETA_CONTEO: { [estado: string]: string } = { BORRADOR: 'En curso', APROBADO: 'Aprobado', ANULADO: 'Anulado' };
+
+export const BADGE_CONTEO: { [estado: string]: string } = {
+  BORRADOR: 'badge badge-warning', APROBADO: 'badge badge-success', ANULADO: 'badge badge-danger'
+};
+
+export interface ConteoResumen {
+  id: number;
+  fecha: string;
+  estado: string;
+  observacion: string;
+  responsable_id: number;
+  aprobado_por: number;
+  aprobado_at: string;
+  items_total: number;
+  items_contados: number;
+  // % de ítems contados sin diferencia (null si no hay contados)
+  exactitud: number;
+}
+
+export interface ConteoItem {
+  item_id: number;
+  producto_id: number;
+  producto: string;
+  cantidad_teorica: number;
+  cantidad_contada: number;
+  diferencia: number;
+  motivo: string;
+  movimiento_id: number;
+}
+
+export interface ConteoDetalle extends ConteoResumen {
+  items: ConteoItem[];
+}
+
+export interface ResultadoAprobacionConteo {
+  conteo: ConteoDetalle;
+  ajustes: { item_id: number, producto_id: number, cantidad: number, movimiento_id: number }[];
+  recalculados: { item_id: number, producto_id: number, cantidad_teorica: number, stock_actual: number }[];
+}

@@ -59,6 +59,7 @@ export class KardexProductoComponent implements OnInit {
     if (m.referencia_tipo === 'ordenes_compra') { return 'Orden de compra N° ' + m.referencia_id; }
     if (m.referencia_tipo === 'solicitudes_bodega') { return 'Solicitud N° ' + m.referencia_id; }
     if (m.referencia_tipo === 'recepciones_compra') { return 'Recepción N° ' + m.referencia_id; }
+    if (m.referencia_tipo === 'inventario_conteos') { return 'Conteo físico N° ' + m.referencia_id; }
     if (m.referencia_tipo === 'stock_rapidos') { return 'Stock rápido N° ' + m.referencia_id; }
     if (m.referencia_tipo === 'lista_insumos') { return 'Lista de insumos N° ' + m.referencia_id; }
     if (m.referencia_tipo === 'migracion_RF-BOD-06') { return 'Carga inicial del kardex'; }
