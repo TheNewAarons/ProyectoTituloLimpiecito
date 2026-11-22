@@ -197,7 +197,9 @@ describe('orden de locks y concurrencia', () => {
     escenario();
     await recepcion.recibir(10, null, ctx);
     const claves = bd.historialLocks.map((l) => l.clave);
-    expect(claves).toEqual(['ordenes:10', 'solicitudes:1', 'solicitudes:2', 'solicitudes:3', 'productos:1']);
+    // QA-01: el kardex lee su último saldo con lock compartido, siempre después del producto
+    expect(claves.filter((c) => c.indexOf('movimientos:') !== 0)).toEqual(['ordenes:10', 'solicitudes:1', 'solicitudes:2', 'solicitudes:3', 'productos:1']);
+    expect(claves.indexOf('productos:1')).toBeLessThan(claves.findIndex((c) => c.indexOf('movimientos:') === 0));
   });
 
   it('auditoría de la recepción y de cada solicitud completada, en la misma transacción', async () => {
