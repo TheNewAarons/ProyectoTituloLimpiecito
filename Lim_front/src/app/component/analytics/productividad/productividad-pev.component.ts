@@ -1,0 +1,149 @@
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
+import {
+  FilaProductividadSector, FilaProductividadSupervisor, FilaProductividadTrabajador, FiltrosProductividad, RangoPeriodo, SerieGrafico
+} from '../../../model/analytics';
+import { AnalyticsService } from '../../../services/analytics/analytics.service';
+import { AlertasService } from '../../../services/alertas/alertas.service';
+import { generarMeses, mesActualSantiago } from '../compartido/filtro-periodo/filtro-periodo.component';
+
+type Columna = [string, string]; // [título, clave]
+
+/** CSV para Excel en español: separador ';', coma decimal y BOM para que respete tildes. */
+export function aCsv(columnas: Columna[], filas: object[]): string {
+  const celda = (v: any): string => {
+    if (v === null || v === undefined) return '';
+    let s = typeof v === 'number' ? String(v).replace('.', ',') : String(v);
+    // Texto que Excel interpretaría como fórmula (nombres de sector o cliente los escriben usuarios): se antepone '.
+    if (typeof v !== 'number' && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lineas = [columnas.map((c: Columna) => celda(c[0])).join(';')]
+    .concat(filas.map((f: object) => columnas.map((c: Columna) => celda((f as any)[c[1]])).join(';')));
+  return '﻿' + lineas.join('\r\n');
+}
+
+// RF-BI-04: productividad PEV — cumplimiento por trabajador, verificación por supervisor y observaciones por sector (D-BI-04-1..4).
+@Component({
+  selector: 'app-productividad-pev',
+  templateUrl: './productividad-pev.component.html'
+})
+export class ProductividadPevComponent implements OnInit, OnDestroy {
+  static readonly COLUMNAS: { [vista: string]: Columna[] } = {
+    trabajadores: [['Trabajador', 'nombre'], ['N° empleado', 'n_empleado'], ['Días', 'dias'], ['Tareas', 'tareas'],
+      ['Pasos asignados', 'pasos_asignados'], ['Pasos marcados', 'pasos_marcados'], ['Cumplimiento %', 'cumplimiento_pct']],
+    supervisores: [['#', 'posicion'], ['Supervisor', 'nombre'], ['N° empleado', 'n_empleado'], ['Listas', 'listas'],
+      ['Listas firmadas', 'listas_firmadas'], ['Tareas', 'tareas'], ['Rondas verificadas', 'rondas_verificadas'],
+      ['Rondas asignadas', 'rondas_asignadas'], ['Verificación %', 'verificacion_pct']],
+    sectores: [['Sector', 'sector'], ['Cliente', 'cliente'], ['Tareas', 'tareas'], ['Cumplimiento %', 'cumplimiento_pct'],
+      ['Observaciones', 'observaciones'], ['Obs. trabajador', 'observaciones_trabajador'], ['Obs. supervisor', 'observaciones_supervisor']]
+  };
+
+  hasta = mesActualSantiago();
+  desde = generarMeses(this.hasta, 3)[2];
+  clienteId: number | null = null;
+  supervisor: number | null = null;
+
+  trabajadores: FilaProductividadTrabajador[] = [];
+  supervisores: FilaProductividadSupervisor[] = [];
+  sectores: FilaProductividadSector[] = [];
+  cumplimiento: number | null = null;
+  verificacion: number | null = null;
+  observaciones: number | null = null;
+  etiquetas: string[] = [];
+  series: SerieGrafico[] = [];
+  cargando = true;
+  private subRanking: Subscription | null = null;
+  private subsFiltradas: Subscription[] = [];
+  private alertaMostrada = false;
+
+  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService) {}
+
+  ngOnInit(): void {
+    this.cargar();
+  }
+
+  ngOnDestroy(): void {
+    this.cancelarFiltradas();
+    if (this.subRanking) this.subRanking.unsubscribe();
+  }
+
+  cambiarPeriodo(rango: RangoPeriodo): void {
+    this.desde = rango.desde;
+    this.hasta = rango.hasta;
+    this.cargar();
+  }
+
+  cambiarCliente(id: number | null): void {
+    this.clienteId = id;
+    this.supervisor = null; // las opciones de supervisor dependen del cliente
+    this.cargar();
+  }
+
+  private filtros(conSupervisor: boolean): FiltrosProductividad {
+    return { desde: this.desde, hasta: this.hasta, clienteId: this.clienteId, supervisor: conSupervisor ? this.supervisor : null };
+  }
+
+  private cancelarFiltradas(): void {
+    this.subsFiltradas.forEach((s: Subscription) => s.unsubscribe());
+    this.subsFiltradas = [];
+  }
+
+  /** Contador de respuestas pendientes; si varias fallan, una sola alerta. */
+  private seguimiento(pendientes: number): { listo: () => void, error: () => void } {
+    this.cargando = true;
+    this.alertaMostrada = false;
+    const listo = () => { pendientes--; if (pendientes <= 0) this.cargando = false; };
+    const error = () => {
+      listo();
+      if (!this.alertaMostrada) { this.alertaMostrada = true; this.alertas.alertaErrorMsj('No se pudo cargar la productividad PEV'); }
+    };
+    return { listo: listo, error: error };
+  }
+
+  cargar(): void {
+    // Cambios rápidos de filtro: solo vale la última respuesta.
+    this.cancelarFiltradas();
+    if (this.subRanking) this.subRanking.unsubscribe();
+    const s = this.seguimiento(3);
+    // El ranking de supervisores muestra a todos (y alimenta el selector); el filtro de supervisor aplica a trabajadores y sectores.
+    this.subRanking = this.analyticsService.productividad<FilaProductividadSupervisor[]>('supervisores', this.filtros(false)).subscribe((r) => {
+      this.supervisores = r.data;
+      this.verificacion = r.meta.verificacion_pct === undefined ? null : r.meta.verificacion_pct;
+      s.listo();
+    }, s.error);
+    this.cargarFiltradas(s.listo, s.error);
+  }
+
+  cambiarSupervisor(): void {
+    // El ranking no depende del supervisor: si sigue cargando, se deja terminar.
+    this.cancelarFiltradas();
+    const s = this.seguimiento(2);
+    this.cargarFiltradas(s.listo, s.error);
+  }
+
+  private cargarFiltradas(listo: () => void, error: () => void): void {
+    this.subsFiltradas.push(this.analyticsService.productividad<FilaProductividadTrabajador[]>('trabajadores', this.filtros(true)).subscribe((r) => {
+      this.trabajadores = r.data;
+      this.cumplimiento = r.meta.cumplimiento_pct === undefined ? null : r.meta.cumplimiento_pct;
+      this.etiquetas = r.data.map((f: FilaProductividadTrabajador): string => f.nombre);
+      this.series = [{ etiqueta: 'Cumplimiento %', datos: r.data.map((f: FilaProductividadTrabajador): number => f.cumplimiento_pct || 0) }];
+      listo();
+    }, error));
+    this.subsFiltradas.push(this.analyticsService.productividad<FilaProductividadSector[]>('sectores', this.filtros(true)).subscribe((r) => {
+      this.sectores = r.data;
+      this.observaciones = r.meta.observaciones === undefined ? null : r.meta.observaciones;
+      listo();
+    }, error));
+  }
+
+  exportar(vista: 'trabajadores' | 'supervisores' | 'sectores'): void {
+    const filas: object[] = { trabajadores: this.trabajadores, supervisores: this.supervisores, sectores: this.sectores }[vista];
+    const blob = new Blob([aCsv(ProductividadPevComponent.COLUMNAS[vista], filas)], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'productividad-pev-' + vista + '-' + this.desde + '_' + this.hasta + '.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000); // revocar en el mismo tick puede cortar la descarga
+  }
+}

@@ -10,6 +10,7 @@ import {
 import {
   AgruparConsumo, FilaConsumoGrupo, FilaConsumoMes, FilaFrecuenciaCompra, FilaStockCritico, FilaTopProducto, MetaConsumo
 } from '../../model/analytics';
+import { FiltrosProductividad, MetaProductividad } from '../../model/analytics';
 
 type FilaRankingRentabilidad = FilaRentabilidad | FilaGastosGenerales;
 
@@ -92,5 +93,13 @@ export class AnalyticsService {
 
   stockCriticoBodega(): Observable<RespuestaAnalytics<FilaStockCritico[]>> {
     return this.obtenerBodega<FilaStockCritico[]>('/stock-critico', {});
+  }
+
+  // PRODUCTIVIDAD PEV (RF-BI-04). vista: 'trabajadores' | 'supervisores' | 'sectores'
+  productividad<T>(vista: string, f: FiltrosProductividad): Observable<RespuestaAnalytics<T, MetaProductividad>> {
+    let params = new HttpParams().set('desde', f.desde).set('hasta', f.hasta);
+    if (f.clienteId) params = params.set('cliente_id', String(f.clienteId));
+    if (f.supervisor) params = params.set('supervisor', String(f.supervisor));
+    return this.http.get<RespuestaAnalytics<T, MetaProductividad>>(this.url_analytics + '/productividad/' + vista, { headers: this.obtenerCabeceras(), params: params });
   }
 }

@@ -9,6 +9,8 @@ import { LoadingModule } from 'src/app/loading/loading.module';
 
 import { AnalyticsRoutes } from './analytics.routing';
 import { AnalyticsBodegaRoutes } from './analytics.routing';
+import { AnalyticsProductividadRoutes } from './analytics.routing';
+import { ProductividadPevComponent } from './productividad/productividad-pev.component';
 import { AnalyticsInicioComponent } from './inicio/analytics-inicio.component';
 import { DashboardFinancieroComponent } from './financiero/dashboard-financiero.component';
 import { RentabilidadComponent } from './rentabilidad/rentabilidad.component';
@@ -26,6 +28,7 @@ import { SelectorClienteComponent } from './compartido/selector-cliente/selector
     FormsModule,
     RouterModule.forChild(AnalyticsRoutes),
     RouterModule.forChild(AnalyticsBodegaRoutes),
+    RouterModule.forChild(AnalyticsProductividadRoutes),
     MaterialModule,
     LoadingModule,
     ChartsModule
@@ -35,6 +38,7 @@ import { SelectorClienteComponent } from './compartido/selector-cliente/selector
     DashboardFinancieroComponent,
     RentabilidadComponent,
     ConsumoBodegaComponent,
+    ProductividadPevComponent,
     KpiCardComponent,
     GraficoComponent,
     FiltroPeriodoComponent,
