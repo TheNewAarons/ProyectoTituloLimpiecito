@@ -23,7 +23,7 @@
 
 ## 1. Backlog consolidado
 
-Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**. Total: **56 pts** (42 RF + 14 RNF).
+Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**. Total: **56 pts** (42 RF + 14 RNF). Las filas marcadas *retro. Sumativa 2* (ver `Docs/informe-bodega-sumativa2.md`) quedan fuera de ese total.
 
 | Código | Requerimiento | Módulo | Prioridad | Esf. | Tipo | Sprint | Depende de | Estado |
 |---|---|---|---|---|---|---|---|---|
@@ -34,6 +34,12 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 | RF-BOD-03 | Envío automático de orden de compra al proveedor | Bodega | 🔴 Alta | M | Feature nueva | 2 | BOD-02 | Implementado – pendiente verificación/PR |
 | RF-BOD-04 | Recepción y actualización automática de bodega | Bodega | 🔴 Alta | M | Feature nueva | 3 | BOD-03 | Sin empezar |
 | RF-BOD-05 | Dashboard/Home de bodega (solicitudes, lista de compra, stock) | Bodega | 🟠 Media-Alta | M | Feature nueva | 3 | BOD-01..04 | Sin empezar |
+| RF-BOD-06 | Kardex valorizado (CPP móvil, saldos, reversas enlazadas) | Bodega | 🔴 Alta | L | Mejora (retro. Sumativa 2) | — | BOD-01..04 | Implementado – PR #70 (+ fixes en #73) |
+| RF-BOD-04b | Recepción parcial con documento y costo real | Bodega | 🔴 Alta | M | Mejora (retro. Sumativa 2) | — | BOD-06 | Implementado – PR #71 |
+| RF-BOD-07 | Conteo físico de inventario con ajustes aprobados | Bodega | 🟠 Media-Alta | M | Feature nueva (retro. Sumativa 2) | — | BOD-06 | Implementado – PR #72 |
+| QA-01 | Evidencias de pruebas del modelo de bodega (T1–T9) | Bodega | 🔴 Alta | M | Pruebas (retro. Sumativa 2) | — | BOD-06, 04b, 07 | PR #73 – T7 y corridas sobre copia de producción pendientes con TI |
+| INF-01 | Validación de infraestructura con TI | Transversal | 🟠 Media | S | Documentación (retro. Sumativa 2) | — | — | PR #74 – pendiente reunión y firma de TI |
+| DOC-01 | Correcciones al informe (diccionario, DER, BPMN, UML, trazabilidad, valorización) | Transversal | 🟡 Baja | S | Documentación (retro. Sumativa 2) | — | QA-01 | `Docs/informe-bodega-sumativa2.md` – pendiente traspasar al informe |
 | RF-FAC-01 | Estado de pago en facturas (ingresos y egresos) | Facturación | 🟡 Media | S | Mejora | 3 | — | Implementado – pendiente verificación/PR |
 | RF-WEB-01 | Catálogo de productos publicable a la web | Web | 🟡 Media | L | Feature nueva | 4 | — | Sin empezar |
 | RF-WEB-02 | Portal de PDFs descargables (políticas, reglamento) | Web | 🟡 Media | S | Feature nueva | 4 | — | Implementado – pendiente verificación/PR |
