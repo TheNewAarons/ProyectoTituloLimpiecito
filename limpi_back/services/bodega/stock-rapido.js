@@ -32,7 +32,11 @@ async function listar() {
       .forEach(function (p) { nombres[p.id] = p.nombre; });
   }
   return filas.map(function (f) {
-    return { id: f.id, producto_id: f.productoId, producto: nombres[f.productoId] || null, cantidad: f.cantidad, comentario: f.comentario, fecha: f.fecha };
+    return {
+      id: f.id, producto_id: f.productoId, producto: nombres[f.productoId] || null, cantidad: f.cantidad, comentario: f.comentario, fecha: f.fecha,
+      // RNF-ARQ-01 (AUT-010): null = activa
+      anulada_at: f.anulada_at || null, anulada_por: f.anulada_por || null, motivo_anulacion: f.motivo_anulacion || null
+    };
   });
 }
 
