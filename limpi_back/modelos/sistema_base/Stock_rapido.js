@@ -11,6 +11,11 @@ module.exports = db.sequelize.define(
             primaryKey: true,
             autoIncrement: true
         },
+        // RNF-ARQ-01: anulación en vez de borrado físico (NULL = activa)
+        anulada_at: { type: Sequelize.DATE, allowNull: true },
+        anulada_por: { type: Sequelize.INTEGER, allowNull: true },
+        contexto_anulacion: { type: Sequelize.STRING(20), allowNull: true },
+        motivo_anulacion: { type: Sequelize.STRING(255), allowNull: true },
         cantidad:{
             type: Sequelize.INTEGER,
         },

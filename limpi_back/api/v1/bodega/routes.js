@@ -80,6 +80,8 @@ router.delete('/productos/:id', ADMIN_Y_OPERACIONES, asyncHandler(productosCrud.
 const stockRapido = require('./stock-rapido-controlador');
 router.get('/stock-rapido', ADMIN_Y_OPERACIONES, asyncHandler(stockRapido.listar));
 router.post('/stock-rapido', ADMIN_Y_OPERACIONES, asyncHandler(stockRapido.crear));
+// Cierre D-ARQ-01-1: anular (REVERSA en kardex) en vez del borrado físico del legacy.
+router.patch('/stock-rapido/:id/anular', ADMIN_Y_OPERACIONES, asyncHandler(require('./stock-rapido-anular-controlador').anular));
 
 // RF-BOD-07: conteo físico. Captura = Admin y Operaciones; aprobar (genera AJUSTE en el kardex) = solo Admin.
 const conteos = require('./conteos-controlador');
