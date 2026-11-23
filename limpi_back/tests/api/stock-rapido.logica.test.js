@@ -17,6 +17,8 @@ jest.mock('../../modelos/sistema_base/Producto', () => ({
 jest.mock('../../services/bodega/kardex', () => ({ registrar: jest.fn() }));
 jest.mock('../../services/auditoria', () => ({ auditar: jest.fn() }));
 jest.mock('../../services/caja/cierre', () => ({ reintentarTransaccion: (f) => f() }));
+// AUT-010: eliminarStock delega en el servicio de anulación (su lógica: tests/services/bodega/stock-rapido-anular.test.js)
+jest.mock('../../services/bodega/stock-rapido-anular', () => ({ anular: jest.fn() }));
 
 const { Op } = require('sequelize');
 const db = require('../../database/database');
@@ -193,72 +195,36 @@ describe('stock_rapidos: crearStock (B8)', () => {
   });
 });
 
-describe('stock_rapidos: eliminarStock (B9)', () => {
-  function filaEliminar() {
-    mem.productos = { 5: { id: 5, stock: 8 } };
-    mem.stockRapidos = { 7: { id: 7, productoId: 5, cantidad: 3, comentario: 'x', fecha: new Date('2026-11-13') } };
-    mem.nextStockId = 8;
-  }
+describe('stock_rapidos: eliminarStock (B9 → anulación, AUT-010)', () => {
+  const anularStock = require('../../services/bodega/stock-rapido-anular');
+  const MOTIVO_LEGACY = 'Anulada desde la ruta legacy /stock/eliminar';
 
-  it('audita ANULAR antes del destroy, destroy fisico, stock decrementado y AJUSTE', async () => {
-    filaEliminar();
+  it('delega en el servicio de anulación con el actor del token y no borra la fila', async () => {
+    anularStock.anular.mockResolvedValue({ id: 7 });
     const req = { params: { id: '7' }, usuario: { id: 9, contexto: 'usuarios' }, ip: '1.1.1.1' };
     const res = resFalso();
     await controlador.eliminarStock(req, res);
 
     expect(res.json).toHaveBeenCalledWith({ mensaje: 'Listo' });
-
-    const anularIdx = auditar.mock.calls.findIndex((c) => c[0].accion === 'ANULAR');
-    expect(anularIdx).toBeGreaterThanOrEqual(0);
-    const anular = auditar.mock.calls[anularIdx][0];
-    expect(anular.entidad).toBe('stock_rapidos');
-    expect(anular.entidad_id).toBe(7);
-    expect(anular.despues).toBeNull();
-    expect(anular.antes.get()).toEqual(expect.objectContaining({
-      productoId: 5, cantidad: 3, comentario: 'x', fecha: expect.any(Date)
-    }));
-    expect(auditar.mock.invocationCallOrder[anularIdx]).toBeLessThan(Stock.destroy.mock.invocationCallOrder[0]);
-
-    // destroy fisico
-    expect(Stock.destroy).toHaveBeenCalledWith({ where: { id: '7' }, transaction: t });
-    expect(mem.stockRapidos[7]).toBeUndefined();
-
-    // decrement
-    expect(kardex.registrar).toHaveBeenCalledWith(expect.objectContaining({ transaction: t, tipo: 'AJUSTE', cantidad: -3, referenciaId: 7 }));
-    expect(kardex.registrar.mock.calls[0][0].producto.id).toBe(5);
-    expect(mem.productos[5].stock).toBe(5);
-
-    // AJUSTE con antes/despues
-    const ajuste = auditar.mock.calls.find((c) => c[0].accion === 'AJUSTE');
-    expect(ajuste).toBeTruthy();
-    expect(ajuste[0].entidad).toBe('productos');
-    expect(ajuste[0].antes).toEqual({ id: 5, stock: 8 });
-    expect(ajuste[0].despues).toEqual({ id: 5, stock: 5 });
-  });
-
-  it('id inexistente responde error, sin destroy, sin decrement, sin auditar', async () => {
-    const req = { params: { id: '999' }, usuario: { id: 9, contexto: 'usuarios' }, ip: '1.1.1.1' };
-    const res = resFalso();
-    await controlador.eliminarStock(req, res);
-
-    expect(res.send).toHaveBeenCalled();
-    expect(String(res.send.mock.calls[0][0]).startsWith('error')).toBe(true);
-    expect(res.json).not.toHaveBeenCalled();
+    expect(anularStock.anular).toHaveBeenCalledWith(7, MOTIVO_LEGACY, { usuario: { id: 9, contexto: 'usuarios' }, ip: '1.1.1.1', motivoSinToken: null });
     expect(Stock.destroy).not.toHaveBeenCalled();
     expect(kardex.registrar).not.toHaveBeenCalled();
-    expect(auditar).not.toHaveBeenCalled();
   });
 
-  it('si auditar falla, hace rollback (fila sigue existiendo y stock intacto)', async () => {
-    filaEliminar();
-    auditar.mockRejectedValue(new Error('fallo auditoria'));
-    const req = { params: { id: '7' }, usuario: { id: 9, contexto: 'usuarios' }, ip: '1.1.1.1' };
-    const res = resFalso();
-    await controlador.eliminarStock(req, res);
+  it('sin token anula como sistema con LEGACY_SIN_TOKEN (igual que antes)', async () => {
+    anularStock.anular.mockResolvedValue({ id: 7 });
+    await controlador.eliminarStock({ params: { id: '7' }, ip: '1.1.1.1' }, resFalso());
+    expect(anularStock.anular.mock.calls[0][2]).toEqual({ usuario: { id: null, contexto: 'sistema' }, ip: '1.1.1.1', motivoSinToken: 'LEGACY_SIN_TOKEN' });
+  });
 
-    expect(res.send).toHaveBeenCalled();
+  it('un error del servicio (inexistente, ya anulada, stock insuficiente) responde res.send error, como el legacy', async () => {
+    anularStock.anular.mockRejectedValue(new Error('el stock actual es menor que la cantidad de la entrada'));
+    const res = resFalso();
+    await controlador.eliminarStock({ params: { id: '7' } }, res);
+
+    expect(String(res.send.mock.calls[0][0])).toContain('error');
+    expect(String(res.send.mock.calls[0][0])).toContain('stock actual es menor');
     expect(res.json).not.toHaveBeenCalled();
-    expect(mem.stockRapidos[7]).toBeDefined();
-    expect(mem.productos[5].stock).toBe(8);
+    expect(Stock.destroy).not.toHaveBeenCalled();
   });
 });
