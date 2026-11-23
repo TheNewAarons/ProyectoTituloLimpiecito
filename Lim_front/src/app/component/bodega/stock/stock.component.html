@@ -32,21 +32,28 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let stock of stocks | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
-                    <td>{{ stock.producto.nombre }}</td>
-                    <td>{{ stock.cantidad }}</td>
-                    <td>{{ stock.comentario }}</td>
+                  <tr *ngFor="let stock of stocks | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize"
+                    [class.text-muted]="stock.anulada_at">
+                    <td>{{ stock.producto?.nombre }}</td>
+                    <td><span [style.text-decoration]="stock.anulada_at ? 'line-through' : null">{{ stock.cantidad }}</span></td>
+                    <td>
+                      {{ stock.comentario }}
+                      <div *ngIf="stock.anulada_at" class="small">
+                        <span class="badge badge-secondary">Anulada</span>
+                        {{ stock.anulada_at | date: 'dd/MM/yyyy HH:mm' }} · {{ stock.motivo_anulacion }}
+                      </div>
+                    </td>
                     <td>{{ stock.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td class="td-actions text-right">
                       <button
-                        *ngIf="usuario.role.nombre != 'APOYO_LVL_1'"
+                        *ngIf="puedeAnular(stock)"
                         mat-raised-button
                         type="button"
-                        matTooltip="Eliminar Stock"
+                        matTooltip="Anular entrada"
                         class="btn btn-danger btn-round"
-                        (click)="eliminarStock(stock.id)"
+                        (click)="anularStock(stock)"
                       >
-                        <i class="material-icons">close</i>
+                        <i class="material-icons">block</i>
                       </button>
                     </td>
                   </tr>

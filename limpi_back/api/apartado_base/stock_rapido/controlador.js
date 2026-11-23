@@ -11,6 +11,7 @@ const Producto = require('../../../modelos/sistema_base/Producto')
 const logicaDB = require('./logica')
 const kardex = require('../../../services/bodega/kardex')
 const { TIPOS_MOVIMIENTO: M } = require('../../../services/bodega/constantes')
+const anularStock = require('../../../services/bodega/stock-rapido-anular')
 
 const crearStock = async(req,res) => {
     const stocks = JSON.parse(req.body.stocks);
@@ -98,62 +99,10 @@ const crearStock = async(req,res) => {
     }
 }
 
+// RNF-ARQ-01 (D-ARQ-01-5, AUT-010): ya no borra la fila; anula con el mismo servicio que PATCH /api/v1/bodega/stock-rapido/:id/anular.
 const eliminarStock = async(req,res) => {
-    const { usuario, ip, motivoSinToken } = actorDeRequest(req);
     try{
-        await reintentarTransaccion(function () {
-            return db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async function (t) {
-                const stock = await Stock.findById(req.params.id, { transaction: t, lock: t.LOCK.UPDATE })
-
-                const bloqueados = await Producto.findAll({
-                    where: { id: { [Op.in]: [stock.productoId] } },
-                    order: [['id', 'ASC']],
-                    lock: t.LOCK.UPDATE,
-                    transaction: t
-                });
-                const stockPrevio = bloqueados.length ? bloqueados[0].stock : null;
-
-                await auditar({
-                    transaction: t,
-                    usuario: usuario,
-                    entidad: 'stock_rapidos',
-                    entidad_id: stock.id,
-                    accion: 'ANULAR',
-                    antes: stock,
-                    despues: null,
-                    ip: ip,
-                    motivo: motivoSinToken
-                });
-
-                await logicaDB.eliminarStockDB(req.params.id, t)
-                if (bloqueados.length) {
-                    await kardex.registrar({
-                        transaction: t, producto: bloqueados[0], tipo: M.AJUSTE, cantidad: -Number(stock.cantidad),
-                        referenciaTipo: 'stock_rapidos', referenciaId: stock.id, motivo: 'Eliminación de entrada de stock rápido', usuario: usuario
-                    })
-                }
-
-                const releidos = await Producto.findAll({
-                    where: { id: { [Op.in]: [stock.productoId] } },
-                    order: [['id', 'ASC']],
-                    lock: t.LOCK.UPDATE,
-                    transaction: t
-                });
-                if (releidos.length) {
-                    await auditar({
-                        transaction: t,
-                        usuario: usuario,
-                        entidad: 'productos',
-                        entidad_id: releidos[0].id,
-                        accion: 'AJUSTE',
-                        antes: { id: releidos[0].id, stock: stockPrevio },
-                        despues: { id: releidos[0].id, stock: releidos[0].stock },
-                        ip: ip,
-                        motivo: motivoSinToken
-                    });
-                }
-            });
-        });
+        await anularStock.anular(Number(req.params.id), 'Anulada desde la ruta legacy /stock/eliminar', actorDeRequest(req))
         return res.json({mensaje:'Listo'})
     }catch(error){
         return res.send('error'+error)
