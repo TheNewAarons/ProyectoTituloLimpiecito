@@ -61,6 +61,7 @@ export const ROUTES: RouteInfo[] = [
       { path: 'solicitudes', title: 'Solicitudes', ab: 'So' }, // RF-BOD-01
       { path: 'ordenes-compra', title: 'Órdenes De Compra', ab: 'OC' }, // RF-BOD-04
       { path: 'movimientos', title: 'Movimientos', ab: 'Mv' }, // RF-BOD-04
+      { path: 'conteos', title: 'Conteos Físicos', ab: 'CF' }, // RF-BOD-07
       { path: 'stock', title: 'Agregar Stock', ab: 'S' }
     ]
   },

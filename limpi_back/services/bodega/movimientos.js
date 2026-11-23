@@ -7,6 +7,7 @@ const Op = require('sequelize').Op;
 
 const Movimiento = require('../../modelos/sistema_bodega/Movimiento_bodega');
 const Producto = require('../../modelos/sistema_base/Producto');
+const AppError = require('../../libs/app-error');
 
 const ZONA = 'America/Santiago';
 
@@ -57,12 +58,56 @@ async function listar(filtros) {
     ? (await Producto.findAll({ where: { id: { [Op.in]: ids } }, attributes: ['id', 'nombre'] })).reduce((acc, p) => { acc[p.id] = p.nombre; return acc; }, {})
     : {};
   return {
-    data: r.rows.map((m) => ({
+    data: r.rows.map((m) => Object.assign({
       id: m.id, producto_id: m.producto_id, producto: productos[m.producto_id] || null, tipo: m.tipo, cantidad: m.cantidad,
       referencia_tipo: m.referencia_tipo, referencia_id: m.referencia_id, contexto_usuario: m.contexto_usuario, usuario_id: m.usuario_id, created_at: m.created_at
-    })),
+    }, saldo(m))),
     meta: { page: filtros.page, limit: filtros.limit, total: r.count }
   };
 }
 
-module.exports = { listar, inicioDiaSantiago };
+const enteroONulo = (v) => (v === null || v === undefined ? null : Number(v));
+
+// RF-BOD-06: columnas del kardex valorizado (null en movimientos previos al kardex).
+function saldo(m) {
+  return {
+    stock_anterior: enteroONulo(m.stock_anterior), stock_resultante: enteroONulo(m.stock_resultante),
+    costo_unitario: enteroONulo(m.costo_unitario), valor_movimiento: enteroONulo(m.valor_movimiento),
+    valor_saldo_anterior: enteroONulo(m.valor_saldo_anterior), valor_saldo_resultante: enteroONulo(m.valor_saldo_resultante),
+    referencia_linea_id: m.referencia_linea_id === undefined ? null : m.referencia_linea_id,
+    movimiento_revertido_id: m.movimiento_revertido_id === undefined ? null : m.movimiento_revertido_id,
+    motivo: m.motivo || null
+  };
+}
+
+/**
+ * RF-BOD-06 — GET /productos/:id/kardex: movimientos valorizados del producto en orden cronológico y saldo vigente.
+ * @param {number} productoId
+ * @param {{page:number, limit:number}} filtros validados
+ */
+async function kardex(productoId, filtros) {
+  const producto = await Producto.findById(productoId, { attributes: ['id', 'nombre', 'stock'] });
+  if (!producto) throw new AppError('PRODUCTO_NO_EXISTE', 'el producto no existe', 404, { id: productoId });
+  const where = { producto_id: productoId };
+  const [r, ultimo] = await Promise.all([
+    Movimiento.findAndCountAll({ where: where, order: [['id', 'ASC']], limit: filtros.limit, offset: (filtros.page - 1) * filtros.limit }),
+    Movimiento.findOne({ where: { producto_id: productoId, stock_resultante: { [Op.ne]: null } }, order: [['id', 'DESC']] })
+  ]);
+  const stockKardex = ultimo ? Number(ultimo.stock_resultante) : null;
+  const valor = ultimo ? Number(ultimo.valor_saldo_resultante) : null;
+  return {
+    data: {
+      producto: { id: producto.id, nombre: producto.nombre },
+      saldo: {
+        stock: Number(producto.stock || 0), stock_kardex: stockKardex, valor_saldo: valor,
+        costo_promedio: stockKardex > 0 && valor > 0 ? Math.round(valor / stockKardex) : null,
+        // false: productos.stock se modificó fuera del kardex; el próximo movimiento deja un AJUSTE de descuadre
+        cuadrado: stockKardex === null ? null : stockKardex === Number(producto.stock || 0)
+      },
+      movimientos: r.rows.map((m) => Object.assign({ id: m.id, tipo: m.tipo, cantidad: m.cantidad, referencia_tipo: m.referencia_tipo, referencia_id: m.referencia_id, contexto_usuario: m.contexto_usuario, usuario_id: m.usuario_id, created_at: m.created_at }, saldo(m)))
+    },
+    meta: { page: filtros.page, limit: filtros.limit, total: r.count }
+  };
+}
+
+module.exports = { listar, kardex, inicioDiaSantiago };

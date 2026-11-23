@@ -11,6 +11,8 @@ jest.mock('../../../modelos/sistema_bodega/Solicitud_item', () => require('../..
 jest.mock('../../../modelos/sistema_bodega/Movimiento_bodega', () => require('../../helpers/bd-memoria-bodega').modelo('movimientos'));
 jest.mock('../../../modelos/sistema_bodega/Orden_compra', () => require('../../helpers/bd-memoria-bodega').modelo('ordenes'));
 jest.mock('../../../modelos/sistema_bodega/Orden_compra_item', () => require('../../helpers/bd-memoria-bodega').modelo('orden_items'));
+jest.mock('../../../modelos/sistema_bodega/Recepcion_compra', () => require('../../helpers/bd-memoria-bodega').modelo('recepciones'));
+jest.mock('../../../modelos/sistema_bodega/Recepcion_item', () => require('../../helpers/bd-memoria-bodega').modelo('recepcion_items'));
 jest.mock('../../../modelos/sistema_bodega/Proveedor', () => require('../../helpers/bd-memoria-bodega').modelo('proveedores'));
 jest.mock('../../../modelos/sistema_base/Producto', () => require('../../helpers/bd-memoria-bodega').modelo('productos'));
 jest.mock('../../../modelos/sistema_base/Centro_costo', () => require('../../helpers/bd-memoria-bodega').modelo('centros'));
@@ -64,7 +66,7 @@ describe('recepción y asignación FIFO', () => {
     expect(fila('solicitudes', 3).estado).toBe('PARCIAL');
     expect(fila('items', 3)).toMatchObject({ cantidad_asignada: 2, cantidad_faltante: 4 });
     expect(fila('productos', 1).stock).toBe(0);
-    expect(movs('ENTRADA_COMPRA')).toEqual([expect.objectContaining({ producto_id: 1, cantidad: 10, referencia_tipo: 'ordenes_compra', referencia_id: 10 })]);
+    expect(movs('ENTRADA_COMPRA')).toEqual([expect.objectContaining({ producto_id: 1, cantidad: 10, referencia_tipo: 'recepciones_compra', referencia_id: 1 })]);
     expect(movs('SALIDA_SOLICITUD').map((m) => m.cantidad)).toEqual([-5, -3, -2]);
   });
 
@@ -116,6 +118,51 @@ describe('parcial vs total', () => {
   });
 });
 
+describe('RF-BOD-04b: recepciones como eventos', () => {
+  beforeEach(() => escenario({ solicitudes: [], items: [] }));
+
+  it('dos recepciones parciales con costos distintos: 2 cabeceras, 2 ENTRADA_COMPRA enlazadas y CPP', async () => {
+    const r1 = await recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 4 }], ctx, { documento_tipo: 'GUIA', documento_numero: '55' });
+    const r2 = await recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 6, costo_unitario: 1500 }], ctx, { documento_tipo: 'FACTURA', documento_numero: '901' });
+
+    expect([r1.recepcion_id, r2.recepcion_id]).toEqual([1, 2]);
+    expect(tabla('recepciones')).toEqual([
+      expect.objectContaining({ id: 1, orden_id: 10, documento_tipo: 'GUIA', documento_numero: '55', historica: false, estado: 'CONFIRMADA' }),
+      expect.objectContaining({ id: 2, orden_id: 10, documento_tipo: 'FACTURA', documento_numero: '901' })
+    ]);
+    const entradas = movs('ENTRADA_COMPRA');
+    expect(entradas.map((m) => [m.referencia_tipo, m.referencia_id, m.referencia_linea_id, m.costo_unitario])).toEqual([
+      ['recepciones_compra', 1, 1, 1000], ['recepciones_compra', 2, 2, 1500]
+    ]);
+    expect(tabla('recepcion_items').map((l) => [l.orden_item_id, l.cantidad, l.costo_unitario, l.movimiento_id])).toEqual([
+      [100, 4, 1000, entradas[0].id], [100, 6, 1500, entradas[1].id]
+    ]);
+    // caché = suma de las líneas de recepción
+    const recibido = tabla('recepcion_items').reduce((a, l) => a + l.cantidad, 0);
+    expect(fila('orden_items', 100).cantidad_recibida).toBe(recibido);
+    // CPP: (4 × 1000 + 6 × 1500) / 10 = 1300
+    expect(entradas[1].valor_saldo_resultante / entradas[1].stock_resultante).toBe(1300);
+    expect(fila('productos', 1).costo_unitario).toBe(1500);
+  });
+
+  it('costo real distinto al de la OC queda marcado en diferencias_precio y en la auditoría', async () => {
+    const r = await recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 2, costo_unitario: 1100 }], ctx);
+    expect(r.diferencias_precio).toEqual([{ item_id: 100, producto_id: 1, costo_oc: 1000, costo_real: 1100 }]);
+    const aud = tabla('auditoria').filter((a) => a.accion === 'RECEPCION')[0];
+    expect(aud).toMatchObject({ motivo: 'DIFERENCIA_PRECIO' });
+  });
+
+  it('mismo costo que la OC: sin diferencias', async () => {
+    const r = await recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 2, costo_unitario: 1000 }], ctx);
+    expect(r.diferencias_precio).toEqual([]);
+  });
+
+  it('error de validación no crea cabecera', async () => {
+    await expect(recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 50 }], ctx)).rejects.toMatchObject({ code: 'CANTIDAD_EXCEDE_PENDIENTE' });
+    expect(tabla('recepciones')).toEqual([]);
+  });
+});
+
 describe('validaciones', () => {
   beforeEach(() => escenario());
 
@@ -150,7 +197,9 @@ describe('orden de locks y concurrencia', () => {
     escenario();
     await recepcion.recibir(10, null, ctx);
     const claves = bd.historialLocks.map((l) => l.clave);
-    expect(claves).toEqual(['ordenes:10', 'solicitudes:1', 'solicitudes:2', 'solicitudes:3', 'productos:1']);
+    // QA-01: el kardex lee su último saldo con lock compartido, siempre después del producto
+    expect(claves.filter((c) => c.indexOf('movimientos:') !== 0)).toEqual(['ordenes:10', 'solicitudes:1', 'solicitudes:2', 'solicitudes:3', 'productos:1']);
+    expect(claves.indexOf('productos:1')).toBeLessThan(claves.findIndex((c) => c.indexOf('movimientos:') === 0));
   });
 
   it('auditoría de la recepción y de cada solicitud completada, en la misma transacción', async () => {

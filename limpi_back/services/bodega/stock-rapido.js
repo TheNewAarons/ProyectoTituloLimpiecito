@@ -16,6 +16,8 @@ const AppError = require('../../libs/app-error');
 const fecha = require('../../libs/fecha');
 const { auditar } = require('../auditoria');
 const { reintentarTransaccion } = require('../caja/cierre');
+const kardex = require('./kardex');
+const { TIPOS_MOVIMIENTO: M } = require('./constantes');
 
 const TOPE_ITEMS = 100;
 const LARGO_COMENTARIO = 255;
@@ -68,7 +70,8 @@ async function crear(body, ctx) {
     return db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async function (t) {
       const bloqueados = await Producto.findAll({ where: { id: { [Op.in]: ids } }, order: [['id', 'ASC']], lock: t.LOCK.UPDATE, transaction: t });
       const previo = {};
-      bloqueados.forEach(function (p) { previo[p.id] = p; });
+      const stockPrevio = {};
+      bloqueados.forEach(function (p) { previo[p.id] = p; stockPrevio[p.id] = p.stock; });
       const invalidos = ids.filter(function (id) { return !previo[id] || Number(previo[id].estado) !== 1; });
       if (invalidos.length) throw new AppError('PRODUCTO_NO_DISPONIBLE', 'hay productos inexistentes o no activos', 409, { producto_ids: invalidos });
 
@@ -77,7 +80,11 @@ async function crear(body, ctx) {
         const it = items[i];
         // Medianoche en Santiago ≈ 03:00/04:00 UTC: se guarda el mediodía UTC para que la fecha no cambie de día al mostrarla.
         const s = await Stock.create({ cantidad: it.cantidad, comentario: it.comentario, fecha: new Date(it.fecha + 'T12:00:00Z'), productoId: it.producto_id }, { transaction: t });
-        await Producto.increment('stock', { by: it.cantidad, where: { id: it.producto_id }, transaction: t });
+        // RF-BOD-06: entrada sin orden de compra, valorizada al costo promedio vigente
+        await kardex.registrar({
+          transaction: t, producto: previo[it.producto_id], tipo: M.ENTRADA_MANUAL, cantidad: it.cantidad,
+          referenciaTipo: 'stock_rapidos', referenciaId: s.id, motivo: it.comentario, usuario: ctx.usuario
+        });
         await auditar({ transaction: t, usuario: ctx.usuario, entidad: 'stock_rapidos', entidad_id: s.id, accion: 'CREAR', antes: null, despues: s, ip: ctx.ip });
         creadas.push(s.id);
       }
@@ -86,7 +93,7 @@ async function crear(body, ctx) {
         const p = releidos[i];
         await auditar({
           transaction: t, usuario: ctx.usuario, entidad: 'productos', entidad_id: p.id, accion: 'AJUSTE',
-          antes: { id: p.id, stock: previo[p.id].stock }, despues: { id: p.id, stock: p.stock }, ip: ctx.ip
+          antes: { id: p.id, stock: stockPrevio[p.id] }, despues: { id: p.id, stock: p.stock }, ip: ctx.ip
         });
       }
       return { entradas_creadas: creadas, productos: releidos.map(function (p) { return { id: p.id, nombre: p.nombre, stock: Number(p.stock) || 0 }; }) };

@@ -60,6 +60,7 @@ router.post('/ordenes-compra/:id/recepcion', admin, asyncHandler(recepcionBodega
 router.post('/solicitudes/:id/entregar', admin, asyncHandler(recepcionBodega.entregar));
 router.get('/solicitudes/:id/formato-entrega', admin, asyncHandler(recepcionBodega.formatoEntrega));
 router.get('/movimientos', admin, asyncHandler(recepcionBodega.listarMovimientos));
+router.get('/productos/:id/kardex', admin, asyncHandler(recepcionBodega.kardexProducto));
 router.get('/ordenes-compra', admin, asyncHandler(recepcionBodega.listarOrdenes));
 router.get('/ordenes-compra/:id/recepcion', admin, asyncHandler(recepcionBodega.detalleRecepcion));
 
@@ -79,5 +80,15 @@ router.delete('/productos/:id', ADMIN_Y_OPERACIONES, asyncHandler(productosCrud.
 const stockRapido = require('./stock-rapido-controlador');
 router.get('/stock-rapido', ADMIN_Y_OPERACIONES, asyncHandler(stockRapido.listar));
 router.post('/stock-rapido', ADMIN_Y_OPERACIONES, asyncHandler(stockRapido.crear));
+
+// RF-BOD-07: conteo físico. Captura = Admin y Operaciones; aprobar (genera AJUSTE en el kardex) = solo Admin.
+const conteos = require('./conteos-controlador');
+const soloAdmin = [autenticarBodega, permitir({ roles: ROL_ADMIN_NOMBRES })];
+router.get('/conteos', admin, asyncHandler(conteos.listar));
+router.post('/conteos', admin, asyncHandler(conteos.crear));
+router.get('/conteos/:id', admin, asyncHandler(conteos.obtener));
+router.patch('/conteos/:id/items', admin, asyncHandler(conteos.capturar));
+router.patch('/conteos/:id/anular', admin, asyncHandler(conteos.anular));
+router.post('/conteos/:id/aprobar', soloAdmin, asyncHandler(conteos.aprobar));
 
 module.exports = router;

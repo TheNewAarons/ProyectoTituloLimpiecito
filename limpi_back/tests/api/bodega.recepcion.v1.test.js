@@ -12,7 +12,10 @@ jest.mock('../../services/bodega/entrega', () => ({
   entregar: jest.fn(async (id) => ({ id: id, estado: 'ENTREGADA' })),
   formatoEntrega: jest.fn(async (id) => ({ numero: id, items: [] }))
 }));
-jest.mock('../../services/bodega/movimientos', () => ({ listar: jest.fn(async (f) => ({ data: [], meta: { page: f.page, limit: f.limit, total: 0 } })) }));
+jest.mock('../../services/bodega/movimientos', () => ({
+  listar: jest.fn(async (f) => ({ data: [], meta: { page: f.page, limit: f.limit, total: 0 } })),
+  kardex: jest.fn(async (id, f) => ({ data: { producto: { id: id }, saldo: {}, movimientos: [] }, meta: { page: f.page, limit: f.limit, total: 0 } }))
+}));
 jest.mock('../../services/bodega/ordenesConsulta', () => ({
   listar: jest.fn(async (f) => ({ data: [], meta: { page: f.page, limit: f.limit, total: 0 } })),
   detalleRecepcion: jest.fn(async (id) => ({ id: id, items: [] }))
@@ -67,7 +70,8 @@ const RUTAS = [
   ['post', '/ordenes-compra/10/recepcion'],
   ['post', '/solicitudes/1/entregar'],
   ['get', '/solicitudes/1/formato-entrega'],
-  ['get', '/movimientos']
+  ['get', '/movimientos'],
+  ['get', '/productos/5/kardex']
 ];
 
 describe('permisos (Admin y Operaciones)', () => {
@@ -92,7 +96,17 @@ describe('POST /ordenes-compra/:id/recepcion', () => {
   it('sin items recibe todo lo pendiente (pasa null al servicio) y responde { ok, data, meta }', async () => {
     const r = await llamar('post', '/ordenes-compra/10/recepcion', ADMIN, {});
     expect(r.body).toEqual({ ok: true, data: { orden_id: 10, estado: 'RECIBIDA' }, meta: {} });
-    expect(recepcion.recibir).toHaveBeenCalledWith(10, null, expect.objectContaining({ usuario: { id: 1, contexto: 'usuarios' } }));
+    expect(recepcion.recibir).toHaveBeenCalledWith(10, null, expect.objectContaining({ usuario: { id: 1, contexto: 'usuarios' } }),
+      { documento_tipo: null, documento_numero: null, observacion: null });
+  });
+
+  it('RF-BOD-04b: costo real por línea y documento de respaldo', async () => {
+    await llamar('post', '/ordenes-compra/10/recepcion', ADMIN, {
+      items: [{ item_id: 100, cantidad_recibida: 2, costo_unitario: 1200 }], documento_tipo: 'FACTURA', documento_numero: ' 901 ', observacion: 'llegó caja dañada'
+    });
+    const args = recepcion.recibir.mock.calls[0];
+    expect(args[1]).toEqual([{ item_id: 100, cantidad_recibida: 2, costo_unitario: 1200 }]);
+    expect(args[3]).toEqual({ documento_tipo: 'FACTURA', documento_numero: '901', observacion: 'llegó caja dañada' });
   });
 
   it('acepta 0 por línea', async () => {
@@ -106,7 +120,12 @@ describe('POST /ordenes-compra/:id/recepcion', () => {
     ['cantidad como texto', { items: [{ item_id: 100, cantidad_recibida: '3' }] }],
     ['item_id repetido', { items: [{ item_id: 100, cantidad_recibida: 1 }, { item_id: 100, cantidad_recibida: 2 }] }],
     ['item_id inválido', { items: [{ item_id: 'x', cantidad_recibida: 1 }] }],
-    ['items vacío', { items: [] }]
+    ['items vacío', { items: [] }],
+    ['costo negativo', { items: [{ item_id: 100, cantidad_recibida: 1, costo_unitario: -5 }] }],
+    ['costo decimal', { items: [{ item_id: 100, cantidad_recibida: 1, costo_unitario: 10.5 }] }],
+    ['documento_tipo desconocido', { documento_tipo: 'BOLETA', documento_numero: '1' }],
+    ['documento sin número', { documento_tipo: 'GUIA' }],
+    ['número sin tipo', { documento_numero: '12' }]
   ])('%s -> 400 VALIDATION_ERROR sin llamar al servicio', async (nombre, body) => {
     const r = await llamar('post', '/ordenes-compra/10/recepcion', ADMIN, body);
     expect(r.status).toBe(400);
@@ -146,6 +165,20 @@ describe('GET /ordenes-compra (listado y detalle para recepción)', () => {
     const r = await llamar('get', '/ordenes-compra/10/recepcion', ADMIN);
     expect(r.body.data).toEqual({ id: 10, items: [] });
     expect(ordenesConsulta.detalleRecepcion).toHaveBeenCalledWith(10);
+  });
+});
+
+describe('GET /productos/:id/kardex (RF-BOD-06)', () => {
+  it('pasa id y paginación al servicio y responde { ok, data, meta }', async () => {
+    const r = await llamar('get', '/productos/5/kardex?page=2&limit=10', ADMIN);
+    expect(r.status).toBe(200);
+    expect(movimientos.kardex).toHaveBeenCalledWith(5, { page: 2, limit: 10 });
+    expect(r.body).toMatchObject({ ok: true, data: { producto: { id: 5 } }, meta: { page: 2, limit: 10 } });
+  });
+
+  it.each(['/productos/abc/kardex', '/productos/0/kardex', '/productos/5/kardex?page=0'])('%s -> 400', async (ruta) => {
+    expect((await llamar('get', ruta, ADMIN)).status).toBe(400);
+    expect(movimientos.kardex).not.toHaveBeenCalled();
   });
 });
 

@@ -22,7 +22,9 @@ export const TIPOS_MOVIMIENTO: { valor: string, nombre: string }[] = [
   { valor: 'ENTRADA_COMPRA', nombre: 'Entrada por compra' },
   { valor: 'SALIDA_SOLICITUD', nombre: 'Salida a solicitud' },
   { valor: 'REVERSA', nombre: 'Reversa (anulación)' },
-  { valor: 'AJUSTE', nombre: 'Ajuste' }
+  { valor: 'AJUSTE', nombre: 'Ajuste' },
+  { valor: 'SALDO_INICIAL', nombre: 'Saldo inicial' },
+  { valor: 'ENTRADA_MANUAL', nombre: 'Entrada manual (stock rápido)' }
 ];
 
 export interface OrdenResumen {
@@ -46,6 +48,29 @@ export interface LineaRecepcion {
   costo_unitario: number;
 }
 
+// RF-BOD-04b: documento de respaldo y historial de recepciones de una orden
+export const DOCUMENTOS_RECEPCION: { valor: string, nombre: string }[] = [
+  { valor: 'GUIA', nombre: 'Guía de despacho' },
+  { valor: 'FACTURA', nombre: 'Factura' }
+];
+
+export interface DocumentoRecepcion {
+  documento_tipo: string;
+  documento_numero: string;
+  observacion: string;
+}
+
+export interface RecepcionHistorial {
+  id: number;
+  fecha_recepcion: string;
+  documento_tipo: string;
+  documento_numero: string;
+  observacion: string;
+  estado: string;
+  historica: boolean;
+  items: { item_id: number, producto_id: number, producto: string, cantidad: number, costo_unitario: number }[];
+}
+
 export interface OrdenRecepcion {
   id: number;
   estado: EstadoOrden;
@@ -53,12 +78,15 @@ export interface OrdenRecepcion {
   enviada_at: string;
   recibible: boolean;
   items: LineaRecepcion[];
+  recepciones: RecepcionHistorial[];
 }
 
 export interface ResultadoRecepcion {
   orden_id: number;
+  recepcion_id: number;
   estado: EstadoOrden;
   recibidos: { producto_id: number, cantidad: number, costo_unitario: number }[];
+  diferencias_precio: { item_id: number, producto_id: number, costo_oc: number, costo_real: number }[];
   asignaciones: { solicitud_id: number, producto_id: number, cantidad: number }[];
   solicitudes_listas: number[];
 }
@@ -90,4 +118,69 @@ export interface MovimientoBodega {
   contexto_usuario: string;
   usuario_id: number;
   created_at: string;
+  // RF-BOD-06: kardex valorizado (null en movimientos previos al kardex)
+  stock_anterior?: number;
+  stock_resultante?: number;
+  costo_unitario?: number;
+  valor_movimiento?: number;
+  valor_saldo_anterior?: number;
+  valor_saldo_resultante?: number;
+  movimiento_revertido_id?: number;
+  motivo?: string;
+}
+
+// RF-BOD-06: GET /bodega/productos/:id/kardex
+export interface KardexProducto {
+  producto: { id: number, nombre: string };
+  saldo: { stock: number, stock_kardex: number, valor_saldo: number, costo_promedio: number, cuadrado: boolean };
+  movimientos: MovimientoBodega[];
+}
+
+// RF-BOD-07: conteo físico de inventario (BORRADOR -> APROBADO | ANULADO)
+export const FILTROS_CONTEO: { valor: string, nombre: string }[] = [
+  { valor: 'BORRADOR', nombre: 'En curso' },
+  { valor: 'APROBADO', nombre: 'Aprobados' },
+  { valor: 'ANULADO', nombre: 'Anulados' },
+  { valor: '', nombre: 'Todos' }
+];
+
+export const ETIQUETA_CONTEO: { [estado: string]: string } = { BORRADOR: 'En curso', APROBADO: 'Aprobado', ANULADO: 'Anulado' };
+
+export const BADGE_CONTEO: { [estado: string]: string } = {
+  BORRADOR: 'badge badge-warning', APROBADO: 'badge badge-success', ANULADO: 'badge badge-danger'
+};
+
+export interface ConteoResumen {
+  id: number;
+  fecha: string;
+  estado: string;
+  observacion: string;
+  responsable_id: number;
+  aprobado_por: number;
+  aprobado_at: string;
+  items_total: number;
+  items_contados: number;
+  // % de ítems contados sin diferencia (null si no hay contados)
+  exactitud: number;
+}
+
+export interface ConteoItem {
+  item_id: number;
+  producto_id: number;
+  producto: string;
+  cantidad_teorica: number;
+  cantidad_contada: number;
+  diferencia: number;
+  motivo: string;
+  movimiento_id: number;
+}
+
+export interface ConteoDetalle extends ConteoResumen {
+  items: ConteoItem[];
+}
+
+export interface ResultadoAprobacionConteo {
+  conteo: ConteoDetalle;
+  ajustes: { item_id: number, producto_id: number, cantidad: number, movimiento_id: number }[];
+  recalculados: { item_id: number, producto_id: number, cantidad_teorica: number, stock_actual: number }[];
 }

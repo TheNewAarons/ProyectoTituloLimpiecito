@@ -4,7 +4,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginService } from '../login/login.service';
 import { RespuestaBodega, SolicitudBodega } from '../../model/solicitud-bodega';
-import { OrdenResumen, OrdenRecepcion, ResultadoRecepcion, FormatoEntrega, MovimientoBodega } from '../../model/recepcion-bodega';
+import {
+  OrdenResumen, OrdenRecepcion, ResultadoRecepcion, DocumentoRecepcion, FormatoEntrega, MovimientoBodega, KardexProducto,
+  ConteoResumen, ConteoDetalle, ResultadoAprobacionConteo
+} from '../../model/recepcion-bodega';
 
 // RECEPCIÓN, ENTREGA Y MOVIMIENTOS DE BODEGA (RF-BOD-04) — /api/v1/bodega, formato { ok, data, meta }
 @Injectable({
@@ -35,8 +38,11 @@ export class RecepcionBodegaService {
   }
 
   //CONFIRMAR RECEPCION POR LINEA
-  recibir(id: number, items: { item_id: number, cantidad_recibida: number }[]): Observable<RespuestaBodega<ResultadoRecepcion>> {
-    return this.http.post<RespuestaBodega<ResultadoRecepcion>>(this.url_bodega + '/ordenes-compra/' + id + '/recepcion', { items: items }, { headers: this.obtenerCabeceras() });
+  recibir(
+    id: number, items: { item_id: number, cantidad_recibida: number, costo_unitario?: number }[], documento: DocumentoRecepcion
+  ): Observable<RespuestaBodega<ResultadoRecepcion>> {
+    const body = Object.assign({ items: items }, documento);
+    return this.http.post<RespuestaBodega<ResultadoRecepcion>>(this.url_bodega + '/ordenes-compra/' + id + '/recepcion', body, { headers: this.obtenerCabeceras() });
   }
 
   //ENTREGAR SOLICITUD (NO MUEVE STOCK; REGISTRA CONSUMO EN EL CENTRO DE COSTO)
@@ -57,5 +63,41 @@ export class RecepcionBodegaService {
     if (filtros.desde) { params = params.set('desde', filtros.desde); }
     if (filtros.hasta) { params = params.set('hasta', filtros.hasta); }
     return this.http.get<RespuestaBodega<MovimientoBodega[]>>(this.url_bodega + '/movimientos', { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  //KARDEX VALORIZADO DE UN PRODUCTO (RF-BOD-06)
+  kardex(productoId: number, page: number, limit: number): Observable<RespuestaBodega<KardexProducto>> {
+    const params = new HttpParams().set('page', String(page)).set('limit', String(limit));
+    return this.http.get<RespuestaBodega<KardexProducto>>(this.url_bodega + '/productos/' + productoId + '/kardex', { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  //CONTEOS FISICOS (RF-BOD-07)
+  listarConteos(estado: string, page: number, limit: number): Observable<RespuestaBodega<ConteoResumen[]>> {
+    let params = new HttpParams().set('page', String(page)).set('limit', String(limit));
+    if (estado) { params = params.set('estado', estado); }
+    return this.http.get<RespuestaBodega<ConteoResumen[]>>(this.url_bodega + '/conteos', { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  //SIN producto_ids SE CUENTAN TODOS LOS PRODUCTOS ACTIVOS
+  crearConteo(observacion: string): Observable<RespuestaBodega<ConteoResumen>> {
+    return this.http.post<RespuestaBodega<ConteoResumen>>(this.url_bodega + '/conteos', { observacion: observacion }, { headers: this.obtenerCabeceras() });
+  }
+
+  obtenerConteo(id: number): Observable<RespuestaBodega<ConteoDetalle>> {
+    return this.http.get<RespuestaBodega<ConteoDetalle>>(this.url_bodega + '/conteos/' + id, { headers: this.obtenerCabeceras() });
+  }
+
+  //cantidad_contada null LIMPIA LA LINEA
+  capturarConteo(id: number, items: { item_id: number, cantidad_contada: number, motivo: string }[]): Observable<RespuestaBodega<ConteoDetalle>> {
+    return this.http.patch<RespuestaBodega<ConteoDetalle>>(this.url_bodega + '/conteos/' + id + '/items', { items: items }, { headers: this.obtenerCabeceras() });
+  }
+
+  anularConteo(id: number, motivo: string): Observable<RespuestaBodega<ConteoDetalle>> {
+    return this.http.patch<RespuestaBodega<ConteoDetalle>>(this.url_bodega + '/conteos/' + id + '/anular', { motivo: motivo }, { headers: this.obtenerCabeceras() });
+  }
+
+  //SOLO ADMINISTRADOR: GENERA LOS AJUSTES EN EL KARDEX
+  aprobarConteo(id: number): Observable<RespuestaBodega<ResultadoAprobacionConteo>> {
+    return this.http.post<RespuestaBodega<ResultadoAprobacionConteo>>(this.url_bodega + '/conteos/' + id + '/aprobar', {}, { headers: this.obtenerCabeceras() });
   }
 }

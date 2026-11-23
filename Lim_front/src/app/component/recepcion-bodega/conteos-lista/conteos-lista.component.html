@@ -1,0 +1,65 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">fact_check</i></div>
+            <h4 class="card-title">Conteos Físicos</h4>
+            <br />
+            <button mat-raised-button type="button" class="btn btn-rose btn-sm" [disabled]="creando" (click)="nuevo()">
+              <span class="btn-label"><i class="material-icons">add</i></span>
+              Nuevo Conteo
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-md-4">
+                <mat-form-field class="example-full-width">
+                  <mat-select placeholder="Estado" name="estado" [(ngModel)]="estado" (selectionChange)="filtrar()">
+                    <mat-option *ngFor="let f of filtros" [value]="f.valor">{{ f.nombre }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div class="table-responsive" *ngIf="!loading">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th class="text-left">N°</th>
+                    <th>Fecha</th>
+                    <th class="text-right">Contados</th>
+                    <th class="text-right">Exactitud</th>
+                    <th>Estado</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="conteos.length === 0">
+                    <td colspan="6" class="text-center">Sin registros</td>
+                  </tr>
+                  <tr *ngFor="let c of conteos">
+                    <td class="text-left">{{ c.id }}</td>
+                    <td>{{ c.fecha | date:'dd/MM/yyyy HH:mm' }}<br *ngIf="c.observacion" /><small *ngIf="c.observacion">{{ c.observacion }}</small></td>
+                    <td class="text-right">{{ c.items_contados | number:'1.0-0' }} / {{ c.items_total | number:'1.0-0' }}</td>
+                    <td class="text-right">{{ c.exactitud === null ? '—' : (c.exactitud | number:'1.0-2') + ' %' }}</td>
+                    <td><span [class]="badge[c.estado]">{{ etiqueta[c.estado] }}</span></td>
+                    <td class="td-actions text-right">
+                      <button mat-raised-button type="button" matTooltip="Ver / Contar" class="btn btn-info btn-round" (click)="ver(c.id)">
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card-footer" *ngIf="total > pageSize">
+            <ngb-pagination [(page)]="page" [pageSize]="pageSize" [collectionSize]="total" [maxSize]="5" [boundaryLinks]="true" (pageChange)="cargar()"></ngb-pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

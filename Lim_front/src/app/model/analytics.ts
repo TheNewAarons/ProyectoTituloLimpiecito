@@ -182,3 +182,58 @@ export interface FilaStockCritico {
   stock_minimo: number;
   faltante: number;
 }
+
+// RF-BI-04: productividad PEV (/api/v1/analytics/productividad/*)
+export interface FiltrosProductividad {
+  desde: string;
+  hasta: string;
+  clienteId?: number | null;
+  supervisor?: number | null; // n_empleado del supervisor
+}
+
+export interface FilaProductividadTrabajador {
+  trabajador_id: number | null;
+  nombre: string;
+  n_empleado: number | null;
+  dias: number;
+  tareas: number;
+  pasos_asignados: number;
+  pasos_marcados: number;
+  cumplimiento_pct: number | null;
+}
+
+export interface FilaProductividadSupervisor {
+  posicion: number;
+  n_empleado: number;
+  trabajador_id: number | null;
+  nombre: string;
+  listas: number;
+  listas_firmadas: number;
+  tareas: number;
+  rondas_asignadas: number;
+  rondas_verificadas: number;
+  verificacion_pct: number | null;
+}
+
+export interface FilaProductividadSector {
+  sector_id: number;
+  sector: string;
+  cliente_id: number | null;
+  cliente: string | null;
+  tareas: number;
+  cumplimiento_pct: number | null;
+  observaciones: number;
+  observaciones_trabajador: number;
+  observaciones_supervisor: number;
+}
+
+export interface MetaProductividad {
+  desde: string;
+  hasta: string;
+  cliente_id: number | null;
+  supervisor: number | null;
+  tareas?: number;
+  cumplimiento_pct?: number | null;
+  verificacion_pct?: number | null;
+  observaciones?: number;
+}

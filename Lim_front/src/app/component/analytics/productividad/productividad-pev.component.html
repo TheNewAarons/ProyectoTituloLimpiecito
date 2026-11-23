@@ -1,0 +1,151 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">fact_check</i></div>
+            <h4 class="card-title">Productividad PEV <small>{{ desde }} a {{ hasta }}</small></h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-lg-6">
+                <app-filtro-periodo [desde]="desde" [hasta]="hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-3">
+                <app-selector-cliente [valor]="clienteId" (cambio)="cambiarCliente($event)"></app-selector-cliente>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-3">
+                <mat-form-field class="w-100">
+                  <mat-select placeholder="Supervisor" [(ngModel)]="supervisor" (selectionChange)="cambiarSupervisor()">
+                    <mat-option [value]="null">Todos</mat-option>
+                    <mat-option *ngFor="let s of supervisores" [value]="s.n_empleado">{{ s.nombre }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+            <p class="text-muted">
+              Cumplimiento: pasos marcados por el trabajador sobre los asignados (3 por tarea). Verificación: rondas con hora
+              registrada por el supervisor sobre las asignadas. El filtro de supervisor aplica a trabajadores y sectores.
+            </p>
+
+            <div class="row">
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Cumplimiento" icono="task_alt" color="success" formato="porcentaje" [cargando]="cargando"
+                  [valor]="cumplimiento" detalle="Trabajadores"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Verificación" icono="verified" color="info" formato="porcentaje" [cargando]="cargando"
+                  [valor]="verificacion" detalle="Supervisores"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Observaciones" icono="report" [color]="observaciones ? 'warning' : 'success'" formato="numero"
+                  [cargando]="cargando" [valor]="observaciones" detalle="En el período"></app-kpi-card>
+              </div>
+            </div>
+
+            <app-grafico tipo="bar" [enteros]="true" titulo="Cumplimiento por trabajador (%)" [etiquetas]="etiquetas" [series]="series"></app-grafico>
+
+            <div class="d-flex flex-wrap align-items-center mt-4">
+              <h4 class="mr-3 mb-0">Cumplimiento por trabajador</h4>
+              <button mat-raised-button type="button" class="btn btn-info btn-sm" style="min-height: 44px" (click)="exportar('trabajadores')" [disabled]="!trabajadores.length">
+                <span class="btn-label"><i class="material-icons">download</i></span> Excel (CSV)
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Trabajador</th>
+                    <th class="text-right">Días</th>
+                    <th class="text-right">Tareas</th>
+                    <th class="text-right">Pasos marcados</th>
+                    <th class="text-right">Cumplimiento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let f of trabajadores">
+                    <td>{{ f.nombre }}</td>
+                    <td class="text-right">{{ f.dias }}</td>
+                    <td class="text-right">{{ f.tareas | number:'1.0-0':'es-CL' }}</td>
+                    <td class="text-right">{{ f.pasos_marcados | number:'1.0-0':'es-CL' }} / {{ f.pasos_asignados | number:'1.0-0':'es-CL' }}</td>
+                    <td class="text-right">{{ f.cumplimiento_pct === null ? '—' : (f.cumplimiento_pct | number:'1.0-1':'es-CL') + ' %' }}</td>
+                  </tr>
+                  <tr *ngIf="!cargando && trabajadores.length === 0">
+                    <td colspan="5" class="text-center text-muted">Sin tareas PEV en el período.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center mt-4">
+              <h4 class="mr-3 mb-0">Ranking de supervisores por verificación</h4>
+              <button mat-raised-button type="button" class="btn btn-info btn-sm" style="min-height: 44px" (click)="exportar('supervisores')" [disabled]="!supervisores.length">
+                <span class="btn-label"><i class="material-icons">download</i></span> Excel (CSV)
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Supervisor</th>
+                    <th class="text-right">Listas (firmadas)</th>
+                    <th class="text-right">Rondas verificadas</th>
+                    <th class="text-right">Verificación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let s of supervisores" [class.table-active]="supervisor === s.n_empleado">
+                    <td>{{ s.posicion }}</td>
+                    <td>{{ s.nombre }}</td>
+                    <td class="text-right">{{ s.listas }} ({{ s.listas_firmadas }})</td>
+                    <td class="text-right">{{ s.rondas_verificadas | number:'1.0-0':'es-CL' }} / {{ s.rondas_asignadas | number:'1.0-0':'es-CL' }}</td>
+                    <td class="text-right">{{ s.verificacion_pct === null ? '—' : (s.verificacion_pct | number:'1.0-1':'es-CL') + ' %' }}</td>
+                  </tr>
+                  <tr *ngIf="!cargando && supervisores.length === 0">
+                    <td colspan="5" class="text-center text-muted">Sin verificaciones en el período.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center mt-4">
+              <h4 class="mr-3 mb-0">Sectores con más observaciones</h4>
+              <button mat-raised-button type="button" class="btn btn-info btn-sm" style="min-height: 44px" (click)="exportar('sectores')" [disabled]="!sectores.length">
+                <span class="btn-label"><i class="material-icons">download</i></span> Excel (CSV)
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Sector</th>
+                    <th>Cliente</th>
+                    <th class="text-right">Tareas</th>
+                    <th class="text-right">Cumplimiento</th>
+                    <th class="text-right">Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let s of sectores">
+                    <td>{{ s.sector }}</td>
+                    <td>{{ s.cliente || '—' }}</td>
+                    <td class="text-right">{{ s.tareas | number:'1.0-0':'es-CL' }}</td>
+                    <td class="text-right">{{ s.cumplimiento_pct === null ? '—' : (s.cumplimiento_pct | number:'1.0-1':'es-CL') + ' %' }}</td>
+                    <td class="text-right">
+                      <span [class.badge]="s.observaciones" [class.badge-warning]="s.observaciones">{{ s.observaciones }}</span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!cargando && sectores.length === 0">
+                    <td colspan="5" class="text-center text-muted">Sin sectores con tareas en el período.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

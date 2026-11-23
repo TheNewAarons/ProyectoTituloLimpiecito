@@ -11,6 +11,9 @@ jest.mock('../../modelos/sistema_base/Producto', () => ({ increment: jest.fn(), 
 jest.mock('../../modelos/sistema_base/Centro_costo', () => ({ increment: jest.fn(), decrement: jest.fn() }));
 jest.mock('../../modelos/sistema_base/Liquidacion', () => ({ findById: jest.fn(), destroy: jest.fn() }));
 jest.mock('../../services/auditoria', () => ({ auditar: jest.fn() }));
+// RF-BOD-06: el stock se mueve con el kardex (probado en tests/services/bodega/kardex.test.js)
+jest.mock('../../services/bodega/kardex', () => ({ registrar: jest.fn() }));
+jest.mock('../../modelos/sistema_bodega/Movimiento_bodega', () => ({ findAll: jest.fn() }));
 
 const db = require('../../database/database');
 const Ccegreso = require('../../modelos/sistema_base/CcEgreso');
@@ -22,6 +25,8 @@ const Liquidacion = require('../../modelos/sistema_base/Liquidacion');
 const Lista_insumo = require('../../modelos/sistema_base/Lista_insumo');
 const Linea_insumo = require('../../modelos/sistema_base/Linea_insumo');
 const { auditar } = require('../../services/auditoria');
+const kardex = require('../../services/bodega/kardex');
+const Movimiento = require('../../modelos/sistema_bodega/Movimiento_bodega');
 const logica = require('../../api/apartado_base/detalle_centro/logica');
 
 function inst(data) {
@@ -197,14 +202,14 @@ describe('detalle_centro: B10 crearListaInsumo', () => {
   it('crea lista y lineas, descuenta stock con lock ASC y audita CREAR', async () => {
     const lista = inst({ id: 100 });
     Lista_insumo.create.mockResolvedValue(lista);
-    Producto.findAll.mockResolvedValue([]);
-    Producto.decrement.mockResolvedValue([1]);
-    Linea_insumo.create.mockResolvedValue({});
+    Producto.findAll.mockResolvedValue([{ id: 1 }, { id: 2 }]);
+    Linea_insumo.create.mockResolvedValueOnce({ id: 51 }).mockResolvedValueOnce({ id: 52 });
     const r = await logica.crearListaInsumoCompletoDB({ estado: 1 }, lineas, ctxToken);
     expect(r).toBe(lista);
     expect(Lista_insumo.create).toHaveBeenCalledWith({ estado: 1 }, { transaction: t });
     expect(Producto.findAll).toHaveBeenCalledWith({ where: { id: [1, 2] }, transaction: t, lock: t.LOCK.UPDATE, order: [['id', 'ASC']] });
-    expect(Producto.decrement).toHaveBeenCalledTimes(2);
+    expect(kardex.registrar.mock.calls.map((c) => [c[0].producto.id, c[0].tipo, c[0].cantidad, c[0].referenciaTipo, c[0].referenciaId, c[0].referenciaLineaId]))
+      .toEqual([[2, 'SALIDA_SOLICITUD', -3, 'lista_insumos', 100, 51], [1, 'SALIDA_SOLICITUD', -1, 'lista_insumos', 100, 52]]);
     expect(Linea_insumo.create).toHaveBeenCalledTimes(2);
     expect(Linea_insumo.create).toHaveBeenCalledWith(expect.objectContaining({ listaInsumoId: 100, productoId: 2 }), { transaction: t });
     expect(auditar).toHaveBeenCalledWith(expect.objectContaining({
@@ -216,7 +221,8 @@ describe('detalle_centro: B10 crearListaInsumo', () => {
 
   it('si auditar falla la promesa rechaza', async () => {
     Lista_insumo.create.mockResolvedValue(inst({ id: 100 }));
-    Producto.findAll.mockResolvedValue([]);
+    Producto.findAll.mockResolvedValue([{ id: 1 }, { id: 2 }]);
+    Linea_insumo.create.mockResolvedValue({ id: 51 });
     auditar.mockRejectedValue(new Error('fallo auditoria'));
     await expect(logica.crearListaInsumoCompletoDB({}, lineas, ctxToken)).rejects.toThrow('fallo auditoria');
   });
@@ -261,8 +267,8 @@ describe('detalle_centro: B10 eliminarListaInsumo', () => {
       { productoId: 2, cantidad: 3 },
       { productoId: 1, cantidad: 1 }
     ]);
-    Producto.findAll.mockResolvedValue([]);
-    Producto.increment.mockResolvedValue([1]);
+    Producto.findAll.mockResolvedValue([{ id: 1 }, { id: 2 }]);
+    Movimiento.findAll.mockResolvedValue([]);
     Linea_insumo.destroy.mockResolvedValue(2);
     Lista_insumo.destroy.mockResolvedValue(1);
     const r = await logica.eliminarListaInsumoCompletoDB(30, ctxToken);
@@ -275,7 +281,8 @@ describe('detalle_centro: B10 eliminarListaInsumo', () => {
       { productoId: 2, cantidad: 3 },
       { productoId: 1, cantidad: 1 }
     ]);
-    expect(Producto.increment).toHaveBeenCalledTimes(2);
+    expect(kardex.registrar.mock.calls.map((c) => [c[0].producto.id, c[0].tipo, c[0].cantidad, c[0].referenciaId]))
+      .toEqual([[2, 'REVERSA', 3, 30], [1, 'REVERSA', 1, 30]]);
     expect(Linea_insumo.destroy).toHaveBeenCalledWith({ where: { listaInsumoId: 30 }, transaction: t });
     expect(Lista_insumo.destroy).toHaveBeenCalledWith({ where: { id: 30 }, transaction: t });
   });
@@ -284,7 +291,7 @@ describe('detalle_centro: B10 eliminarListaInsumo', () => {
     Lista_insumo.findById.mockResolvedValue(inst({ id: 30 }));
     auditar.mockRejectedValue(new Error('fallo auditoria'));
     await expect(logica.eliminarListaInsumoCompletoDB(30, ctxToken)).rejects.toThrow('fallo auditoria');
-    expect(Producto.increment).not.toHaveBeenCalled();
+    expect(kardex.registrar).not.toHaveBeenCalled();
     expect(Linea_insumo.destroy).not.toHaveBeenCalled();
     expect(Lista_insumo.destroy).not.toHaveBeenCalled();
   });

@@ -15,6 +15,8 @@ const MAX_ITEMS = 200;
 const LIMIT_DEFECTO = 50;
 const LIMIT_MAX = 200;
 const PAGE_MAX = 10000;
+const COSTO_MAX = 999999999;
+const DOCUMENTOS = ['GUIA', 'FACTURA'];
 
 const invalido = (mensaje, details) => new AppError('VALIDATION_ERROR', mensaje, 400, details);
 
@@ -39,12 +41,33 @@ function validarRecepcion(body) {
     if (vistos[itemId]) throw invalido('item_id ' + itemId + ' repetido', { campo: 'items[' + i + '].item_id' });
     vistos[itemId] = true;
     if (typeof item.cantidad_recibida !== 'number') throw invalido('items[' + i + '].cantidad_recibida debe ser numerico', { campo: 'items[' + i + '].cantidad_recibida' });
-    return { item_id: itemId, cantidad_recibida: entero(item.cantidad_recibida, 'items[' + i + '].cantidad_recibida', 0) };
+    const linea = { item_id: itemId, cantidad_recibida: entero(item.cantidad_recibida, 'items[' + i + '].cantidad_recibida', 0) };
+    // RF-BOD-04b: costo real CLP entero; sin él se usa el de la OC
+    if (item.costo_unitario !== undefined && item.costo_unitario !== null) {
+      if (typeof item.costo_unitario !== 'number') throw invalido('items[' + i + '].costo_unitario debe ser numerico', { campo: 'items[' + i + '].costo_unitario' });
+      linea.costo_unitario = entero(item.costo_unitario, 'items[' + i + '].costo_unitario', 0, COSTO_MAX);
+    }
+    return linea;
   });
 }
 
+// RF-BOD-04b: documento de respaldo de la recepción (opcional; tipo y número van juntos).
+function validarDocumento(body) {
+  const b = body || {};
+  const texto = (v, campo, max) => {
+    if (v === undefined || v === null || v === '') return null;
+    if (typeof v !== 'string' || v.trim().length > max) throw invalido(campo + ' debe ser texto de hasta ' + max + ' caracteres', { campo: campo });
+    return v.trim() || null;
+  };
+  const tipo = texto(b.documento_tipo, 'documento_tipo', 10);
+  const numero = texto(b.documento_numero, 'documento_numero', 50);
+  if (tipo && DOCUMENTOS.indexOf(tipo) === -1) throw invalido('documento_tipo no valido', { campo: 'documento_tipo', permitidos: DOCUMENTOS });
+  if (!tipo !== !numero) throw invalido('documento_tipo y documento_numero van juntos', { campo: tipo ? 'documento_numero' : 'documento_tipo' });
+  return { documento_tipo: tipo, documento_numero: numero, observacion: texto(b.observacion, 'observacion', 255) };
+}
+
 async function recibir(req, res) {
-  const data = await servicio('recepcion').recibir(entero(req.params.id, 'id', 1), validarRecepcion(req.body), { usuario: { id: req.usuario.id, contexto: req.usuario.contexto }, ip: req.ip });
+  const data = await servicio('recepcion').recibir(entero(req.params.id, 'id', 1), validarRecepcion(req.body), { usuario: { id: req.usuario.id, contexto: req.usuario.contexto }, ip: req.ip }, validarDocumento(req.body));
   return res.json({ ok: true, data: data, meta: {} });
 }
 
@@ -77,6 +100,16 @@ async function listarMovimientos(req, res) {
   return res.json({ ok: true, data: r.data, meta: r.meta });
 }
 
+// RF-BOD-06: kardex valorizado de un producto (costos: solo Admin y Operaciones, ver routes.js).
+async function kardexProducto(req, res) {
+  const q = req.query;
+  const r = await servicio('movimientos').kardex(entero(req.params.id, 'id', 1), {
+    page: q.page === undefined ? 1 : entero(q.page, 'page', 1, PAGE_MAX),
+    limit: q.limit === undefined ? LIMIT_DEFECTO : entero(q.limit, 'limit', 1, LIMIT_MAX)
+  });
+  return res.json({ ok: true, data: r.data, meta: r.meta });
+}
+
 const ESTADOS_ORDEN = ['BORRADOR', 'ENVIADA', 'RECIBIDA_PARCIAL', 'RECIBIDA', 'ANULADA'];
 
 async function listarOrdenes(req, res) {
@@ -99,4 +132,4 @@ async function detalleRecepcion(req, res) {
   return res.json({ ok: true, data: data, meta: {} });
 }
 
-module.exports = { recibir, entregar, formatoEntrega, listarMovimientos, listarOrdenes, detalleRecepcion, validarRecepcion };
+module.exports = { recibir, entregar, formatoEntrega, listarMovimientos, kardexProducto, listarOrdenes, detalleRecepcion, validarRecepcion, validarDocumento };

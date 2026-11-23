@@ -22,10 +22,11 @@ const Usuario = require('../../modelos/sistema_base/Usuario');
 const Lista_insumo = require('../../modelos/sistema_base/Lista_insumo');
 const Linea_insumo = require('../../modelos/sistema_base/Linea_insumo');
 const Auditoria = require('../../modelos/sistema_base/Auditoria');
-const { ESTADOS_SOLICITUD: E, CENTRO_ABIERTO } = require('./constantes');
+const Movimiento = require('../../modelos/sistema_bodega/Movimiento_bodega');
+const { ESTADOS_SOLICITUD: E, TIPOS_MOVIMIENTO: M, CENTRO_ABIERTO } = require('./constantes');
 
 const EMPRESA = 'Aseo Limpiecito';
-const ORIGEN = { COSTO: 'COSTO', ESTIMADO: 'ESTIMADO', SIN_COSTO: 'SIN_COSTO' };
+const ORIGEN = { KARDEX: 'KARDEX', COSTO: 'COSTO', ESTIMADO: 'ESTIMADO', SIN_COSTO: 'SIN_COSTO' };
 const LISTA_APROBADA = 1;
 
 // Costo por unidad: último costo de compra; si no hay, productos.precio (lo que usa la carga manual), marcado "estimado".
@@ -39,16 +40,33 @@ function precioDe(producto) {
   return { precio: 0, origen: ORIGEN.SIN_COSTO };
 }
 
+// RF-BOD-06: valor con que el kardex sacó lo asignado al ítem (suma de sus SALIDA_SOLICITUD); null si no cubre
+// toda la cantidad (salidas previas al kardex o sin enlace a la línea) y se usa precioDe.
+function valorKardex(item, salidas) {
+  const propias = salidas.filter((m) => m.referencia_linea_id === item.id);
+  const cantidad = propias.reduce((acc, m) => acc - Number(m.cantidad), 0);
+  if (!propias.length || cantidad !== Number(item.cantidad_asignada) || propias.some((m) => m.valor_movimiento === null || m.valor_movimiento === undefined)) return null;
+  return propias.reduce((acc, m) => acc - Number(m.valor_movimiento), 0);
+}
+
 async function lineasConPrecio(items, transaction) {
   const ids = Array.from(new Set(items.map((i) => i.producto_id)));
   const productos = (await Producto.findAll({ where: { id: { [Op.in]: ids } }, attributes: ['id', 'nombre', 'costo_unitario', 'precio'], transaction: transaction }))
     .reduce((m, p) => { m[p.id] = p; return m; }, {});
+  const salidas = items.length
+    ? await Movimiento.findAll({ where: { tipo: M.SALIDA_SOLICITUD, referencia_tipo: 'solicitudes_bodega', referencia_id: items[0].solicitud_id }, transaction: transaction })
+    : [];
   return items
     .filter((i) => Number(i.cantidad_asignada) > 0)
     .map((i) => {
-      const p = precioDe(productos[i.producto_id]);
       const cantidad = Number(i.cantidad_asignada);
-      return { producto_id: i.producto_id, producto: productos[i.producto_id] ? productos[i.producto_id].nombre : null, cantidad: cantidad, precio: p.precio, origen: p.origen, total: cantidad * p.precio };
+      const nombre = productos[i.producto_id] ? productos[i.producto_id].nombre : null;
+      const total = valorKardex(i, salidas);
+      if (total !== null) {
+        return { producto_id: i.producto_id, producto: nombre, cantidad: cantidad, precio: Math.round(total / cantidad), origen: ORIGEN.KARDEX, total: total };
+      }
+      const p = precioDe(productos[i.producto_id]);
+      return { producto_id: i.producto_id, producto: nombre, cantidad: cantidad, precio: p.precio, origen: p.origen, total: cantidad * p.precio };
     });
 }
 
