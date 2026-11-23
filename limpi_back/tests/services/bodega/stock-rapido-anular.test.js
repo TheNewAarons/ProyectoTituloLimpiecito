@@ -94,6 +94,15 @@ describe('anular', () => {
     expect(tabla('movimientos')).toHaveLength(4);
   });
 
+  it('si el ENTRADA_MANUAL no calza con la cantidad de la fila responde 409 KARDEX_NO_CALZA sin escribir', async () => {
+    fila('movimientos', 2).cantidad = 5;
+    await expect(servicio.anular(1, 'Ingresado por error', ctx)).rejects.toMatchObject({
+      code: 'KARDEX_NO_CALZA', httpStatus: 409, details: { movimiento_id: 2, cantidad_kardex: 5, cantidad: 4 }
+    });
+    expect(fila('stock_rapidos', 1).anulada_at).toBeNull();
+    expect(fila('productos', 1).stock).toBe(10);
+  });
+
   it('dos anulaciones simultáneas de la misma entrada: una gana, la otra 409, el stock baja una sola vez', async () => {
     const r = await Promise.allSettled([servicio.anular(1, 'Primera', ctx), servicio.anular(1, 'Segunda', ctx)]);
     expect(r.map((x) => x.status).sort()).toEqual(['fulfilled', 'rejected']);

@@ -56,6 +56,11 @@ async function anular(id, motivo, ctx) {
         const original = await Movimiento.findOne({
           where: { referencia_tipo: 'stock_rapidos', referencia_id: stock.id, tipo: M.ENTRADA_MANUAL }, order: [['id', 'ASC']], transaction: t
         });
+        // La REVERSA exige la cantidad opuesta exacta; si el kardex no calza con la fila, se pide corregir con conteo.
+        if (original && Number(original.cantidad) !== cantidad) {
+          throw new AppError('KARDEX_NO_CALZA', 'la entrada no coincide con su movimiento en el kardex; corrija con un conteo físico', 409,
+            { movimiento_id: original.id, cantidad_kardex: Number(original.cantidad), cantidad: cantidad });
+        }
         movimiento = await kardex.registrar({
           transaction: t, producto: producto, cantidad: -cantidad, usuario: ctx.usuario,
           // Entrada anterior al kardex (sin ENTRADA_MANUAL): no hay movimiento que revertir, queda como AJUSTE explícito.

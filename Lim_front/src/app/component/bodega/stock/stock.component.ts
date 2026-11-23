@@ -51,8 +51,9 @@ export class StockComponent implements OnInit {
 
   //ANULAR STOCK (RNF-ARQ-01, AUT-010): reemplaza la eliminación física. Solo Administrador y Operaciones (como el backend v1).
   puedeAnular(stock): boolean {
-    const rol = this.usuario && this.usuario.role ? this.usuario.role.nombre : '';
-    return !stock.anulada_at && (rol === 'Administrador' || rol === 'Operaciones');
+    // Sin distinguir mayúsculas (como el backend y vista-caja): el rol puede venir como 'ADMINISTRADOR'.
+    const rol = String(this.usuario && this.usuario.role ? this.usuario.role.nombre : '').toUpperCase();
+    return !stock.anulada_at && (rol === 'ADMINISTRADOR' || rol === 'OPERACIONES');
   }
 
   anularStock(stock) {
