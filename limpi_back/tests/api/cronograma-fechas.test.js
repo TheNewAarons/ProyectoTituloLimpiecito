@@ -50,9 +50,16 @@ describe('validarFechasCronograma', () => {
     expect(controlador.validarFechasCronograma({ mes: 0, anio: sig, fecha_inicio: sig + '-01-01', fecha_termino: sig + '-01-31' })).toBeNull();
   });
 
-  it('mes base 0: febrero bisiesto y diciembre', () => {
-    expect(controlador.validarFechasCronograma({ mes: 1, anio: 2028, fecha_inicio: '2028-02-01', fecha_termino: '2028-02-29' }))
-      .toMatch(/El año debe ser|^null$/); // 2028 solo vale si es año actual o siguiente
+  it('mes base 0: febrero según el año (bisiesto o no) y diciembre', () => {
+    // Año relativo (actual o siguiente): el test no depende de la fecha en que se ejecute.
+    [ANIO, ANIO + 1].forEach((a) => {
+      const bisiesto = (a % 4 === 0 && a % 100 !== 0) || a % 400 === 0;
+      const ultimo = bisiesto ? 29 : 28;
+      expect(controlador.validarFechasCronograma({ mes: 1, anio: a, fecha_inicio: a + '-02-01', fecha_termino: a + '-02-' + ultimo })).toBeNull();
+      if (!bisiesto) {
+        expect(controlador.validarFechasCronograma({ mes: 1, anio: a, fecha_inicio: a + '-02-01', fecha_termino: a + '-02-29' })).toMatch(/fecha de inicio y de término|dentro del mes/);
+      }
+    });
     expect(controlador.validarFechasCronograma({ mes: 11, anio: ANIO, fecha_inicio: ANIO + '-12-01', fecha_termino: ANIO + '-12-31' })).toBeNull();
     expect(controlador.validarFechasCronograma({ mes: 12, anio: ANIO, fecha_inicio: ANIO + '-12-01', fecha_termino: ANIO + '-12-31' })).toMatch(/mes no es válido/);
   });
@@ -61,6 +68,10 @@ describe('validarFechasCronograma', () => {
     expect(controlador.validarFechasCronograma(Object.assign(valido(), { fecha_inicio: null }))).toMatch(/Indica la fecha/);
     expect(controlador.validarFechasCronograma(Object.assign(valido(), { fecha_termino: '30/11/2026' }))).toMatch(/Indica la fecha/);
     expect(controlador.validarFechasCronograma(null)).toMatch(/Faltan los datos/);
+    // mes ausente no se toma como Enero (Number(null) === 0)
+    [null, undefined, ''].forEach((m) => {
+      expect(controlador.validarFechasCronograma({ mes: m, anio: ANIO, fecha_inicio: ANIO + '-01-01', fecha_termino: ANIO + '-01-31' })).toMatch(/mes no es válido/);
+    });
   });
 });
 

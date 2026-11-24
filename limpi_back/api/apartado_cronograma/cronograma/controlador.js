@@ -8,6 +8,8 @@ const fechaLib = require('../../../libs/fecha')
  */
 function validarFechasCronograma(c) {
     if (!c || typeof c !== 'object') return 'Faltan los datos del cronograma.'
+    // Number(null) y Number('') valen 0 (Enero): un mes ausente no puede pasar como Enero.
+    if (c.mes === null || c.mes === undefined || c.mes === '') return 'El mes no es válido.'
     const mes = Number(c.mes)
     const anio = Number(c.anio)
     const actual = Number(fechaLib.hoySantiago().slice(0, 4))
