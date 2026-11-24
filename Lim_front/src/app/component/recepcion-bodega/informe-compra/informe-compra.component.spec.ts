@@ -15,10 +15,11 @@ describe('Informe de compra (temporal)', () => {
       orden(4, 'Aseo SpA', 'ANULADA', 100, 100),
       orden(5, null, 'BORRADOR', 1, 1)
     ]);
-    expect(filas).toEqual([
-      { proveedor: 'Químicos Ltda', ordenes: 1, pedidas: 30, recibidas: 0, pendientes: 30 },
-      { proveedor: 'Aseo SpA', ordenes: 2, pedidas: 15, recibidas: 13, pendientes: 2 },
-      { proveedor: 'Sin proveedor', ordenes: 1, pedidas: 1, recibidas: 0, pendientes: 1 }
+    expect(filas.map((f) => [f.proveedor, f.ordenes, f.pedidas, f.recibidas, f.pendientes])).toEqual([
+      ['Químicos Ltda', 1, 30, 0, 30],
+      ['Aseo SpA', 2, 15, 13, 2],
+      ['Sin proveedor', 1, 1, 0, 1]
     ]);
+    expect(filas[1].detalle.map((o) => o.id)).toEqual([1, 2]);
   });
 });
