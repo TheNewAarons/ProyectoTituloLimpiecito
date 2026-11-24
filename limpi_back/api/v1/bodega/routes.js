@@ -46,6 +46,7 @@ router.get('/proveedores/:id', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.obt
 router.post('/proveedores', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.crear));
 router.patch('/proveedores/:id', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.editar));
 router.delete('/proveedores/:id', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.desactivar));
+router.patch('/proveedores/:id/reactivar', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.reactivar));
 
 router.patch('/productos/:id/proveedor', ADMIN_Y_OPERACIONES, asyncHandler(productos.asignarProveedor));
 

@@ -13,11 +13,17 @@
           </div>
           <div class="card-body">
             <div *ngIf="turnos.length > 0" class="row">
-              <mat-form-field class="col-md-6">
-                <mat-select placeholder="Seleccionar Mes" (selectionChange)="obtenerDatosMes()" [(ngModel)]="id_mes" required>
+              <mat-form-field class="col-md-4">
+                <mat-select placeholder="Seleccionar Mes" (selectionChange)="obtenerDatosMes(); alCambiarPeriodo()" [(ngModel)]="id_mes" required>
                   <mat-option *ngFor="let mes of meses" [value]="mes.valor">
                     {{ mes.nombre }}
                   </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <!-- Obs. 13 (AUT-017): año actual o siguiente (antes se guardaba siempre el año en curso) -->
+              <mat-form-field class="col-md-2">
+                <mat-select placeholder="Año" (selectionChange)="alCambiarPeriodo()" [(ngModel)]="id_anio" required>
+                  <mat-option *ngFor="let a of anios" [value]="a">{{ a }}</mat-option>
                 </mat-select>
               </mat-form-field>
               <mat-form-field class="col-md-6">
@@ -33,14 +39,15 @@
             </div>
             <div *ngIf="id_turno != null && id_mes != null" class="row">
               <mat-form-field class="col-md-6">
-                <input matInput placeholder="Fecha Inicio" name="fecha_inicio" [(ngModel)]="fecha_inicio" type="date" />
+                <input matInput placeholder="Fecha Inicio" name="fecha_inicio" [(ngModel)]="fecha_inicio" type="date" [min]="minFecha" [max]="maxFecha" />
               </mat-form-field>
               <mat-form-field class="col-md-6">
-                <input matInput placeholder="Fecha Termino" name="fecha_termino" [(ngModel)]="fecha_termino" type="date" />
+                <input matInput placeholder="Fecha Termino" name="fecha_termino" [(ngModel)]="fecha_termino" type="date" [min]="fecha_inicio || minFecha" [max]="maxFecha" />
               </mat-form-field>
             </div>
             <div *ngIf="id_turno != null && id_mes != null">
-              <button (click)="crearCronograma()" [disabled]="fecha_inicio == null || fecha_termino == null" class="btn btn-success btn-sm"> Crear </button>
+              <button (click)="crearCronograma()" [disabled]="!!errorFechas()" class="btn btn-success btn-sm"> Crear </button>
+              <small class="text-danger ml-2" *ngIf="errorFechas()">{{ errorFechas() }}</small>
             </div>
             <br />
             <div class="col-md-12">

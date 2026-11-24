@@ -5,6 +5,7 @@ import { formatDate } from '@angular/common';
 //SERVICIOS
 import { DocumentoService } from 'src/app/services/documento/archivo/documento.service';
 import { CategoriaService } from 'src/app/services/documento/categoria/categoria.service';
+import { AlertasService } from 'src/app/services/alertas/alertas.service';
 //MODELO
 import { Documento } from 'src/app/model/documento';
 
@@ -24,7 +25,8 @@ export class CrearDocumentoComponent implements OnInit {
   public categoriasListo = true;
   public fd = new FormData();
 
-  constructor(private documentoService: DocumentoService, private router: Router, private categoriaService: CategoriaService) {}
+  constructor(private documentoService: DocumentoService, private router: Router, private categoriaService: CategoriaService,
+    private alertaService: AlertasService) {}
 
   ngOnInit() {
     this.obtenerCategorias();
@@ -42,17 +44,20 @@ export class CrearDocumentoComponent implements OnInit {
       }
     );
   }
+  // AUT-011 (obs. 16): mensaje del sistema en vez de alert() y se limpia la selección inválida.
   pdfSelecionado(event: HtmlInputEvent) {
     if (event.target.files && event.target.files[0]) {
       this.file = event.target.files[0];
       if (this.file.type != 'application/pdf') {
         this.file = null;
-        alert('Suba un Archivo PDF');
+        event.target.value = '';
+        this.alertaService.alertaErrorMsj('Archivo no permitido', 'El archivo debe ser un PDF.');
       }
     }
   }
-  //CREAR FORM DATA
+  //CREAR FORM DATA (nuevo en cada intento: append acumula campos repetidos si se reintenta)
   crearFormData(documento) {
+    this.fd = new FormData();
     this.fd.append('nombre', documento.nombre);
     this.fd.append('pdf', this.file);
     this.fd.append('fecha_subida', formatDate(new Date(), 'yyyy-MM-dd HH:mm:ss', 'en-US'));
@@ -62,6 +67,10 @@ export class CrearDocumentoComponent implements OnInit {
 
   //CREAR DOCUMENTO
   crearDocumento(valid) {
+    if (!this.file) {
+      this.alertaService.alertaErrorMsj('Falta el archivo', 'Debe adjuntar un archivo PDF.');
+      return;
+    }
     if (valid) {
       this.crearFormData(this.documento);
       this.documentoService.crearDocumento(this.fd).subscribe(
@@ -71,7 +80,8 @@ export class CrearDocumentoComponent implements OnInit {
           }
         },
         (error) => {
-          console.log(error);
+          const mensaje = error && error.error && error.error.mensaje ? error.error.mensaje : 'No se pudo crear el documento.';
+          this.alertaService.alertaErrorMsj('No se pudo crear el documento', mensaje);
         }
       );
     }

@@ -1,0 +1,129 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">assessment</i></div>
+            <h4 class="card-title">Informe De Compra Por Proveedor <small>(provisorio)</small></h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-md-4">
+                <mat-form-field class="example-full-width">
+                  <mat-select placeholder="Estado de la orden" name="estado" [(ngModel)]="estado" (selectionChange)="cargar()">
+                    <mat-option *ngFor="let f of filtros" [value]="f.valor">{{ f.nombre }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col-12 col-md-8 text-right">
+                <button mat-raised-button type="button" matTooltip="Imprimir" class="btn btn-danger btn-sm" (click)="imprimir()" [disabled]="loading">
+                  <span class="btn-label"><i class="material-icons">print</i></span>
+                  Imprimir
+                </button>
+              </div>
+            </div>
+            <div class="alert alert-warning" *ngIf="truncado">
+              Hay {{ totalOrdenes }} órdenes; el informe considera solo las {{ MAX_ORDENES }} más recientes.
+            </div>
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div class="table-responsive" *ngIf="!loading">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Proveedor</th>
+                    <th class="text-right">Órdenes</th>
+                    <th class="text-right">Unidades pedidas</th>
+                    <th class="text-right">Recibidas</th>
+                    <th class="text-right">Pendientes</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="filas.length === 0">
+                    <td colspan="6" class="text-center">Sin registros</td>
+                  </tr>
+                  <tr *ngFor="let f of filas">
+                    <td>{{ f.proveedor }}</td>
+                    <td class="text-right">{{ f.ordenes | number:'1.0-0' }}</td>
+                    <td class="text-right">{{ f.pedidas | number:'1.0-0' }}</td>
+                    <td class="text-right">{{ f.recibidas | number:'1.0-0' }}</td>
+                    <td class="text-right">{{ f.pendientes | number:'1.0-0' }}</td>
+                    <td class="td-actions text-right">
+                      <button mat-raised-button type="button" matTooltip="Ver Detalle" class="btn btn-info btn-round" (click)="ver(f)">
+                        <i class="material-icons">remove_red_eye</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" *ngIf="seleccionada">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">description</i></div>
+            <h4 class="card-title">Detalle Del Proveedor</h4>
+          </div>
+          <div class="card-body">
+            <div class="text-right">
+              <button mat-raised-button type="button" matTooltip="Descargar PDF" class="btn btn-danger btn-sm" (click)="descargarPdf()">
+                <span class="btn-label"><i class="material-icons">picture_as_pdf</i></span>
+                Descargar PDF
+              </button>
+              <button mat-raised-button type="button" matTooltip="Imprimir" class="btn btn-danger btn-sm" (click)="imprimirProveedor()">
+                <span class="btn-label"><i class="material-icons">print</i></span>
+                Imprimir
+              </button>
+              <button mat-raised-button type="button" class="btn btn-rose btn-sm" (click)="cerrarDetalle()">
+                <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+                Volver
+              </button>
+            </div>
+            <div id="informe-proveedor">
+              <h4>Informe De Compra — {{ seleccionada.proveedor }}</h4>
+              <p class="card-category">
+                Generado {{ generado | date:'dd/MM/yyyy HH:mm' }} · Estado: {{ nombreEstado }} · Documento provisorio
+              </p>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th class="text-left">N° Orden</th>
+                      <th>Estado</th>
+                      <th>Enviada</th>
+                      <th class="text-right">Pedidas</th>
+                      <th class="text-right">Recibidas</th>
+                      <th class="text-right">Pendientes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let o of seleccionada.detalle">
+                      <td class="text-left">{{ o.id }}</td>
+                      <td>{{ etiqueta[o.estado] }}</td>
+                      <td>{{ o.enviada_at ? (o.enviada_at | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+                      <td class="text-right">{{ o.unidades_pedidas | number:'1.0-0' }}</td>
+                      <td class="text-right">{{ (o.unidades_pedidas - o.unidades_pendientes) | number:'1.0-0' }}</td>
+                      <td class="text-right">{{ o.unidades_pendientes | number:'1.0-0' }}</td>
+                    </tr>
+                    <tr>
+                      <th class="text-left" colspan="3">Total ({{ seleccionada.ordenes }} órdenes)</th>
+                      <th class="text-right">{{ seleccionada.pedidas | number:'1.0-0' }}</th>
+                      <th class="text-right">{{ seleccionada.recibidas | number:'1.0-0' }}</th>
+                      <th class="text-right">{{ seleccionada.pendientes | number:'1.0-0' }}</th>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

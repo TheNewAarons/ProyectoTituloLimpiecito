@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment'
+import { HttpHeaders } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,11 @@ export class DocumentoService {
   //EDITAR DOCUMENTO
   editarDocumento(documento, idDocumento) {
     return this.http.put(this.url_backend + '/editar/' + idDocumento, documento);
+  }
+  //REEMPLAZAR EL ARCHIVO DE UN DOCUMENTO (RF-010.2): PUT /api/v1/archivos/:id/archivo (Admin), FormData con el campo 'pdf'
+  reemplazarArchivo(idDocumento, formData: FormData, token: string) {
+    return this.http.put(environment.url + '/api/v1/archivos/' + idDocumento + '/archivo', formData,
+      { headers: new HttpHeaders({ 'x-access-token': token || '' }) });
   }
 
   //ELIMINAR DOCUMENTO
@@ -39,6 +45,14 @@ export class DocumentoService {
       responseType: 'blob'
     });
   }
+  //CONTENIDO DEL PDF CON SESIÓN (RNF-SEC-01, AUT-015): GET /api/v1/documentos/:id/contenido
+  obtenerContenido(idDocumento, token: string) {
+    return this.http.get(environment.url + '/api/v1/documentos/' + idDocumento + '/contenido', {
+      responseType: 'blob',
+      headers: new HttpHeaders({ 'x-access-token': token || '' })
+    });
+  }
+
   //BUSCAR EN DOCUMENTOS
   buscarDocumentos(categoria, search) {
     return this.http.get(this.url_backend + '/buscar-documento/' + categoria + '/' + search);

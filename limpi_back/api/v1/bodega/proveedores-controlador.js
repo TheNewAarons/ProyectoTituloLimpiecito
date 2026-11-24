@@ -71,6 +71,15 @@ const desactivar = async (req, res) => {
   return res.json({ ok: true, data: proveedor, meta: {} });
 };
 
+/** PATCH /api/v1/bodega/proveedores/:id/reactivar — revierte la baja lógica (activo = 1) */
+const reactivar = async (req, res) => {
+  const proveedor = await proveedoresService.reactivar(parsearId(req.params.id), {
+    usuario: usuarioDesdeRequest(req),
+    ip: req.ip
+  });
+  return res.json({ ok: true, data: proveedor, meta: {} });
+};
+
 /** GET /api/v1/bodega/proveedores/:id/productos?pagina= */
 const productos = async (req, res) => {
   const resultado = await proveedorProductoService.listarProductosDeProveedor(parsearId(req.params.id), {
@@ -96,5 +105,6 @@ module.exports = {
   crear: crear,
   editar: editar,
   desactivar: desactivar,
+  reactivar: reactivar,
   productos: productos
 };
