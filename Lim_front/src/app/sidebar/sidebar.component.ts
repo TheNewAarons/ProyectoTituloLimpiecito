@@ -76,6 +76,8 @@ export const ROUTES: RouteInfo[] = [
       { path: 'producto', title: 'Producto EPP ', ab: 'P' },
       { path: 'solicitudes', title: 'Solicitudes', ab: 'So', roles: ADMIN_OPS }, // RF-BOD-01
       { path: 'ordenes-compra', title: 'Órdenes De Compra', ab: 'OC', roles: ADMIN_OPS }, // RF-BOD-04
+      { path: 'proveedores', title: 'Proveedores', ab: 'Pv', roles: ADMIN_OPS }, // RF-BOD-03
+      { path: 'informe-compra', title: 'Informe De Compra', ab: 'IC', roles: ADMIN_OPS }, // RF-BOD-03 (temporal)
       { path: 'movimientos', title: 'Movimientos', ab: 'Mv', roles: ADMIN_OPS }, // RF-BOD-04
       { path: 'conteos', title: 'Conteos Físicos', ab: 'CF', roles: ADMIN_OPS }, // RF-BOD-07
       { path: 'stock', title: 'Agregar Stock', ab: 'S', roles: ADMIN_OPS }

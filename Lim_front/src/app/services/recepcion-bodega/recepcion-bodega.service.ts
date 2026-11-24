@@ -6,7 +6,7 @@ import { LoginService } from '../login/login.service';
 import { RespuestaBodega, SolicitudBodega } from '../../model/solicitud-bodega';
 import {
   OrdenResumen, OrdenRecepcion, ResultadoRecepcion, DocumentoRecepcion, FormatoEntrega, MovimientoBodega, KardexProducto,
-  ConteoResumen, ConteoDetalle, ResultadoAprobacionConteo
+  ConteoResumen, ConteoDetalle, ResultadoAprobacionConteo, Proveedor, DatosProveedor
 } from '../../model/recepcion-bodega';
 
 // RECEPCIÓN, ENTREGA Y MOVIMIENTOS DE BODEGA (RF-BOD-04) — /api/v1/bodega, formato { ok, data, meta }
@@ -99,5 +99,29 @@ export class RecepcionBodegaService {
   //SOLO ADMINISTRADOR: GENERA LOS AJUSTES EN EL KARDEX
   aprobarConteo(id: number): Observable<RespuestaBodega<ResultadoAprobacionConteo>> {
     return this.http.post<RespuestaBodega<ResultadoAprobacionConteo>>(this.url_bodega + '/conteos/' + id + '/aprobar', {}, { headers: this.obtenerCabeceras() });
+  }
+
+  //PROVEEDORES (RF-BOD-03). activo: 1 activos, 0 inactivos, null todos. El backend acepta limite <= 100
+  listarProveedores(activo: number, pagina: number, limite: number): Observable<RespuestaBodega<Proveedor[]>> {
+    let params = new HttpParams().set('pagina', String(pagina)).set('limite', String(limite));
+    if (activo === 0 || activo === 1) { params = params.set('activo', String(activo)); }
+    return this.http.get<RespuestaBodega<Proveedor[]>>(this.url_bodega + '/proveedores', { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  crearProveedor(datos: DatosProveedor): Observable<RespuestaBodega<Proveedor>> {
+    return this.http.post<RespuestaBodega<Proveedor>>(this.url_bodega + '/proveedores', datos, { headers: this.obtenerCabeceras() });
+  }
+
+  editarProveedor(id: number, datos: DatosProveedor): Observable<RespuestaBodega<Proveedor>> {
+    return this.http.patch<RespuestaBodega<Proveedor>>(this.url_bodega + '/proveedores/' + id, datos, { headers: this.obtenerCabeceras() });
+  }
+
+  //BAJA LOGICA (activo = 0); NO SE BORRA
+  desactivarProveedor(id: number): Observable<RespuestaBodega<Proveedor>> {
+    return this.http.delete<RespuestaBodega<Proveedor>>(this.url_bodega + '/proveedores/' + id, { headers: this.obtenerCabeceras() });
+  }
+
+  reactivarProveedor(id: number): Observable<RespuestaBodega<Proveedor>> {
+    return this.http.patch<RespuestaBodega<Proveedor>>(this.url_bodega + '/proveedores/' + id + '/reactivar', {}, { headers: this.obtenerCabeceras() });
   }
 }
