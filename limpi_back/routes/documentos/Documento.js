@@ -10,6 +10,8 @@ const Op = Sequelize.Op;
 const Documento = require('../../modelos/sistema_base/Documento');
 const Categoria = require('../../modelos/sistema_base/Categoria');
 const Asoc_trabajador = require('../../modelos/sistema_base/Asociacion_trabajador');
+const { autenticar, requerirRol } = require('../../middleware/auth');
+const { ROL_ADMIN_NOMBRES } = require('../../services/constantes');
 
 Documento.belongsTo(Categoria);
 
@@ -96,9 +98,11 @@ documentos.get('/obtener-documento/:idDocumento', async (req, res) => {
 });
 
 //DESCARGAR DOCUMENTO PDF
-documentos.get('/descargar-pdf/:idDocumento', async (req, res) => {
+// RNF-SEC-01 (AUT-015): exige sesión del ERP (antes se descargaba cualquier documento sin sesión conociendo su id).
+documentos.get('/descargar-pdf/:idDocumento', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES.concat(['LVL_ARCHIVO'])), async (req, res) => {
   Documento.findOne({ where: { id: req.params.idDocumento } })
     .then((documento) => {
+      if (!documento) return res.status(404).send('error: documento no encontrado');
       let filePath = path.join(__dirname, '../../', documento.url);
       return res.status(200).sendFile(filePath);
     })
