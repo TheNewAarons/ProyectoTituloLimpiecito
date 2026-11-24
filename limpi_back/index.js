@@ -226,6 +226,8 @@ const Contactanos_web = require('./routes/sistema_web/Contactanos');
 api.use('/contactanos_web', Contactanos_web);
 // para anuncios
 const Anuncio_web = require('./routes/sistema_web/Anuncios');
+// Obs. 24 (AUT-019): crear/editar/eliminar anuncios exigen sesión de Administrador; la lectura sigue libre para la web.
+api.use('/anuncios_web', require('./middleware/anuncios-protegidos'));
 api.use('/anuncios_web', Anuncio_web);
 
 /*** ---------------------- */
@@ -340,6 +342,8 @@ app.use(process.env.PREFIJO + '/api/v1/public', PublicV1);
 // RF-WEB-03: publicaciones del sitio (solo Admin).
 const PublicacionesV1 = require('./api/v1/web/publicaciones/routes');
 app.use(process.env.PREFIJO + '/api/v1/web/publicaciones', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), PublicacionesV1);
+// Obs. 23 (AUT-019): reemplazar la imagen del anuncio legacy (solo Admin).
+app.use(process.env.PREFIJO + '/api/v1/web/anuncios', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), require('./api/v1/web/anuncios/routes'));
 
 // RF-WEB-01: catálogo del sitio (solo Admin); el listado público está en /api/v1/public/catalogo.
 const CatalogoV1 = require('./api/v1/web/catalogo/routes');

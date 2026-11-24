@@ -36,14 +36,14 @@
                 </small>
               </mat-form-field>
 
-              <input type="file" #fo name="fo" (change)="imagenSelecionado($event)" required />
+              <input type="file" #fo name="fo" accept="image/jpeg,image/png,image/webp" (change)="imagenSelecionado($event)" />
               <small [hidden]="file" class="text-danger">
-                Archivo es requerido.
+                Imagen requerida (jpg, png o webp).
               </small>
-              
-              
+
+
               <div class="modal-footer justify-content-center">
-                <button mat-raised-button type="submit" class="btn btn-info btn-round">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round" [disabled]="!f1.valid || !file">
                   Crear
                 </button>
               </div>

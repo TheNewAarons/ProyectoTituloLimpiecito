@@ -66,34 +66,88 @@ export class AnunciosComponent implements OnInit {
             }
           },
           (error) => {
-            console.log(error);
+            this.alertaService.alertaErrorMsj('No se pudo eliminar el anuncio', this.mensajeError(error));
           }
         );
       }
     });
   }
 
+  // Obs. 23 (AUT-019): Editar compara con el original y permite cambiar la imagen.
+  public anuncioOriginal: any = null;
+  public imagenNueva: File = null;
+
   //ASIGNAR VARIABLE PARA EDITAR
   asignarEditar(anuncio_editar) {
     this.anuncioEdit = Object.assign({}, anuncio_editar);
+    this.anuncioOriginal = Object.assign({}, anuncio_editar);
+    this.limpiarImagenNueva();
+  }
+
+  textosCambiados(): boolean {
+    const o = this.anuncioOriginal;
+    const e: any = this.anuncioEdit;
+    if (!o || !e) { return false; }
+    return ['titulo', 'sub_titulo', 'descripcion'].some((k) => String(e[k] || '').trim() !== String(o[k] || '').trim());
+  }
+
+  // El botón Editar se habilita solo si cambió algún texto o se eligió una imagen nueva.
+  hayCambios(): boolean {
+    return this.textosCambiados() || !!this.imagenNueva;
+  }
+
+  imagenEditarSeleccionada(event) {
+    const f: File = event.target.files && event.target.files[0];
+    if (!f) { this.imagenNueva = null; return; }
+    if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) === -1) {
+      this.limpiarImagenNueva();
+      this.alertaService.alertaErrorMsj('Archivo no válido', 'La imagen debe ser jpg, png o webp.');
+      return;
+    }
+    this.imagenNueva = f;
+  }
+
+  limpiarImagenNueva() {
+    this.imagenNueva = null;
+    const input = document.getElementById('imagenEditarAnuncio') as HTMLInputElement;
+    if (input) { input.value = ''; }
+  }
+
+  // Mensaje del backend: legacy { mensaje } o v1 { error: { message } } (401/403 de la sesión).
+  mensajeError(e): string {
+    if (e && e.status === 401) { return 'Su sesión expiró. Vuelva a iniciar sesión.'; }
+    if (e && e.status === 403) { return 'No tiene permiso para administrar anuncios.'; }
+    if (e && e.error && e.error.mensaje) { return e.error.mensaje; }
+    if (e && e.error && e.error.error && e.error.error.message) { return e.error.error.message; }
+    return 'Intente nuevamente.';
   }
 
   //EDITAR DOCUMENTO
+  // Primero los textos y luego la imagen: si la imagen falla, los textos ya quedaron guardados y se avisa.
   editarAnuncio(valid) {
-    if (valid) {
-      this.anuncioService.editarAnuncio(this.anuncioEdit, this.anuncioEdit.id).subscribe(
-        (response: any) => {
-          if (response.filas != 0) {
-            this.mostrarAnuncio();
-            $('#editModal').modal('hide');
-            this.alertaService.alertaExitoMsj('Anuncio Editado Correctamente')
-          }
-        },
+    if (!valid || !this.hayCambios()) { return; }
+    const terminar = () => {
+      this.limpiarImagenNueva();
+      this.mostrarAnuncio();
+      $('#editModal').modal('hide');
+      this.alertaService.alertaExitoMsj('Anuncio Editado Correctamente');
+    };
+    const subirImagen = () => {
+      const fd = new FormData();
+      fd.append('imagen', this.imagenNueva);
+      this.anuncioService.reemplazarImagen(this.anuncioEdit.id, fd).subscribe(
+        () => terminar(),
         (error) => {
-          console.log(error);
+          this.mostrarAnuncio();
+          this.alertaService.alertaErrorMsj('No se pudo cambiar la imagen', this.mensajeError(error));
         }
       );
-    }
+    };
+    if (!this.textosCambiados()) { subirImagen(); return; }
+    this.anuncioService.editarAnuncio(this.anuncioEdit, this.anuncioEdit.id).subscribe(
+      () => { if (this.imagenNueva) { subirImagen(); } else { terminar(); } },
+      (error) => this.alertaService.alertaErrorMsj('No se pudo editar el anuncio', this.mensajeError(error))
+    );
   }
   
 
