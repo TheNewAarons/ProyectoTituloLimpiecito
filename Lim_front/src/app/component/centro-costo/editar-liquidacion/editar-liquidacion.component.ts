@@ -72,6 +72,11 @@ export class EditarLiquidacionComponent implements OnInit {
 
   //EDITAR LIQUIDACION
   editarLiquidacion(valid) {
+    // sin días trabajados el líquido queda en 0 y luego no se puede pagar (MONTO_INVALIDO)
+    if (valid && !(this.liquidacion.dias_trabajados > 0 && this.liquidacion.liquido_pagar > 0)) {
+      this.alertaService.alertaErrorMsj('Liquidación incompleta', 'Ingrese los días trabajados: el líquido a pagar debe ser mayor a 0.');
+      return;
+    }
     if (valid) {
       this.alertaService.loading()
       this.liquidacionService.editarLiquidacion(this.idLiquidacion, this.liquidacion).subscribe(
