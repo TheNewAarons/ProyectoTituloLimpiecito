@@ -95,9 +95,14 @@
             </small>
 
           </mat-form-field>
-          
+          <div>
+            <label for="imagenEditarAnuncio">Cambiar imagen (opcional: jpg, png o webp)</label><br />
+            <input type="file" id="imagenEditarAnuncio" accept="image/jpeg,image/png,image/webp" (change)="imagenEditarSeleccionada($event)" />
+          </div>
+          <small class="text-muted" *ngIf="!hayCambios()">Modifique algún campo o elija una imagen nueva para habilitar Editar.</small>
+
           <div class="modal-footer justify-content-center">
-            <button mat-raised-button type="submit" class="btn btn-info btn-round">
+            <button mat-raised-button type="submit" class="btn btn-info btn-round" [disabled]="!f2.valid || !hayCambios()">
               Editar
             </button>
           </div>

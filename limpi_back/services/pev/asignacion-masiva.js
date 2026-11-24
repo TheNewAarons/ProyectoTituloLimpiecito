@@ -167,7 +167,10 @@ async function clasificar(e, t) {
     turno: { id: turno.id, nombre: turno.nombre },
     fecha_desde: e.fecha_desde,
     filas: filas,
-    resumen: { a_crear: crear, ya_asignadas: omitidas, con_error: filas.length - crear - omitidas, repetidas_en_la_seleccion: e.repetidas }
+    resumen: { a_crear: crear, ya_asignadas: omitidas, con_error: filas.length - crear - omitidas, repetidas_en_la_seleccion: e.repetidas },
+    // RF-PEV-02 (AUT-016, obs. 12): cronogramas activos donde se reflejará; si no hay, aviso (no bloquea).
+    // Solo en la vista previa: al confirmar (t) no se consulta con otra conexión mientras la transacción tiene locks.
+    cronograma: t ? undefined : await require('./cronograma-asignacion').destinoVistaPrevia(e.cliente_id, turno.id, e.fecha_desde)
   };
 }
 

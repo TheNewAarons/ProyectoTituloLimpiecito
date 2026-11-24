@@ -6,6 +6,7 @@
       <div class="card-header card-header-rose card-header-icon">
         <div class="card-icon"><i class="material-icons">group_add</i></div>
         <h4 class="card-title">Asignación masiva de actividades PEV</h4>
+        <a mat-raised-button class="btn btn-info btn-sm float-right" routerLink="/pev/asignaciones">Ver asignaciones de una actividad</a>
         <p class="card-category">Elija la actividad y marque los trabajadores: se asigna a todos en una sola acción.</p>
       </div>
       <div class="card-body">
@@ -135,6 +136,17 @@
           </table>
         </div>
         <p class="text-danger" *ngIf="plan.resumen.con_error > 0">Corrija las filas marcadas para poder confirmar (no se asigna nada si alguna falla).</p>
+        <!-- RF-PEV-02 (obs. 12): a qué cronogramas llega la asignación -->
+        <div class="alert alert-info py-2" *ngIf="plan.cronograma && plan.cronograma.cronogramas.length > 0">
+          <i class="material-icons align-middle">event_note</i>
+          Se reflejará en el cronograma de: <strong>{{ textoCronogramas(plan.cronograma.cronogramas) }}</strong>
+          (actividad y trabajadores quedan asociados; los días se programan en Cronograma).
+        </div>
+        <div class="alert alert-warning py-2" *ngIf="plan.cronograma && plan.cronograma.sin_cronograma">
+          <i class="material-icons align-middle">warning</i>
+          No hay un cronograma activo para este cliente y turno desde {{ plan.fecha_desde | date:'MM/yyyy' }}.
+          La asignación se crea, pero no aparecerá en el cronograma hasta que se cree uno.
+        </div>
         <div class="text-right">
           <button mat-raised-button type="button" class="btn btn-success" (click)="confirmar()" [disabled]="enviando || plan.resumen.con_error > 0 || plan.resumen.a_crear === 0">
             Confirmar asignación
