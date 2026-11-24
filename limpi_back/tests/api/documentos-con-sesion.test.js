@@ -8,7 +8,7 @@ jest.mock('../../modelos/sistema_base/Role', () => ({ findById: jest.fn(async (i
 jest.mock('../../modelos/sistema_base/Usuario', () => ({ findById: jest.fn(async (id) => ({ id: id, correo: 'u' + id + '@prueba.cl', roleId: id, estado: 1 })) }));
 jest.mock('../../modelos/sistema_base/Trabajadore', () => ({ findById: jest.fn() }));
 jest.mock('../../modelos/sistema_intranet/acceso_laboral', () => ({ findOne: jest.fn() }));
-jest.mock('../../modelos/sistema_base/Documento', () => ({ findOne: jest.fn(), findById: jest.fn(), belongsTo: jest.fn() }));
+jest.mock('../../modelos/sistema_base/Documento', () => ({ findOne: jest.fn(), findAll: jest.fn(), findById: jest.fn(), belongsTo: jest.fn() }));
 jest.mock('../../modelos/sistema_base/Categoria', () => ({}));
 jest.mock('../../modelos/sistema_base/Asociacion_trabajador', () => ({}));
 
@@ -50,25 +50,32 @@ function app() {
 
 describe('estático /web-limpiecito/uploads con filtro de documentos', () => {
   it('un documento interno (privado) responde 404 sin sesión', async () => {
-    Documento.findOne.mockResolvedValue({ id: 7, publico: false });
+    Documento.findAll.mockResolvedValue([{ id: 7, publico: false, url: 'uploads/' + NOMBRE }]);
     const r = await request(app()).get('/web-limpiecito/uploads/' + NOMBRE);
     expect(r.status).toBe(404);
-    expect(Documento.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { url: ['uploads/' + NOMBRE, 'uploads\\' + NOMBRE] } }));
+    expect(Documento.findAll).toHaveBeenCalledWith(expect.objectContaining({ where: { url: ['uploads/' + NOMBRE, 'uploads\\' + NOMBRE] } }));
+  });
+
+  it('coincidencia solo por mayúsculas (collation) no abre el archivo; y si hay uno privado entre varios, se deniega', async () => {
+    Documento.findAll.mockResolvedValue([{ id: 7, publico: true, url: 'uploads/' + NOMBRE.toUpperCase() }]);
+    expect((await request(app()).get('/web-limpiecito/uploads/' + NOMBRE)).status).toBe(404);
+    Documento.findAll.mockResolvedValue([{ id: 7, publico: true, url: 'uploads/' + NOMBRE }, { id: 8, publico: false, url: 'uploads\\' + NOMBRE }]);
+    expect((await request(app()).get('/web-limpiecito/uploads/' + NOMBRE)).status).toBe(404);
   });
 
   it('un documento marcado como público sigue disponible', async () => {
-    Documento.findOne.mockResolvedValue({ id: 7, publico: true });
+    Documento.findAll.mockResolvedValue([{ id: 7, publico: true, url: 'uploads/' + NOMBRE }]);
     const r = await request(app()).get('/web-limpiecito/uploads/' + NOMBRE);
     expect(r.status).toBe(200);
   });
 
   it('un archivo de la raíz que no es de ningún documento responde 404 (denegar por defecto)', async () => {
-    Documento.findOne.mockResolvedValue(null);
+    Documento.findAll.mockResolvedValue([]);
     expect((await request(app()).get('/web-limpiecito/uploads/' + NOMBRE)).status).toBe(404);
   });
 
   it('ante un error de BD se deniega', async () => {
-    Documento.findOne.mockRejectedValue(new Error('BD caída'));
+    Documento.findAll.mockRejectedValue(new Error('BD caída'));
     expect((await request(app()).get('/web-limpiecito/uploads/' + NOMBRE)).status).toBe(404);
   });
 
@@ -77,7 +84,7 @@ describe('estático /web-limpiecito/uploads con filtro de documentos', () => {
       const next = jest.fn();
       await proteger({ path: '/' + carpeta + '/foto.jpg' }, {}, next);
       expect(next).toHaveBeenCalled();
-      expect(Documento.findOne).not.toHaveBeenCalled();
+      expect(Documento.findAll).not.toHaveBeenCalled();
     });
 
   it.each([
@@ -85,14 +92,14 @@ describe('estático /web-limpiecito/uploads con filtro de documentos', () => {
     '/web-limpiecito/uploads/servicios/%2e%2e/' + NOMBRE,
     '/web-limpiecito/uploads/servicios%5C..%5C' + NOMBRE
   ])('no se puede saltar el filtro pasando por una carpeta pública: %s', async (url) => {
-    Documento.findOne.mockResolvedValue({ id: 7, publico: false });
+    Documento.findAll.mockResolvedValue([{ id: 7, publico: false, url: 'uploads/' + NOMBRE }]);
     const r = await request(app()).get(url);
     expect(r.status).toBe(404);
     expect(r.text).not.toContain('%PDF');
   });
 
   it('uploads/documentos/ (carga antigua) también se filtra', async () => {
-    Documento.findOne.mockResolvedValue(null);
+    Documento.findAll.mockResolvedValue([]);
     const res = { status: jest.fn(() => res), end: jest.fn() };
     const next = jest.fn();
     await proteger({ path: '/documentos/trab2_cat1.pdf' }, res, next);

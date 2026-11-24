@@ -30,8 +30,11 @@ async function documentosProtegidos(req, res, next) {
   const primera = relativa.split('/')[0];
   if (relativa.indexOf('/') !== -1 && SUBCARPETAS_PUBLICAS.indexOf(primera) !== -1) return next();
   try {
-    const documento = await Documento.findOne({ where: { url: variantesUrl(relativa) }, attributes: ['id', 'publico'] });
-    if (documento && documento.publico) return next();
+    const variantes = variantesUrl(relativa);
+    const encontrados = await Documento.findAll({ where: { url: variantes }, attributes: ['id', 'publico', 'url'] });
+    // La collation de MySQL ignora mayúsculas y espacios finales: se exige coincidencia exacta y que TODAS sean públicas.
+    const exactos = encontrados.filter((d) => variantes.indexOf(d.url) !== -1);
+    if (exactos.length && exactos.every((d) => d.publico)) return next();
   } catch (e) {
     // Ante un error de BD se deniega (no se expone el archivo).
   }

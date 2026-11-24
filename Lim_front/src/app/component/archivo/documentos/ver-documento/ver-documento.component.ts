@@ -6,6 +6,7 @@ import { AsociacionService } from 'src/app/services/documento/asociacion/asociac
 
 import { saveAs } from 'file-saver';
 import { LoginService } from 'src/app/services/login/login.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-ver-documento',
@@ -29,14 +30,18 @@ export class VerDocumentoComponent implements OnInit {
     this.obtenerId();
   }
 
+  private subPdf: Subscription = null;
+
   ngOnDestroy() {
+    // Si se sale antes de que llegue el PDF, se cancela la carga para no crear una URL que nunca se libere.
+    if (this.subPdf) { this.subPdf.unsubscribe(); }
     if (this.url_documento) { URL.revokeObjectURL(this.url_documento); }
   }
 
   // RNF-SEC-01 (AUT-015): el PDF se pide con sesión y se muestra desde una URL local (blob:), no desde /uploads.
   cargarPdf() {
     this.errorArchivo = '';
-    this.documentoService.obtenerContenido(this.idDocumento, this.loginService.getToken()).subscribe(
+    this.subPdf = this.documentoService.obtenerContenido(this.idDocumento, this.loginService.getToken()).subscribe(
       (blob: Blob) => {
         this.pdf = blob;
         this.url_documento = URL.createObjectURL(blob);
