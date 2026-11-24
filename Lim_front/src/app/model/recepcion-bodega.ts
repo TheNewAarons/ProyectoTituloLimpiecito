@@ -38,6 +38,13 @@ export interface OrdenResumen {
   unidades_pendientes: number;
 }
 
+// RF-BOD-03: resultado de POST /ordenes-compra/desde-lista (una OC BORRADOR por proveedor)
+export interface ResultadoGenerarOrdenes {
+  creadas: { orden_id: number, proveedor_id: number, proveedor: string, items: number }[];
+  omitidas: { proveedor_id: number, proveedor: string }[];
+  sin_proveedor: { producto_id: number }[];
+}
+
 export interface LineaRecepcion {
   item_id: number;
   producto_id: number;
