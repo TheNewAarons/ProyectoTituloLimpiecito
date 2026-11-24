@@ -9,6 +9,7 @@ import swal from 'sweetalert2';
 import { CategoriaService } from 'src/app/services/documento/categoria/categoria.service';
 import { Documento } from 'src/app/model/documento';
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
+import { ElementRef, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'app-vista-documentos',
@@ -131,5 +132,78 @@ export class VistaDocumentosComponent implements OnInit {
         }
       );
     }
+  }
+
+  //REEMPLAZAR ARCHIVO AL EDITAR (RF-010.2): opcional; si se eligió un PDF, se guardan nombre/categoría y luego se reemplaza.
+  public archivoNuevo: File = null;
+  @ViewChild('archivoEditar', { static: false }) archivoEditar: ElementRef;
+
+  // Obs. 19: el botón Editar solo se habilita si cambió el nombre, la categoría o se eligió un archivo nuevo.
+  public edicionOriginal = { nombre: '', categoriaDocumentoId: null };
+
+  prepararEdicion(documento) {
+    this.edicionOriginal = { nombre: String(documento.nombre || '').trim(), categoriaDocumentoId: documento.categoriaDocumentoId };
+    this.limpiarArchivoNuevo();
+  }
+
+  hayCambios(): boolean {
+    const d = this.documentoEdit || ({} as any);
+    return !!this.archivoNuevo
+      || String(d.nombre || '').trim() !== this.edicionOriginal.nombre
+      || d.categoriaDocumentoId !== this.edicionOriginal.categoriaDocumentoId;
+  }
+
+  limpiarArchivoNuevo() {
+    this.archivoNuevo = null;
+    if (this.archivoEditar) { this.archivoEditar.nativeElement.value = ''; }
+  }
+
+  seleccionarArchivoNuevo(event: any) {
+    const archivo: File = event.target.files && event.target.files[0];
+    if (!archivo) { this.archivoNuevo = null; return; }
+    if (archivo.type != 'application/pdf') {
+      this.limpiarArchivoNuevo();
+      this.alertaService.alertaErrorMsj('Archivo no permitido', 'El archivo debe ser un PDF.');
+      return;
+    }
+    this.archivoNuevo = archivo;
+  }
+
+  // Reemplazar el archivo es solo para Administrador (PUT /api/v1/archivos/:id/archivo); sin distinguir mayúsculas.
+  esAdmin(): boolean {
+    const rol = this.usuario && this.usuario.role ? String(this.usuario.role.nombre) : '';
+    return rol.toUpperCase() === 'ADMINISTRADOR';
+  }
+
+  private mensajeError(error, porDefecto: string): string {
+    const e = error && error.error;
+    if (e && e.error && e.error.message) { return e.error.message; } // formato /api/v1
+    if (e && e.mensaje) { return e.mensaje; }                     // formato legacy de /documento
+    return porDefecto;
+  }
+
+  // Primero nombre/categoría y luego el archivo: si algo falla, el archivo no queda cambiado a medias (revisor).
+  guardarEdicion(valid) {
+    if (!valid || !this.hayCambios()) { return; }
+    if (!this.archivoNuevo) { this.editarDocumento(valid); return; }
+    this.documentoService.editarDocumento(this.documentoEdit, this.documentoEdit.id).subscribe(
+      () => {
+        const fd = new FormData();
+        fd.append('pdf', this.archivoNuevo);
+        this.documentoService.reemplazarArchivo(this.documentoEdit.id, fd, this.loginService.getToken()).subscribe(
+          () => {
+            this.limpiarArchivoNuevo();
+            this.obtenerDocumentos();
+            $('#editModal').modal('hide');
+            this.alertaService.alertaExitoMsj('Documento actualizado', 'El archivo fue reemplazado correctamente.');
+          },
+          (error) => {
+            this.obtenerDocumentos();
+            this.alertaService.alertaErrorMsj('No se pudo reemplazar el archivo', this.mensajeError(error, 'El documento conserva su archivo anterior.'));
+          }
+        );
+      },
+      (error) => this.alertaService.alertaErrorMsj('No se pudo guardar el documento', this.mensajeError(error, 'Intenta nuevamente.'))
+    );
   }
 }
