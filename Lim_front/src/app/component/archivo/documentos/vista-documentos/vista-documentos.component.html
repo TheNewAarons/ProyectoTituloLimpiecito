@@ -59,7 +59,7 @@
                         class="btn btn-success btn-round"
                         data-toggle="modal"
                         data-target="#editModal"
-                        (click)="asignarEditar(documento)"
+                        (click)="asignarEditar(documento); limpiarArchivoNuevo()"
                       >
                         <i class="material-icons">edit</i>
                       </button>
@@ -125,7 +125,7 @@
         </button>
       </div>
       <div class="modal-body">
-        <form #f2="ngForm" (submit)="editarDocumento(f2.valid)">
+        <form #f2="ngForm" (submit)="guardarEdicion(f2.valid)">
           <mat-form-field class="example-full-width">
             <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]="documentoEdit.nombre" required type="text" />
             <small [hidden]="nombre.valid || (nombre.pristine && !f2.submitted)" class="text-danger">
@@ -147,6 +147,11 @@
             [clearable]="false"
           >
           </ng-select>
+          <!-- RF-010.2: reemplazo opcional del archivo; la descarga entrega la versión nueva -->
+          <label class="d-block mb-1" for="archivo-editar">Reemplazar archivo (PDF, opcional)</label>
+          <input id="archivo-editar" #archivoEditar type="file" accept="application/pdf,.pdf" (change)="seleccionarArchivoNuevo($event)" />
+          <small class="d-block text-muted mt-1" *ngIf="!archivoNuevo">Si no eliges un archivo, se mantiene el actual.</small>
+          <small class="d-block text-info mt-1" *ngIf="archivoNuevo">Se reemplazará por: {{ archivoNuevo.name }}</small>
           <div class="modal-footer justify-content-center">
             <button mat-raised-button type="submit" class="btn btn-info btn-round">
               Editar

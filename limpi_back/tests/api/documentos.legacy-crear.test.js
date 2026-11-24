@@ -4,9 +4,9 @@
  * Ahora: sin archivo, archivo que no es PDF real o sin categoría válida -> 400 { mensaje }, sin crear nada y sin
  * dejar el archivo subido en disco; el servidor sigue respondiendo.
  */
-jest.mock('../../modelos/sistema_base/Documento', () => ({ belongsTo: jest.fn(), create: jest.fn() }));
+jest.mock('../../modelos/sistema_base/Documento', () => ({ belongsTo: jest.fn(), create: jest.fn(), findById: jest.fn(), update: jest.fn(), destroy: jest.fn() }));
 jest.mock('../../modelos/sistema_base/Categoria', () => ({ findById: jest.fn() }));
-jest.mock('../../modelos/sistema_base/Asociacion_trabajador', () => ({}));
+jest.mock('../../modelos/sistema_base/Asociacion_trabajador', () => ({ count: jest.fn() }));
 
 const fs = require('fs');
 const path = require('path');
@@ -22,6 +22,7 @@ const TEXTO = Buffer.from('esto es un txt renombrado');
 
 function app() {
   const a = express();
+  a.use(express.json());
   a.use('/documentos', rutas);
   return a;
 }
@@ -91,10 +92,75 @@ describe('POST /documentos/crear (legacy)', () => {
     expect(Documento.create).toHaveBeenCalledWith(expect.objectContaining({ url: expect.stringMatching(/\.pdf$/) }));
   });
 
-  it('si la consulta de la categoría falla, responde error sin detener el proceso', async () => {
+  it('si la consulta de la categoría falla, responde error sin detener el proceso (crear)', async () => {
     Categoria.findById.mockRejectedValue(new Error('BD caída'));
     const r = await crear({ buf: PDF, nombre: 'ok.pdf' }, { nombre: 'Doc', categoriaDocumentoId: '3' });
     expect(r.text).toContain('error');
+    expect((await crear(null, {})).status).toBe(400);
+  });
+});
+
+// RF-010.2 (AUT-011): reemplazar el archivo de un documento; la descarga pasa a entregar la versión nueva.
+describe('PUT /documentos/reemplazar-archivo/:id (legacy)', () => {
+  const Asoc = require('../../modelos/sistema_base/Asociacion_trabajador');
+  const reemplazar = (id, archivo) => {
+    const r = request(app()).put('/documentos/reemplazar-archivo/' + id);
+    return archivo ? r.attach('pdf', archivo.buf, archivo.nombre) : r;
+  };
+  beforeEach(() => {
+    Documento.findById.mockImplementation(async (id) => (Number(id) === 56 ? { id: 56, url: 'uploads/anterior.pdf' } : null));
+    Documento.update.mockResolvedValue([1]);
+  });
+
+  it('PDF válido: actualiza la url del documento al archivo nuevo y no borra el anterior', async () => {
+    const borrar = jest.spyOn(fs, 'unlink');
+    const r = await reemplazar(56, { buf: PDF, nombre: 'version2.pdf' });
+    expect(r.status).toBe(200);
+    expect(r.body.documento.id).toBe(56);
+    expect(r.body.documento.url).toMatch(/uploads[\\/][\w-]+\.pdf$/);
+    expect(Documento.update).toHaveBeenCalledWith({ url: r.body.documento.url }, { where: { id: 56 } });
+    expect(borrar).not.toHaveBeenCalled(); // el archivo anterior se conserva (decisión D-WEB-02-R1)
+    borrar.mockRestore();
+  });
+
+  it.each([
+    ['sin archivo', null, 400, 'Debe adjuntar un archivo PDF.'],
+    ['PDF falso', { buf: TEXTO, nombre: 'falso.pdf' }, 400, 'El archivo no es un PDF válido.']
+  ])('%s: responde con error y no modifica el documento', async (_c, archivo, estado, mensaje) => {
+    const r = await reemplazar(56, archivo);
+    expect(r.status).toBe(estado);
+    expect(r.body.mensaje).toBe(mensaje);
+    expect(Documento.update).not.toHaveBeenCalled();
+  });
+
+  it('documento inexistente responde 404 y borra el archivo subido', async () => {
+    const borrar = jest.spyOn(fs, 'unlink');
+    const r = await reemplazar(999, { buf: PDF, nombre: 'x.pdf' });
+    expect(r.status).toBe(404);
+    expect(borrar).toHaveBeenCalledWith(expect.stringMatching(/\.pdf$/), expect.any(Function));
+    expect(Documento.update).not.toHaveBeenCalled();
+    borrar.mockRestore();
+  });
+
+  it('id inválido responde 400', async () => {
+    expect((await reemplazar('abc', { buf: PDF, nombre: 'x.pdf' })).status).toBe(400);
+  });
+
+  it('editar con categoría vacía responde 400 y no actualiza; con categoría válida actualiza', async () => {
+    const vacia = await request(app()).put('/documentos/editar/56').send({ nombre: 'Doc', categoriaDocumentoId: null });
+    expect(vacia.status).toBe(400);
+    expect(Documento.update).not.toHaveBeenCalled();
+    const ok = await request(app()).put('/documentos/editar/56').send({ nombre: 'Doc', categoriaDocumentoId: 3 });
+    expect(ok.body).toEqual({ filas: [1] });
+  });
+
+  it('eliminar un documento cuyo archivo ya no está en disco no detiene el proceso', async () => {
+    Asoc.count.mockResolvedValue(0);
+    Documento.findById.mockResolvedValue({ id: 60, url: 'uploads/no-existe-' + Date.now() + '.pdf' });
+    Documento.destroy.mockResolvedValue(1);
+    const r = await request(app()).delete('/documentos/eliminar/60');
+    expect(r.status).toBe(200);
+    expect(r.body.eliminar).toBe(true);
     expect((await crear(null, {})).status).toBe(400);
   });
 });

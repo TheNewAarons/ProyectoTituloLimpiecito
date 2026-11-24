@@ -9,6 +9,7 @@ import swal from 'sweetalert2';
 import { CategoriaService } from 'src/app/services/documento/categoria/categoria.service';
 import { Documento } from 'src/app/model/documento';
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
+import { ElementRef, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'app-vista-documentos',
@@ -131,5 +132,53 @@ export class VistaDocumentosComponent implements OnInit {
         }
       );
     }
+  }
+
+  //REEMPLAZAR ARCHIVO AL EDITAR (RF-010.2): opcional; si se eligió un PDF, primero se reemplaza y luego se guarda nombre/categoría.
+  public archivoNuevo: File = null;
+  @ViewChild('archivoEditar', { static: false }) archivoEditar: ElementRef;
+
+  limpiarArchivoNuevo() {
+    this.archivoNuevo = null;
+    if (this.archivoEditar) { this.archivoEditar.nativeElement.value = ''; }
+  }
+
+  seleccionarArchivoNuevo(event: any) {
+    const archivo: File = event.target.files && event.target.files[0];
+    if (!archivo) { this.archivoNuevo = null; return; }
+    if (archivo.type != 'application/pdf') {
+      this.limpiarArchivoNuevo();
+      this.alertaService.alertaErrorMsj('Archivo no permitido', 'El archivo debe ser un PDF.');
+      return;
+    }
+    this.archivoNuevo = archivo;
+  }
+
+  guardarEdicion(valid) {
+    if (!valid) { return; }
+    if (!this.archivoNuevo) { this.editarDocumento(valid); return; }
+    const fd = new FormData();
+    fd.append('pdf', this.archivoNuevo);
+    this.documentoService.reemplazarArchivo(this.documentoEdit.id, fd).subscribe(
+      () => {
+        this.limpiarArchivoNuevo();
+        // No se usa editarDocumento(): solo avisa si cambian nombre/categoría (filas != 0), y aquí cambió el archivo.
+        this.documentoService.editarDocumento(this.documentoEdit, this.documentoEdit.id).subscribe(
+          () => {
+            this.obtenerDocumentos();
+            $('#editModal').modal('hide');
+            this.alertaService.alertaExitoMsj('Documento actualizado', 'El archivo fue reemplazado correctamente.');
+          },
+          (error) => {
+            const mensaje = error && error.error && error.error.mensaje ? error.error.mensaje : 'El archivo se reemplazó, pero no se pudieron guardar los demás datos.';
+            this.alertaService.alertaErrorMsj('Documento actualizado parcialmente', mensaje);
+          }
+        );
+      },
+      (error) => {
+        const mensaje = error && error.error && error.error.mensaje ? error.error.mensaje : 'No se pudo reemplazar el archivo.';
+        this.alertaService.alertaErrorMsj('No se pudo reemplazar el archivo', mensaje);
+      }
+    );
   }
 }

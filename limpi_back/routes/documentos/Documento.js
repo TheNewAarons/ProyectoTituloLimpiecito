@@ -65,7 +65,16 @@ documentos.post('/crear', multer.single('pdf'), async (req, res) => {
 
 //EDITAR DOCUMENTO COMO INSTANCIA
 documentos.put('/editar/:id', async (req, res) => {
-  const { nombre, categoriaDocumentoId } = req.body;
+  const { nombre, categoriaDocumentoId } = req.body || {};
+  // AUT-011 (obs. 17): editar con la categoría vacía dejaba documentos sin categoría.
+  const idCategoria = Number(categoriaDocumentoId);
+  try {
+    if (!Number.isSafeInteger(idCategoria) || idCategoria <= 0 || !(await Categoria.findById(idCategoria))) {
+      return res.status(400).json({ mensaje: 'Debe elegir una categoría válida.' });
+    }
+  } catch (error) {
+    return res.send('error: ' + error);
+  }
   Documento.update({ nombre: nombre, categoriaDocumentoId: categoriaDocumentoId }, { where: { id: req.params.id } })
     .then((filas) => {
       return res.json({ filas });
@@ -73,6 +82,27 @@ documentos.put('/editar/:id', async (req, res) => {
     .catch((error) => {
       return res.send('error: ' + error);
     });
+});
+
+//REEMPLAZAR EL ARCHIVO DE UN DOCUMENTO (AUT-011, RF-010.2): la descarga y "Ver Documento" entregan la versión nueva.
+// El archivo anterior se conserva en disco (reversible; ver Docs/DECISIONES.md D-WEB-02-R1).
+documentos.put('/reemplazar-archivo/:id', multer.single('pdf'), async (req, res) => {
+  const rechazar = (estado, mensaje) => {
+    if (req.file) fs.unlink(req.file.path, () => {});
+    return res.status(estado).json({ mensaje: mensaje });
+  };
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id <= 0) return rechazar(400, 'Documento inválido.');
+  if (!req.file) return rechazar(400, 'Debe adjuntar un archivo PDF.');
+  if (!(await esPdf(req.file.path))) return rechazar(400, 'El archivo no es un PDF válido.');
+  try {
+    const documento = await Documento.findById(id);
+    if (!documento) return rechazar(404, 'El documento no existe.');
+    await Documento.update({ url: req.file.path }, { where: { id: id } });
+    return res.json({ documento: { id: id, url: req.file.path } });
+  } catch (error) {
+    return rechazar(500, 'No se pudo reemplazar el archivo.');
+  }
 });
 
 //ELIMINAR DOCUMENTO E INSTANCIA
@@ -86,7 +116,8 @@ documentos.delete('/eliminar/:idDocumento', async (req, res) => {
         where: { id: req.params.idDocumento }
       });
       if (result == 1) {
-        await fs.unlinkSync(path.resolve(documento.url));
+        // AUT-011: si el archivo ya no está en disco no se detiene el proceso (el registro igual se eliminó).
+        try { fs.unlinkSync(path.resolve(documento.url)); } catch (e) { console.warn('[documentos] archivo no encontrado al eliminar:', documento.url); }
       }
       return res.status(200).json({
         eliminar: true,

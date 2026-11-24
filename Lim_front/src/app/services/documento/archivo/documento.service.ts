@@ -20,6 +20,10 @@ export class DocumentoService {
   editarDocumento(documento, idDocumento) {
     return this.http.put(this.url_backend + '/editar/' + idDocumento, documento);
   }
+  //REEMPLAZAR EL ARCHIVO DE UN DOCUMENTO (RF-010.2): FormData con el campo 'pdf'
+  reemplazarArchivo(idDocumento, formData: FormData) {
+    return this.http.put(this.url_backend + '/reemplazar-archivo/' + idDocumento, formData);
+  }
 
   //ELIMINAR DOCUMENTO
   eliminarDocumento(idDocumento) {
