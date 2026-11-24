@@ -26,6 +26,17 @@ export class GraficoComponent implements OnChanges {
     }
   }
 
+  // Obs. 11: montos en peso chileno ($6.088.275) en eje Y y tooltip; opcional, sin efecto si no se usa.
+  @Input() set pesos(valor: boolean) {
+    if (valor) {
+      const clp = (v: any) => '$' + Math.round(Number(v)).toLocaleString('es-CL');
+      this.opciones = Object.assign({}, this.opciones, {
+        scales: { yAxes: [{ ticks: { callback: clp } }] },
+        tooltips: { callbacks: { label: (item: any, data: any) => (data.datasets[item.datasetIndex].label || '') + ': ' + clp(item.yLabel) } }
+      });
+    }
+  }
+
   ngOnChanges(): void {
     this.datasets = (this.series || []).map((s: SerieGrafico): ChartDataSets => ({ label: s.etiqueta, data: s.datos, fill: false }));
   }

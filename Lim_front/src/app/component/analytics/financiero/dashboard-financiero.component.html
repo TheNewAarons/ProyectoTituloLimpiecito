@@ -45,7 +45,7 @@
                   [detalle]="resumen ? resumen.por_pagar.cantidad + ' documentos' : ''"></app-kpi-card>
               </div>
             </div>
-            <app-grafico tipo="line" titulo="Ingresos, egresos y utilidad (últimos 12 meses)" [etiquetas]="etiquetas" [series]="series"></app-grafico>
+            <app-grafico tipo="line" [pesos]="true" titulo="Ingresos, egresos y utilidad (últimos 12 meses)" [etiquetas]="etiquetas" [series]="series"></app-grafico>
           </div>
         </div>
       </div>
