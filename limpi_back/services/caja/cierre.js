@@ -162,6 +162,11 @@ async function cerrarMes(periodo, contexto) {
   if (!fecha.esPeriodoValido(periodo)) {
     throw new AppError('PERIODO_INVALIDO', 'periodo invalido, formato esperado YYYY-MM: ' + periodo, 400, { periodo: periodo });
   }
+  // D-181: un mes que aún no empieza no se puede cerrar (al cerrar se crea el siguiente y se encadenaban meses vacíos).
+  const periodoActual = fecha.hoySantiago().slice(0, 7);
+  if (periodo > periodoActual) {
+    throw new AppError('PERIODO_FUTURO', 'no se puede cerrar ' + periodo + ': el mes aun no comienza', 409, { periodo: periodo, periodo_actual: periodoActual });
+  }
 
   return reintentarTransaccion(function () {
     return db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async function (t) {

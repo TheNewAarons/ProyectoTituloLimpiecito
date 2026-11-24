@@ -156,7 +156,42 @@ export class CrearCronogramaComponent implements OnInit {
     index_tarea.estado = 0;
   }
 
+  // ---- Obs. 13 (AUT-017): fechas realistas. El mes se guarda base 0 (Enero = 0), como lo lee MesPipe. ----
+  anios: number[] = [new Date().getFullYear(), new Date().getFullYear() + 1];
+  id_anio: number = new Date().getFullYear();
+
+  private dosDigitos(n: number): string { return (n < 10 ? '0' : '') + n; }
+
+  // Primer y último día (YYYY-MM-DD) del mes/año elegidos.
+  get minFecha(): string {
+    return this.id_mes == null ? null : this.id_anio + '-' + this.dosDigitos(this.id_mes + 1) + '-01';
+  }
+  get maxFecha(): string {
+    if (this.id_mes == null) { return null; }
+    const ultimo = new Date(Date.UTC(this.id_anio, this.id_mes + 1, 0)).getUTCDate();
+    return this.id_anio + '-' + this.dosDigitos(this.id_mes + 1) + '-' + this.dosDigitos(ultimo);
+  }
+
+  // Al cambiar mes o año: fechas prellenadas con el mes completo.
+  alCambiarPeriodo() {
+    this.fecha_inicio = this.minFecha;
+    this.fecha_termino = this.maxFecha;
+  }
+
+  // Motivo por el que no se puede crear (null = fechas válidas).
+  errorFechas(): string {
+    if (!this.fecha_inicio || !this.fecha_termino) { return 'Indica la fecha de inicio y de término.'; }
+    if (this.fecha_inicio < this.minFecha || this.fecha_inicio > this.maxFecha ||
+        this.fecha_termino < this.minFecha || this.fecha_termino > this.maxFecha) {
+      return 'Las fechas deben estar dentro del mes elegido (' + this.minFecha + ' a ' + this.maxFecha + ').';
+    }
+    if (this.fecha_termino < this.fecha_inicio) { return 'La fecha de término no puede ser anterior a la de inicio.'; }
+    return null;
+  }
+
   crearCronograma() {
+    if (this.errorFechas()) { this.alertaService.alertaErrorMsj('Fechas inválidas', this.errorFechas()); return; }
+    this.cronograma_crear.anio = this.id_anio;
     this.cronograma_crear.fecha = new Date();
     this.cronograma_crear.mes = this.id_mes;
     this.cronograma_crear.turnoId = this.id_turno;
@@ -176,7 +211,12 @@ export class CrearCronogramaComponent implements OnInit {
       },
       (error) => {
         this.alertaService.cerrarAlerta();
-        this.alertaService.alertaError();
+        // El backend valida las mismas reglas de fechas (400 { mensaje }).
+        if (error && error.status === 400 && error.error && error.error.mensaje) {
+          this.alertaService.alertaErrorMsj('Fechas inválidas', error.error.mensaje);
+        } else {
+          this.alertaService.alertaError();
+        }
         console.log(error);
       }
     );
