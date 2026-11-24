@@ -145,7 +145,15 @@ export class AnunciosComponent implements OnInit {
     };
     if (!this.textosCambiados()) { subirImagen(); return; }
     this.anuncioService.editarAnuncio(this.anuncioEdit, this.anuncioEdit.id).subscribe(
-      () => { if (this.imagenNueva) { subirImagen(); } else { terminar(); } },
+      (response: any) => {
+        // Como antes: sin filas actualizadas (p. ej. el anuncio ya no existe) no se informa éxito.
+        if (!response || response.filas == 0) {
+          this.mostrarAnuncio();
+          this.alertaService.alertaErrorMsj('No se pudo editar el anuncio', 'El anuncio ya no existe o no se pudo actualizar. Recargue la página.');
+          return;
+        }
+        if (this.imagenNueva) { subirImagen(); } else { terminar(); }
+      },
       (error) => this.alertaService.alertaErrorMsj('No se pudo editar el anuncio', this.mensajeError(error))
     );
   }
