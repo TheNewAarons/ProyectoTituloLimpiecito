@@ -135,6 +135,8 @@ describe('listarPorCronograma', () => {
     expect(r.asignaciones).toEqual([expect.objectContaining({ id: 70, actividad: 'Barrido 1', trabajador: 'Ana Rojas', n_empleado: 1004 })]);
     const llamada = db.sequelize.query.mock.calls[1];
     expect(llamada[0]).toMatch(/estado <> 'ANULADA'/);
-    expect(llamada[1].replacements).toEqual({ cliente: 1, turno: 1, inicio: '2028-02-01', fin: '2028-02-29' });
+    // obs. 21: solo trabajadores asociados a este cronograma
+    expect(llamada[0]).toMatch(/EXISTS \(SELECT 1 FROM trabajadores_cronogramas tc WHERE tc.cronogramaId = :cronograma AND tc.trabajadoreId = x.trabajador_id\)/);
+    expect(llamada[1].replacements).toEqual({ cronograma: 89, cliente: 1, turno: 1, inicio: '2028-02-01', fin: '2028-02-29' });
   });
 });

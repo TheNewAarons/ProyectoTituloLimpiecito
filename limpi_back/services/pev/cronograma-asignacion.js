@@ -113,8 +113,10 @@ async function listarPorCronograma(cronogramaId) {
     'JOIN trabajadores tr ON tr.id = x.trabajador_id ' +
     "WHERE act.cliente_id = :cliente AND x.turno_id = :turno AND x.estado <> 'ANULADA' " +
     'AND x.fecha_desde <= :fin AND (x.fecha_hasta IS NULL OR x.fecha_hasta >= :inicio) ' +
+    // obs. 21: solo trabajadores asociados a ESTE cronograma (no asignaciones antiguas del cliente/turno ajenas a él).
+    'AND EXISTS (SELECT 1 FROM trabajadores_cronogramas tc WHERE tc.cronogramaId = :cronograma AND tc.trabajadoreId = x.trabajador_id) ' +
     'ORDER BY act.nombre, s.nombre, ar.nombre, tr.apellido, tr.nombre',
-    { replacements: { cliente: cr.clienteId, turno: cr.turnoId, inicio: inicio, fin: fin }, type: Sequelize.QueryTypes.SELECT }
+    { replacements: { cronograma: Number(cr.id), cliente: cr.clienteId, turno: cr.turnoId, inicio: inicio, fin: fin }, type: Sequelize.QueryTypes.SELECT }
   );
   return {
     cronograma: { id: Number(cr.id), inicio: inicio, fin: fin, mes: Number(cr.mes), anio: Number(cr.anio), cliente_id: Number(cr.clienteId), turno_id: Number(cr.turnoId) },
