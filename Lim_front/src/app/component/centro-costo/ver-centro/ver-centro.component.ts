@@ -261,7 +261,7 @@ export class VerCentroComponent implements OnInit {
           this.alertaService.alertaExitoMsj('Ingreso Creado Correctamente')
         },
         (error) => {
-          this.alertaService.cerrarAlerta()
+          this.alertaService.alertaErrorMsj('No se pudo crear el ingreso', 'Intenta nuevamente o contacta al administrador.')
           console.log(error);
         }
       );
