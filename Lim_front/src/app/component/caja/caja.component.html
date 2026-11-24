@@ -27,7 +27,8 @@
               <table class="table">
                 <thead>
                   <tr>
-                    <th class="text-left">Fecha Apertura</th>
+                    <th class="text-left">Periodo</th>
+                    <th>Fecha Apertura</th>
                     <th>Fecha Cierre</th>
                     <th class="text-right">Acciones</th>
                   </tr>
@@ -35,6 +36,9 @@
                 <tbody>
                   <tr *ngFor="let caja of cajas | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
                     <td class="text-left">
+                      <strong>{{ caja.fecha_inicio | date: 'MMMM yyyy':'':'es-CL' | titlecase }}</strong>
+                    </td>
+                    <td>
                       {{ caja.fecha_inicio | date: 'dd/MM/yyyy HH:mm' }}
                     </td>
                     <td>
