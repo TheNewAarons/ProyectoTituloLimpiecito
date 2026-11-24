@@ -65,10 +65,14 @@ export class DashboardBodegaComponent implements OnInit {
       (r) => {
         this.datos = r.data;
         this.duracionMs = (r.meta as any).duracion_ms;
+        // Si el producto no viene en la lista (recortada por el tope del backend), se queda en la página actual.
         const i = this.datos && this.datos.stock ? this.datos.stock.productos.map((x) => x.id).indexOf(productoId) : -1;
         if (i >= 0) { this.page = Math.floor(i / this.pageSize) + 1; }
       },
-      (error: HttpErrorResponse) => mostrarErrorBodega(error, this.alertas, this.loginService)
+      (error: HttpErrorResponse) => {
+        this.error = true;
+        mostrarErrorBodega(error, this.alertas, this.loginService);
+      }
     );
   }
 
@@ -107,9 +111,10 @@ export class DashboardBodegaComponent implements OnInit {
       if (resultado.dismiss || resultado.value === undefined) { return; }
       const nuevo = Number(resultado.value);
       this.dashboardService.actualizarStockMinimo(p.id, nuevo).subscribe(
-        () => {
-          const enAlerta = nuevo > 0 && Number(p.stock) <= nuevo;
-          this.alertas.showNotification('Stock mínimo de ' + p.nombre + ' actualizado a ' + nuevo + '. ' +
+        (r) => {
+          // La notificación se pinta como HTML: el nombre va escapado. El estado de alerta lo decide el backend.
+          const enAlerta = r && r.data ? !!r.data.bajo_minimo : (nuevo > 0 && Number(p.stock) <= nuevo);
+          this.alertas.showNotification('Stock mínimo de ' + this.escaparHtml(p.nombre) + ' actualizado a ' + nuevo + '. ' +
             (enAlerta ? 'Queda en alerta (bajo mínimo).' : 'Queda sin alerta.'));
           this.recargarMostrando(p.id);
         },
