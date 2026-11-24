@@ -1,0 +1,98 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header card-header-rose card-header-icon">
+        <div class="card-icon"><i class="material-icons">assignment_ind</i></div>
+        <h4 class="card-title">Asignaciones de una actividad</h4>
+        <p class="card-category">Ve quién tiene asignada una actividad, quita a un trabajador sin afectar al resto y revisa su cumplimiento.</p>
+        <a mat-raised-button class="btn btn-info btn-sm" routerLink="/pev/asignacion-masiva">Volver a Asignación PEV</a>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12 col-md-5">
+            <label class="d-block" for="as-cliente">Cliente</label>
+            <select id="as-cliente" class="form-control" [(ngModel)]="clienteId" (ngModelChange)="elegirCliente()">
+              <option [ngValue]="null">— Elija un cliente —</option>
+              <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }}</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-5">
+            <label class="d-block" for="as-actividad">Actividad</label>
+            <select id="as-actividad" class="form-control" [(ngModel)]="actividadId" (ngModelChange)="cargar()" [disabled]="!clienteId">
+              <option [ngValue]="null">— Elija una actividad —</option>
+              <option *ngFor="let a of actividades" [ngValue]="a.id">{{ a.nombre }}</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-2 d-flex align-items-end">
+            <mat-checkbox [(ngModel)]="verAnuladas">Ver anuladas</mat-checkbox>
+          </div>
+        </div>
+
+        <div class="text-center text-muted mt-3" *ngIf="cargando">Cargando…</div>
+        <p class="mt-3 mb-1" *ngIf="actividadId && !cargando">
+          <strong>{{ activas() }}</strong> trabajador(es) con la actividad activa · {{ asignaciones.length }} asignación(es) en total.
+        </p>
+        <p class="text-muted" *ngIf="actividadId && !cargando && asignaciones.length === 0">Esta actividad no tiene asignaciones.</p>
+        <p class="text-warning" *ngIf="total > asignaciones.length">
+          Se muestran las {{ asignaciones.length }} más recientes de {{ total }} asignaciones; los conteos consideran solo las mostradas.
+        </p>
+
+        <div class="table-responsive" *ngIf="visibles().length > 0">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Trabajador</th>
+                <th>Área</th>
+                <th>Turno</th>
+                <th>Vigencia</th>
+                <th>Estado</th>
+                <th class="text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of visibles()" [class.text-muted]="a.estado !== 'ACTIVA'" [class.table-active]="seleccionada?.id === a.id">
+                <td>{{ nombre(a) }} <span class="text-muted small" *ngIf="a.trabajador?.n_empleado">N° {{ a.trabajador.n_empleado }}</span></td>
+                <td>{{ a.area?.nombre }}</td>
+                <td>{{ a.turno?.nombre }}</td>
+                <td>{{ a.fecha_desde | date: 'dd/MM/yyyy' }} – {{ a.fecha_hasta ? (a.fecha_hasta | date: 'dd/MM/yyyy') : 'vigente' }}</td>
+                <td>
+                  <span class="badge" [ngClass]="a.estado === 'ACTIVA' ? 'badge-success' : (a.estado === 'CERRADA' ? 'badge-secondary' : 'badge-dark')">{{ a.estado }}</span>
+                </td>
+                <td class="td-actions text-right">
+                  <button mat-raised-button type="button" class="btn btn-info btn-round" matTooltip="Ver cumplimiento" (click)="verCumplimiento(a)">
+                    <i class="material-icons">fact_check</i>
+                  </button>
+                  <button mat-raised-button type="button" class="btn btn-danger btn-round ml-1" matTooltip="Quitar de la actividad" *ngIf="a.estado === 'ACTIVA'" (click)="quitar(a)">
+                    <i class="material-icons">person_remove</i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" *ngIf="seleccionada">
+      <div class="card-body">
+        <h5>Cumplimiento de {{ nombre(seleccionada) }} <small class="text-muted">({{ seleccionada.estado }})</small></h5>
+        <div class="text-muted" *ngIf="cargandoCumplimiento">Cargando…</div>
+        <p class="text-muted" *ngIf="!cargandoCumplimiento && cumplimiento.length === 0">
+          Sin registros de chequeo para esta asignación todavía.
+        </p>
+        <div class="table-responsive" *ngIf="cumplimiento.length > 0">
+          <table class="table table-sm">
+            <thead><tr><th>Fecha</th><th>Registro</th><th>Avance</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let l of cumplimiento">
+                <td>{{ l.fecha | date: 'dd/MM/yyyy' }}</td>
+                <td>{{ l.tipo === 'trabajador' ? 'Trabajador' : 'Supervisor' }}</td>
+                <td>{{ marcados(l) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

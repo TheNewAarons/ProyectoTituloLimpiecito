@@ -26,6 +26,21 @@ export class GraficoComponent implements OnChanges {
     }
   }
 
+  // Obs. 11: montos en peso chileno ($6.088.275; negativos -$6.088.275) en eje Y y tooltip; opcional, sin efecto si no se usa.
+  // shortcut: no combinar con [enteros] (cada uno reemplaza `scales`); si una pantalla necesita ambos, unir los ticks.
+  @Input() set pesos(valor: boolean) {
+    if (valor) {
+      const clp = (v: any) => {
+        const n = Math.round(Number(v));
+        return (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('es-CL');
+      };
+      this.opciones = Object.assign({}, this.opciones, {
+        scales: { yAxes: [{ ticks: { callback: clp } }] },
+        tooltips: { callbacks: { label: (item: any, data: any) => (data.datasets[item.datasetIndex].label || '') + ': ' + clp(item.yLabel) } }
+      });
+    }
+  }
+
   ngOnChanges(): void {
     this.datasets = (this.series || []).map((s: SerieGrafico): ChartDataSets => ({ label: s.etiqueta, data: s.datos, fill: false }));
   }

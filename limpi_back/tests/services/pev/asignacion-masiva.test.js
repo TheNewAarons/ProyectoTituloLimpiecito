@@ -143,3 +143,24 @@ describe('ejecutar', () => {
     expect(d.crearActividadEnTx).not.toHaveBeenCalled();
   });
 });
+
+// RF-PEV-02 (AUT-016, obs. 12): la vista previa informa a qué cronogramas llega; al confirmar no se consulta.
+describe('vista previa → cronograma', () => {
+  const cronograma = require('../../../services/pev/cronograma-asignacion');
+
+  it('previsualizar agrega `cronograma` con los destinos (cliente, turno y fecha de la selección)', async () => {
+    const espia = jest.spyOn(cronograma, 'destinoVistaPrevia').mockResolvedValue({ cronogramas: [{ id: 89, inicio: '2026-11-01', fin: '2026-11-30' }], sin_cronograma: false });
+    const plan = await s.previsualizar(base([{ trabajador_id: 3, area_id: 11 }]));
+    expect(espia).toHaveBeenCalledWith(1, 10, '2026-11-20');
+    expect(plan.cronograma).toEqual({ cronogramas: [{ id: 89, inicio: '2026-11-01', fin: '2026-11-30' }], sin_cronograma: false });
+    espia.mockRestore();
+  });
+
+  it('al confirmar (con transacción) no consulta los destinos', async () => {
+    const espia = jest.spyOn(cronograma, 'destinoVistaPrevia');
+    await s.ejecutar(base([{ trabajador_id: 3, area_id: 11 }]), { usuario: { id: 7, contexto: 'usuarios' } },
+      { crearActividadEnTx: jest.fn(), crearAsignacionEnTx: jest.fn(async (t, e) => ({ id: 1000 + e.trabajador_id })) });
+    expect(espia).not.toHaveBeenCalled();
+    espia.mockRestore();
+  });
+});

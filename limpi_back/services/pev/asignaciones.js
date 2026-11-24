@@ -320,7 +320,12 @@ async function crearEnTx(t, entrada, contexto) {
         ip: ip
       });
 
-      return asignacion.get({ plain: true });
+      // RF-PEV-02 (AUT-016, obs. 12): la asignación se refleja en los cronogramas activos del cliente/turno (misma tx).
+      const cronograma = await require('./cronograma-asignacion').sincronizar(t, {
+        clienteId: actividad.cliente_id, turnoId: e.turno_id, fechaDesde: fechaDesde, tareaId: tareaId, trabajadorId: e.trabajador_id
+      }, { usuario: usuario, ip: ip });
+
+      return Object.assign(asignacion.get({ plain: true }), { cronogramas: cronograma.cronogramas });
 }
 
 /**
