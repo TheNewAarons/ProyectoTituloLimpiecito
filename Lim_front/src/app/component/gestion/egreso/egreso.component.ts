@@ -26,6 +26,10 @@ export class EgresoComponent implements OnInit {
   public caja_activa;
   public page = 1;
   public pageSize = 12;
+  //FILTROS DE LA LISTA (TEXTO Y ESTADO)
+  public busqueda = '';
+  public filtroEstado = '';
+  public egresosFiltrados = [];
 
   //RF-FAC-01: estado de pago (facturas)
   public esAdmin = false;
@@ -224,11 +228,9 @@ export class EgresoComponent implements OnInit {
           this.egreso = new Egreso(1,'0',"",null,1,null,1,5,null,null,null,null,'PAGADA',null);
           $("#createModal").modal('hide');
           this.alertaService.alertaExitoMsj('Egreso Creado Correctamente')
-        }
-      ),
-      error => {
-        console.log(error);
-      }
+        },
+        error => this.mostrarErrorBackend(error)
+      );
     }
   }
   //OBTENER TODOS LOS EGRESOS
@@ -237,14 +239,23 @@ export class EgresoComponent implements OnInit {
       response => {
         this.respuesta = response;
         this.egresos = this.respuesta.egresos;
-        this.egresos.forEach(element => {
-          //console.log(element.monto);
-        });
+        this.filtrarEgresos();
       },
       error => {
         console.log(error);
       }
     )
+  }
+  //FILTRAR POR TEXTO (USUARIO, DESCRIPCION, DOCUMENTO) Y POR ESTADO (TEXTO DEL BADGE)
+  filtrarEgresos(): void {
+    const texto = this.busqueda.trim().toLowerCase();
+    this.egresosFiltrados = (this.egresos || []).filter((e: Egreso & { usuario?: { nombre: string } }) => {
+      if (this.filtroEstado && this.textoBadgeEstadoPago(e) !== this.filtroEstado) { return false; }
+      if (!texto) { return true; }
+      const campos = [e.usuario && e.usuario.nombre, e.comentario, e.tipo_documento, e.numero_documento];
+      return campos.some(c => !!c && String(c).toLowerCase().indexOf(texto) !== -1);
+    });
+    this.page = 1;
   }
   //ELIMINAR EGRESO
   eliminarEgreso(id: number): void {

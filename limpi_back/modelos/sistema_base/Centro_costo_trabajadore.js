@@ -30,7 +30,7 @@ module.exports = db.sequelize.define(
         liquidacioneId:{
             type: Sequelize.INTEGER,
             references: {
-                model: Centro_costo,
+                model: Liquidacione,
                 key: 'id'
             }
         }
