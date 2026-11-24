@@ -72,7 +72,9 @@ const obtenerTodosEgresosDB = async() => {
           { model: Caja },
           { model: Usuario }
         ],
-        where: { [Op.or]: [{ estado: null }, { estado: { [Op.ne]: EGRESO_ANULADO } }] }
+        where: { [Op.or]: [{ estado: null }, { estado: { [Op.ne]: EGRESO_ANULADO } }] },
+        // más recientes primero: sin orden, un egreso nuevo quedaba en la última página
+        order: [['id', 'DESC']]
       })
     return respuesta
 }

@@ -81,7 +81,7 @@
       <div class="card-header card-header-rose card-header-icon">
         <div class="card-icon"><i class="material-icons">storefront</i></div>
         <h4 class="card-title">Catálogo web</h4>
-        <p class="card-category">Solo lo publicado aparece en la web, en este orden. Despublicar no borra el ítem.</p>
+        <p class="card-category">Solo lo publicado aparece en la web, en este orden. Despublicar no borra el ítem; para eliminarlo, despublícalo primero.</p>
       </div>
       <div class="card-body">
         <div class="text-right" *ngIf="!form">
@@ -107,7 +107,7 @@
                 <th>Ítem</th>
                 <th class="text-right d-none d-sm-table-cell">Precio</th>
                 <th class="text-center">Web</th>
-                <th class="text-right">Editar</th>
+                <th class="text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -134,8 +134,11 @@
                 <td class="text-center">
                   <mat-slide-toggle [checked]="item.publicado" (change)="cambiarPublicado(item)" [attr.aria-label]="item.publicado ? 'Despublicar' : 'Publicar'"></mat-slide-toggle>
                 </td>
-                <td class="text-right">
+                <td class="text-right text-nowrap">
                   <button mat-icon-button type="button" (click)="editar(item)" aria-label="Editar"><i class="material-icons">edit</i></button>
+                  <!-- Solo despublicados: el backend rechaza borrar lo que está en la web. -->
+                  <button mat-icon-button type="button" class="text-danger" (click)="eliminar(item)" [disabled]="item.publicado"
+                          [title]="item.publicado ? 'Despublica el ítem para poder eliminarlo' : 'Eliminar'" aria-label="Eliminar"><i class="material-icons">delete</i></button>
                 </td>
               </tr>
             </tbody>

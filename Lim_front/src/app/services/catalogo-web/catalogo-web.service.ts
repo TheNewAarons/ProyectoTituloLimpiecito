@@ -42,6 +42,11 @@ export class CatalogoWebService {
     return this.http.delete<RespuestaCatalogo<CatalogoItem>>(this.url_catalogo + '/' + id, this.opciones());
   }
 
+  //ELIMINAR DEFINITIVO (SOLO ITEMS DESPUBLICADOS)
+  eliminar(id: number): Observable<RespuestaCatalogo<{ id: number }>> {
+    return this.http.delete<RespuestaCatalogo<{ id: number }>>(this.url_catalogo + '/' + id + '/eliminar', this.opciones());
+  }
+
   //ORDEN COMPLETO SEGUN LA POSICION DE CADA ID
   reordenar(ids: number[]): Observable<RespuestaCatalogo<CatalogoItem[]>> {
     return this.http.patch<RespuestaCatalogo<CatalogoItem[]>>(this.url_catalogo + '/orden', { ids: ids }, this.opciones());
