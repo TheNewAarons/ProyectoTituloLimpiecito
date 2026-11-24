@@ -86,7 +86,7 @@ function aPlanoLimpio(valor) {
  * @param {string} params.entidad nombre real de la tabla afectada (ej. 'cajas', 'liquidaciones')
  * @param {string|number} [params.entidad_id] id o periodo de la fila afectada
  * @param {string} params.accion acción registrada. Conjunto usado hoy por el código:
- *   'CREAR' | 'EDITAR' | 'ANULAR' | 'PAGO' | 'REVERSION_PAGO' | 'CIERRE' | 'REAPERTURA' |
+ *   'CREAR' | 'EDITAR' | 'ANULAR' | 'ACTIVAR' | 'PAGO' | 'REVERSION_PAGO' | 'CIERRE' | 'REAPERTURA' |
  *   'RECALCULO' | 'RECALCULO_CASCADA' | 'CRUCE_STOCK' | 'REVERSA_STOCK' | 'RECEPCION' |
  *   'ASIGNACION_RECEPCION' | 'ENTREGA' | 'ENVIAR' | 'REENVIAR' | 'ENVIAR_FALLIDO' | 'AJUSTE'.
  *   De auth (services/auditoria/login.js): 'LOGIN_OK' | 'LOGIN_FALLIDO'.

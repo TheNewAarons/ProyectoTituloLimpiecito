@@ -16,6 +16,8 @@ import { FormatoEntregaComponent } from './formato-entrega/formato-entrega.compo
 import { KardexProductoComponent } from './kardex-producto/kardex-producto.component';
 import { ConteosListaComponent } from './conteos-lista/conteos-lista.component';
 import { ConteoDetalleComponent } from './conteo-detalle/conteo-detalle.component';
+import { ProveedoresListaComponent } from './proveedores-lista/proveedores-lista.component';
+import { InformeCompraComponent } from './informe-compra/informe-compra.component';
 
 // RF-BOD-04: recepción de órdenes, movimientos y formato de entrega (módulo nuevo con carga diferida)
 @NgModule({
@@ -30,7 +32,7 @@ import { ConteoDetalleComponent } from './conteo-detalle/conteo-detalle.componen
   ],
   declarations: [
     OrdenesCompraListaComponent, OrdenRecepcionComponent, MovimientosBodegaComponent, FormatoEntregaComponent, KardexProductoComponent,
-    ConteosListaComponent, ConteoDetalleComponent
+    ConteosListaComponent, ConteoDetalleComponent, ProveedoresListaComponent, InformeCompraComponent
   ]
 })
 export class RecepcionBodegaModule {}

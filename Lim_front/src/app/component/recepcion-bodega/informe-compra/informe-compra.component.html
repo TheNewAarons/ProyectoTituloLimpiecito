@@ -1,0 +1,60 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">assessment</i></div>
+            <h4 class="card-title">Informe De Compra Por Proveedor <small>(provisorio)</small></h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-md-4">
+                <mat-form-field class="example-full-width">
+                  <mat-select placeholder="Estado de la orden" name="estado" [(ngModel)]="estado" (selectionChange)="cargar()">
+                    <mat-option *ngFor="let f of filtros" [value]="f.valor">{{ f.nombre }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col-12 col-md-8 text-right">
+                <button mat-raised-button type="button" matTooltip="Imprimir" class="btn btn-danger btn-sm" (click)="imprimir()" [disabled]="loading">
+                  <span class="btn-label"><i class="material-icons">print</i></span>
+                  Imprimir
+                </button>
+              </div>
+            </div>
+            <div class="alert alert-warning" *ngIf="truncado">
+              Hay {{ totalOrdenes }} órdenes; el informe considera solo las {{ MAX_ORDENES }} más recientes.
+            </div>
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div class="table-responsive" *ngIf="!loading">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Proveedor</th>
+                    <th class="text-right">Órdenes</th>
+                    <th class="text-right">Unidades pedidas</th>
+                    <th class="text-right">Recibidas</th>
+                    <th class="text-right">Pendientes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="filas.length === 0">
+                    <td colspan="5" class="text-center">Sin registros</td>
+                  </tr>
+                  <tr *ngFor="let f of filas">
+                    <td>{{ f.proveedor }}</td>
+                    <td class="text-right">{{ f.ordenes | number:'1.0-0' }}</td>
+                    <td class="text-right">{{ f.pedidas | number:'1.0-0' }}</td>
+                    <td class="text-right">{{ f.recibidas | number:'1.0-0' }}</td>
+                    <td class="text-right">{{ f.pendientes | number:'1.0-0' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

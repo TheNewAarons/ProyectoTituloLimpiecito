@@ -179,6 +179,19 @@ export interface ConteoDetalle extends ConteoResumen {
   items: ConteoItem[];
 }
 
+// RF-BOD-03: proveedores (baja lógica con activo = 0)
+export interface Proveedor {
+  id: number;
+  nombre: string;
+  rut: string;
+  email: string;
+  telefono: string;
+  contacto: string;
+  activo: number;
+}
+
+export type DatosProveedor = Pick<Proveedor, 'nombre' | 'rut' | 'email' | 'telefono' | 'contacto'>;
+
 export interface ResultadoAprobacionConteo {
   conteo: ConteoDetalle;
   ajustes: { item_id: number, producto_id: number, cantidad: number, movimiento_id: number }[];
