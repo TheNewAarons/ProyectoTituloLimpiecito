@@ -41,7 +41,7 @@
               >
               </ng-select>
               <div class="modal-footer justify-content-center">
-                <button mat-raised-button type="submit" class="btn btn-info btn-round">
+                <button mat-raised-button type="submit" class="btn btn-info btn-round" [disabled]="!file || !f1.valid">
                   Crear
                 </button>
               </div>

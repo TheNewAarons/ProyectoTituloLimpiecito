@@ -11,11 +11,41 @@ const Documento = require('../../modelos/sistema_base/Documento');
 const Categoria = require('../../modelos/sistema_base/Categoria');
 const Asoc_trabajador = require('../../modelos/sistema_base/Asociacion_trabajador');
 
+// AUT-011: PDF real = extensión .pdf + firma "%PDF-" (sin el tope de 10 MB de los documentos públicos, para no restringir los internos).
+function esPdf(ruta) {
+  return new Promise((resolve) => {
+    if (path.extname(ruta).toLowerCase() !== '.pdf') return resolve(false);
+    fs.open(ruta, 'r', (err, fd) => {
+      if (err) return resolve(false);
+      const buf = Buffer.alloc(5);
+      fs.read(fd, buf, 0, 5, 0, (errRead) => {
+        fs.close(fd, () => {});
+        resolve(!errRead && buf.toString('ascii') === '%PDF-');
+      });
+    });
+  });
+}
+
 Documento.belongsTo(Categoria);
 
 //CREAR DOCUMENTO COMO INSTANCIA Y SUBIDA DE ARCHIVO
 documentos.post('/crear', multer.single('pdf'), async (req, res) => {
-  const { fecha_subida, categoriaDocumentoId, estado, nombre } = req.body;
+  const { fecha_subida, categoriaDocumentoId, estado, nombre } = req.body || {};
+  // AUT-011 (obs. 15/17): sin archivo, archivo que no es PDF o sin categoría -> 400, sin detener el proceso.
+  const rechazar = (mensaje) => {
+    if (req.file) fs.unlink(req.file.path, () => {});
+    return res.status(400).json({ mensaje: mensaje });
+  };
+  if (!req.file) return rechazar('Debe adjuntar un archivo PDF.');
+  if (!(await esPdf(req.file.path))) return rechazar('El archivo no es un PDF válido.');
+  const idCategoria = Number(categoriaDocumentoId);
+  try {
+    if (!Number.isSafeInteger(idCategoria) || idCategoria <= 0 || !(await Categoria.findById(idCategoria))) {
+      return rechazar('Debe elegir una categoría válida.');
+    }
+  } catch (error) {
+    return res.send('error: ' + error);
+  }
   const documentoData = {
     nombre: nombre,
     fecha_subida: fecha_subida,
