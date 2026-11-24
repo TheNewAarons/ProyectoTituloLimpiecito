@@ -11,20 +11,8 @@ const Documento = require('../../modelos/sistema_base/Documento');
 const Categoria = require('../../modelos/sistema_base/Categoria');
 const Asoc_trabajador = require('../../modelos/sistema_base/Asociacion_trabajador');
 
-// AUT-011: PDF real = extensión .pdf + firma "%PDF-" (sin el tope de 10 MB de los documentos públicos, para no restringir los internos).
-function esPdf(ruta) {
-  return new Promise((resolve) => {
-    if (path.extname(ruta).toLowerCase() !== '.pdf') return resolve(false);
-    fs.open(ruta, 'r', (err, fd) => {
-      if (err) return resolve(false);
-      const buf = Buffer.alloc(5);
-      fs.read(fd, buf, 0, 5, 0, (errRead) => {
-        fs.close(fd, () => {});
-        resolve(!errRead && buf.toString('ascii') === '%PDF-');
-      });
-    });
-  });
-}
+// AUT-011: PDF real = extensión .pdf + firma "%PDF-" (compartido con PUT /api/v1/archivos/:id/archivo).
+const { esPdf } = require('../../services/archivo/firma-pdf');
 
 Documento.belongsTo(Categoria);
 
@@ -44,7 +32,8 @@ documentos.post('/crear', multer.single('pdf'), async (req, res) => {
       return rechazar('Debe elegir una categoría válida.');
     }
   } catch (error) {
-    return res.send('error: ' + error);
+    fs.unlink(req.file.path, () => {});
+    return res.status(500).json({ mensaje: 'No se pudo crear el documento.' });
   }
   const documentoData = {
     nombre: nombre,
@@ -84,29 +73,10 @@ documentos.put('/editar/:id', async (req, res) => {
     });
 });
 
-//REEMPLAZAR EL ARCHIVO DE UN DOCUMENTO (AUT-011, RF-010.2): la descarga y "Ver Documento" entregan la versión nueva.
-// El archivo anterior se conserva en disco (reversible; ver Docs/DECISIONES.md D-WEB-02-R1).
-documentos.put('/reemplazar-archivo/:id', multer.single('pdf'), async (req, res) => {
-  const rechazar = (estado, mensaje) => {
-    if (req.file) fs.unlink(req.file.path, () => {});
-    return res.status(estado).json({ mensaje: mensaje });
-  };
-  const id = Number(req.params.id);
-  if (!Number.isSafeInteger(id) || id <= 0) return rechazar(400, 'Documento inválido.');
-  if (!req.file) return rechazar(400, 'Debe adjuntar un archivo PDF.');
-  if (!(await esPdf(req.file.path))) return rechazar(400, 'El archivo no es un PDF válido.');
-  try {
-    const documento = await Documento.findById(id);
-    if (!documento) return rechazar(404, 'El documento no existe.');
-    await Documento.update({ url: req.file.path }, { where: { id: id } });
-    return res.json({ documento: { id: id, url: req.file.path } });
-  } catch (error) {
-    return rechazar(500, 'No se pudo reemplazar el archivo.');
-  }
-});
-
 //ELIMINAR DOCUMENTO E INSTANCIA
 documentos.delete('/eliminar/:idDocumento', async (req, res) => {
+  // AUT-011: un error de BD aquí era una promesa rechazada sin capturar (detiene el proceso en Node >= 15).
+  try {
   const documento = await Documento.findById(req.params.idDocumento);
   if (documento) {
     let cont_trabajador = await Asoc_trabajador.count({ where: { documentoId: documento.id } });
@@ -131,6 +101,9 @@ documentos.delete('/eliminar/:idDocumento', async (req, res) => {
     }
   } else {
     return res.json({ eliminar: false, mensaje: 'No Es Posible Eliminar' });
+  }
+  } catch (error) {
+    return res.status(500).json({ eliminar: false, mensaje: 'No Es Posible Eliminar' });
   }
 });
 

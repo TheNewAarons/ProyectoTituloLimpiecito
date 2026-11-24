@@ -92,59 +92,22 @@ describe('POST /documentos/crear (legacy)', () => {
     expect(Documento.create).toHaveBeenCalledWith(expect.objectContaining({ url: expect.stringMatching(/\.pdf$/) }));
   });
 
-  it('si la consulta de la categoría falla, responde error sin detener el proceso (crear)', async () => {
+  it('si la consulta de la categoría falla: 500 con mensaje genérico, borra el archivo y el proceso sigue', async () => {
     Categoria.findById.mockRejectedValue(new Error('BD caída'));
+    const borrar = jest.spyOn(fs, 'unlink');
     const r = await crear({ buf: PDF, nombre: 'ok.pdf' }, { nombre: 'Doc', categoriaDocumentoId: '3' });
-    expect(r.text).toContain('error');
+    expect(r.status).toBe(500);
+    expect(r.body).toEqual({ mensaje: 'No se pudo crear el documento.' });
+    expect(borrar).toHaveBeenCalledWith(expect.stringMatching(/\.pdf$/), expect.any(Function));
+    borrar.mockRestore();
     expect((await crear(null, {})).status).toBe(400);
   });
 });
 
-// RF-010.2 (AUT-011): reemplazar el archivo de un documento; la descarga pasa a entregar la versión nueva.
-describe('PUT /documentos/reemplazar-archivo/:id (legacy)', () => {
+// El reemplazo de archivo vive en /api/v1/archivos/:id/archivo (tests/api/archivos-reemplazo.v1.test.js).
+describe('PUT /documentos/editar y DELETE /documentos/eliminar (legacy, AUT-011)', () => {
   const Asoc = require('../../modelos/sistema_base/Asociacion_trabajador');
-  const reemplazar = (id, archivo) => {
-    const r = request(app()).put('/documentos/reemplazar-archivo/' + id);
-    return archivo ? r.attach('pdf', archivo.buf, archivo.nombre) : r;
-  };
-  beforeEach(() => {
-    Documento.findById.mockImplementation(async (id) => (Number(id) === 56 ? { id: 56, url: 'uploads/anterior.pdf' } : null));
-    Documento.update.mockResolvedValue([1]);
-  });
-
-  it('PDF válido: actualiza la url del documento al archivo nuevo y no borra el anterior', async () => {
-    const borrar = jest.spyOn(fs, 'unlink');
-    const r = await reemplazar(56, { buf: PDF, nombre: 'version2.pdf' });
-    expect(r.status).toBe(200);
-    expect(r.body.documento.id).toBe(56);
-    expect(r.body.documento.url).toMatch(/uploads[\\/][\w-]+\.pdf$/);
-    expect(Documento.update).toHaveBeenCalledWith({ url: r.body.documento.url }, { where: { id: 56 } });
-    expect(borrar).not.toHaveBeenCalled(); // el archivo anterior se conserva (decisión D-WEB-02-R1)
-    borrar.mockRestore();
-  });
-
-  it.each([
-    ['sin archivo', null, 400, 'Debe adjuntar un archivo PDF.'],
-    ['PDF falso', { buf: TEXTO, nombre: 'falso.pdf' }, 400, 'El archivo no es un PDF válido.']
-  ])('%s: responde con error y no modifica el documento', async (_c, archivo, estado, mensaje) => {
-    const r = await reemplazar(56, archivo);
-    expect(r.status).toBe(estado);
-    expect(r.body.mensaje).toBe(mensaje);
-    expect(Documento.update).not.toHaveBeenCalled();
-  });
-
-  it('documento inexistente responde 404 y borra el archivo subido', async () => {
-    const borrar = jest.spyOn(fs, 'unlink');
-    const r = await reemplazar(999, { buf: PDF, nombre: 'x.pdf' });
-    expect(r.status).toBe(404);
-    expect(borrar).toHaveBeenCalledWith(expect.stringMatching(/\.pdf$/), expect.any(Function));
-    expect(Documento.update).not.toHaveBeenCalled();
-    borrar.mockRestore();
-  });
-
-  it('id inválido responde 400', async () => {
-    expect((await reemplazar('abc', { buf: PDF, nombre: 'x.pdf' })).status).toBe(400);
-  });
+  beforeEach(() => { Documento.update.mockResolvedValue([1]); });
 
   it('editar con categoría vacía responde 400 y no actualiza; con categoría válida actualiza', async () => {
     const vacia = await request(app()).put('/documentos/editar/56').send({ nombre: 'Doc', categoriaDocumentoId: null });
@@ -161,6 +124,14 @@ describe('PUT /documentos/reemplazar-archivo/:id (legacy)', () => {
     const r = await request(app()).delete('/documentos/eliminar/60');
     expect(r.status).toBe(200);
     expect(r.body.eliminar).toBe(true);
+    expect((await crear(null, {})).status).toBe(400);
+  });
+
+  it('eliminar con error de BD responde 500 sin detener el proceso', async () => {
+    Documento.findById.mockRejectedValue(new Error('BD caída'));
+    const r = await request(app()).delete('/documentos/eliminar/60');
+    expect(r.status).toBe(500);
+    expect(r.body).toEqual({ eliminar: false, mensaje: 'No Es Posible Eliminar' });
     expect((await crear(null, {})).status).toBe(400);
   });
 });

@@ -134,9 +134,24 @@ export class VistaDocumentosComponent implements OnInit {
     }
   }
 
-  //REEMPLAZAR ARCHIVO AL EDITAR (RF-010.2): opcional; si se eligió un PDF, primero se reemplaza y luego se guarda nombre/categoría.
+  //REEMPLAZAR ARCHIVO AL EDITAR (RF-010.2): opcional; si se eligió un PDF, se guardan nombre/categoría y luego se reemplaza.
   public archivoNuevo: File = null;
   @ViewChild('archivoEditar', { static: false }) archivoEditar: ElementRef;
+
+  // Obs. 19: el botón Editar solo se habilita si cambió el nombre, la categoría o se eligió un archivo nuevo.
+  public edicionOriginal = { nombre: '', categoriaDocumentoId: null };
+
+  prepararEdicion(documento) {
+    this.edicionOriginal = { nombre: String(documento.nombre || '').trim(), categoriaDocumentoId: documento.categoriaDocumentoId };
+    this.limpiarArchivoNuevo();
+  }
+
+  hayCambios(): boolean {
+    const d = this.documentoEdit || ({} as any);
+    return !!this.archivoNuevo
+      || String(d.nombre || '').trim() !== this.edicionOriginal.nombre
+      || d.categoriaDocumentoId !== this.edicionOriginal.categoriaDocumentoId;
+  }
 
   limpiarArchivoNuevo() {
     this.archivoNuevo = null;
@@ -154,31 +169,41 @@ export class VistaDocumentosComponent implements OnInit {
     this.archivoNuevo = archivo;
   }
 
+  // Reemplazar el archivo es solo para Administrador (PUT /api/v1/archivos/:id/archivo); sin distinguir mayúsculas.
+  esAdmin(): boolean {
+    const rol = this.usuario && this.usuario.role ? String(this.usuario.role.nombre) : '';
+    return rol.toUpperCase() === 'ADMINISTRADOR';
+  }
+
+  private mensajeError(error, porDefecto: string): string {
+    const e = error && error.error;
+    if (e && e.error && e.error.message) { return e.error.message; } // formato /api/v1
+    if (e && e.mensaje) { return e.mensaje; }                     // formato legacy de /documento
+    return porDefecto;
+  }
+
+  // Primero nombre/categoría y luego el archivo: si algo falla, el archivo no queda cambiado a medias (revisor).
   guardarEdicion(valid) {
-    if (!valid) { return; }
+    if (!valid || !this.hayCambios()) { return; }
     if (!this.archivoNuevo) { this.editarDocumento(valid); return; }
-    const fd = new FormData();
-    fd.append('pdf', this.archivoNuevo);
-    this.documentoService.reemplazarArchivo(this.documentoEdit.id, fd).subscribe(
+    this.documentoService.editarDocumento(this.documentoEdit, this.documentoEdit.id).subscribe(
       () => {
-        this.limpiarArchivoNuevo();
-        // No se usa editarDocumento(): solo avisa si cambian nombre/categoría (filas != 0), y aquí cambió el archivo.
-        this.documentoService.editarDocumento(this.documentoEdit, this.documentoEdit.id).subscribe(
+        const fd = new FormData();
+        fd.append('pdf', this.archivoNuevo);
+        this.documentoService.reemplazarArchivo(this.documentoEdit.id, fd, this.loginService.getToken()).subscribe(
           () => {
+            this.limpiarArchivoNuevo();
             this.obtenerDocumentos();
             $('#editModal').modal('hide');
             this.alertaService.alertaExitoMsj('Documento actualizado', 'El archivo fue reemplazado correctamente.');
           },
           (error) => {
-            const mensaje = error && error.error && error.error.mensaje ? error.error.mensaje : 'El archivo se reemplazó, pero no se pudieron guardar los demás datos.';
-            this.alertaService.alertaErrorMsj('Documento actualizado parcialmente', mensaje);
+            this.obtenerDocumentos();
+            this.alertaService.alertaErrorMsj('No se pudo reemplazar el archivo', this.mensajeError(error, 'El documento conserva su archivo anterior.'));
           }
         );
       },
-      (error) => {
-        const mensaje = error && error.error && error.error.mensaje ? error.error.mensaje : 'No se pudo reemplazar el archivo.';
-        this.alertaService.alertaErrorMsj('No se pudo reemplazar el archivo', mensaje);
-      }
+      (error) => this.alertaService.alertaErrorMsj('No se pudo guardar el documento', this.mensajeError(error, 'Intenta nuevamente.'))
     );
   }
 }
