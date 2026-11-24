@@ -114,10 +114,15 @@ export class VerCentroComponent implements OnInit {
     )
   }
   //OBTENER INFORMACION DEL CENTRO DE COSTO
-  obtenerDatosCentroCosto() {
+  // mensajeExito se muestra al terminar la recarga: cerrarAlerta() cerraba el aviso de éxito apenas aparecía
+  obtenerDatosCentroCosto(mensajeExito?: string): void {
     this.centroCostoService.obtenerCentroId(this.idCentro).subscribe(
       (response: any) => {
-        this.alertaService.cerrarAlerta()
+        if (mensajeExito) {
+          this.alertaService.alertaExitoMsj(mensajeExito)
+        } else {
+          this.alertaService.cerrarAlerta()
+        }
         this.centro = response.centro;
         this.trabajadores = this.centro.centro_costo_trabajadores;
         this.listaInsumos = this.centro.lista_insumos;
@@ -235,9 +240,8 @@ export class VerCentroComponent implements OnInit {
       this.centroCostoService.crearEgreso(this.egreso).subscribe(
         (response: any) => {
           this.limpiar();
-          this.obtenerDatosCentroCosto();
+          this.obtenerDatosCentroCosto('Egreso Creado Correctamente');
           $('#createEgreso').modal('hide');
-          this.alertaService.alertaExitoMsj('Egreso Creado Correctamente')
         },
         (error) => {
           this.alertaService.cerrarAlerta()
@@ -256,12 +260,11 @@ export class VerCentroComponent implements OnInit {
       this.centroCostoService.crearIngreso(this.ingreso).subscribe(
         (response: any) => {
           this.limpiar();
-          this.obtenerDatosCentroCosto();
+          this.obtenerDatosCentroCosto('Ingreso Creado Correctamente');
           $('#createIngreso').modal('hide');
-          this.alertaService.alertaExitoMsj('Ingreso Creado Correctamente')
         },
         (error) => {
-          this.alertaService.cerrarAlerta()
+          this.alertaService.alertaErrorMsj('No se pudo crear el ingreso', 'Intenta nuevamente o contacta al administrador.')
           console.log(error);
         }
       );
@@ -287,8 +290,7 @@ export class VerCentroComponent implements OnInit {
         this.alertaService.loading()
         this.centroCostoService.aprobarLista(idLista,this.usuario.id).subscribe(
           (response: any) => {
-            this.obtenerDatosCentroCosto();
-            this.alertaService.alertaExitoMsj('La Lista ha sido Aprobada.')
+            this.obtenerDatosCentroCosto('La Lista ha sido Aprobada.');
           },
           (error) => {
             this.alertaService.cerrarAlerta()
@@ -314,8 +316,7 @@ export class VerCentroComponent implements OnInit {
         this.alertaService.loading()
         this.centroCostoService.eliminarEgreso(idEgreso).subscribe(
           (response: any) => {
-            this.obtenerDatosCentroCosto();
-            this.alertaService.alertaExitoMsj('El Egreso ha sido eliminada.')
+            this.obtenerDatosCentroCosto('El Egreso ha sido eliminada.');
           },
           (error) => {
             this.alertaService.cerrarAlerta()
@@ -341,8 +342,7 @@ export class VerCentroComponent implements OnInit {
         this.alertaService.loading()
         this.centroCostoService.eliminarIngreso(idIngreso).subscribe(
           (response: any) => {
-            this.obtenerDatosCentroCosto();
-            this.alertaService.alertaExitoMsj('El Ingreso ha sido eliminada.')
+            this.obtenerDatosCentroCosto('El Ingreso ha sido eliminada.');
           },
           (error) => {
             this.alertaService.cerrarAlerta()
@@ -368,8 +368,7 @@ export class VerCentroComponent implements OnInit {
         this.alertaService.loading()
         this.centroCostoService.eliminarAsociacion(idAsociacion).subscribe(
           (response: any) => {
-            this.obtenerDatosCentroCosto();
-            this.alertaService.alertaExitoMsj('La Asociación ha sido eliminada.')
+            this.obtenerDatosCentroCosto('La Asociación ha sido eliminada.');
           },
           (error) => {
             this.alertaService.cerrarAlerta()
@@ -395,8 +394,7 @@ export class VerCentroComponent implements OnInit {
         this.alertaService.loading()
         this.centroCostoService.eliminarLista(idLista).subscribe(
           (response: any) => {
-            this.obtenerDatosCentroCosto();
-            this.alertaService.alertaExitoMsj('La lista ha sido eliminada')
+            this.obtenerDatosCentroCosto('La lista ha sido eliminada');
           },
           (error) => {
             this.alertaService.cerrarAlerta()
@@ -440,8 +438,7 @@ export class VerCentroComponent implements OnInit {
           this.centro.estado = 0;
           this.centro.fecha_cierre = formatDate(new Date(), 'yyyy-MM-dd HH:mm:ss', 'en-US');
           this.centroCostoService.cerrarCentro(this.centro, this.centro.id).subscribe((response: any) => {
-            this.obtenerDatosCentroCosto();
-            this.alertaService.alertaExitoMsj('El Centro de Costo Ha Sido Cerrado.')
+            this.obtenerDatosCentroCosto('El Centro de Costo Ha Sido Cerrado.');
           });
         } else {
           this.alertaService.cerrarAlerta()

@@ -59,15 +59,39 @@ export class DashboardBodegaComponent implements OnInit {
     );
   }
 
+  // Obs. 6: tras guardar, la tabla (ordenada con los bajo mínimo primero) salta a la página donde quedó el producto.
+  recargarMostrando(productoId: number) {
+    this.dashboardService.obtener().subscribe(
+      (r) => {
+        this.datos = r.data;
+        this.duracionMs = (r.meta as any).duracion_ms;
+        // Si el producto no viene en la lista (recortada por el tope del backend), se queda en la página actual.
+        const i = this.datos && this.datos.stock ? this.datos.stock.productos.map((x) => x.id).indexOf(productoId) : -1;
+        if (i >= 0) { this.page = Math.floor(i / this.pageSize) + 1; }
+      },
+      (error: HttpErrorResponse) => {
+        this.error = true;
+        mostrarErrorBodega(error, this.alertas, this.loginService);
+      }
+    );
+  }
+
+  private escaparHtml(texto: string): string {
+    return String(texto).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' } as any)[c]);
+  }
+
   ir(ruta: string, id?: number) {
     this.router.navigate(id ? [ruta, id] : [ruta]);
   }
 
   //EDITAR STOCK MINIMO (ENTERO >= 0; 0 = SIN ALERTA)
   editarMinimo(p: ProductoStock) {
+    // Obs. 6 (AUT-013): el número es el nuevo MÍNIMO (umbral de alerta), no el stock.
     swal.fire({
-      title: 'Stock mínimo',
-      text: p.nombre + ' (stock actual: ' + p.stock + '). Use 0 para no alertar.',
+      title: 'Editar stock mínimo',
+      html: '<b>' + this.escaparHtml(p.nombre) + '</b><br>Stock actual: <b>' + p.stock + '</b> · Mínimo actual: <b>' + p.stock_minimo + '</b><br>' +
+        '<small>Ingresa el <b>nuevo stock mínimo</b>. Se alerta cuando el stock es igual o menor a ese número. 0 = sin alerta. ' +
+        'El stock no cambia.</small>',
       input: 'number',
       inputValue: String(p.stock_minimo),
       inputAttributes: { min: '0', step: '1', inputmode: 'numeric' },
@@ -85,10 +109,14 @@ export class DashboardBodegaComponent implements OnInit {
       }
     }).then((resultado) => {
       if (resultado.dismiss || resultado.value === undefined) { return; }
-      this.dashboardService.actualizarStockMinimo(p.id, Number(resultado.value)).subscribe(
-        () => {
-          this.alertas.showNotification('Stock mínimo actualizado');
-          this.cargar();
+      const nuevo = Number(resultado.value);
+      this.dashboardService.actualizarStockMinimo(p.id, nuevo).subscribe(
+        (r) => {
+          // La notificación se pinta como HTML: el nombre va escapado. El estado de alerta lo decide el backend.
+          const enAlerta = r && r.data ? !!r.data.bajo_minimo : (nuevo > 0 && Number(p.stock) <= nuevo);
+          this.alertas.showNotification('Stock mínimo de ' + this.escaparHtml(p.nombre) + ' actualizado a ' + nuevo + '. ' +
+            (enAlerta ? 'Queda en alerta (bajo mínimo).' : 'Queda sin alerta.'));
+          this.recargarMostrando(p.id);
         },
         (error: HttpErrorResponse) => mostrarErrorBodega(error, this.alertas, this.loginService)
       );

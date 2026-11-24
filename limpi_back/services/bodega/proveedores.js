@@ -192,16 +192,35 @@ async function editar(id, cambios, contexto) {
  * @param {{usuario: {id: number, contexto: string}, ip?: string}} contexto
  */
 async function desactivar(id, contexto) {
+  return cambiarActivo(id, 0, 'ANULAR', contexto);
+}
+
+/**
+ * PATCH /proveedores/:id/reactivar — revierte la baja lógica (activo = 1).
+ * @param {number} id
+ * @param {{usuario: {id: number, contexto: string}, ip?: string}} contexto
+ */
+async function reactivar(id, contexto) {
+  return cambiarActivo(id, 1, 'ACTIVAR', contexto);
+}
+
+/**
+ * @param {number} id
+ * @param {number} activo 0 | 1
+ * @param {string} accion acción de auditoría
+ * @param {{usuario: {id: number, contexto: string}, ip?: string}} contexto
+ */
+async function cambiarActivo(id, activo, accion, contexto) {
   return db.sequelize.transaction(async function (t) {
     const proveedor = await obtenerOFallar(id, t);
     const antes = proveedor.get({ plain: true });
-    await proveedor.update({ activo: 0 }, { transaction: t });
+    await proveedor.update({ activo: activo }, { transaction: t });
     await auditar({
       transaction: t,
       usuario: contexto.usuario,
       entidad: 'proveedores',
       entidad_id: proveedor.id,
-      accion: 'ANULAR',
+      accion: accion,
       antes: antes,
       despues: proveedor,
       ip: contexto.ip
@@ -215,5 +234,6 @@ module.exports = {
   obtener: obtener,
   crear: crear,
   editar: editar,
-  desactivar: desactivar
+  desactivar: desactivar,
+  reactivar: reactivar
 };

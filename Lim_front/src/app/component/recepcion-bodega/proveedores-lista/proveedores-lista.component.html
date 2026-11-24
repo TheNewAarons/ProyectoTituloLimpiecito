@@ -1,0 +1,128 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row" *ngIf="formulario">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">{{ formulario.id === null ? 'add_business' : 'edit' }}</i></div>
+            <h4 class="card-title">{{ formulario.id === null ? 'Nuevo Proveedor' : 'Editar Proveedor' }}</h4>
+          </div>
+          <div class="card-body">
+            <form (ngSubmit)="guardar()">
+              <div class="row">
+                <div class="col-12 col-md-6">
+                  <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Nombre *" name="nombre" maxlength="150" required [(ngModel)]="formulario.datos.nombre">
+                  </mat-form-field>
+                </div>
+                <div class="col-12 col-md-6">
+                  <mat-form-field class="example-full-width">
+                    <input matInput placeholder="RUT" name="rut" maxlength="12" [(ngModel)]="formulario.datos.rut">
+                  </mat-form-field>
+                </div>
+                <div class="col-12 col-md-4">
+                  <mat-form-field class="example-full-width">
+                    <input matInput type="email" placeholder="Email (recibe las órdenes de compra)" name="email" maxlength="150" [(ngModel)]="formulario.datos.email">
+                  </mat-form-field>
+                </div>
+                <div class="col-12 col-md-4">
+                  <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Teléfono" name="telefono" maxlength="30" [(ngModel)]="formulario.datos.telefono">
+                  </mat-form-field>
+                </div>
+                <div class="col-12 col-md-4">
+                  <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Contacto" name="contacto" maxlength="150" [(ngModel)]="formulario.datos.contacto">
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="text-right">
+                <button mat-raised-button type="button" class="btn btn-danger btn-sm" (click)="cancelar()">
+                  <span class="btn-label"><i class="material-icons">close</i></span>
+                  Cancelar
+                </button>
+                <button mat-raised-button type="submit" class="btn btn-success btn-sm" [disabled]="guardando">
+                  <span class="btn-label"><i class="material-icons">save</i></span>
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">storefront</i></div>
+            <h4 class="card-title">Proveedores</h4>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-md-4">
+                <mat-form-field class="example-full-width">
+                  <mat-select placeholder="Estado" name="activo" [(ngModel)]="activo" (selectionChange)="filtrar()">
+                    <mat-option *ngFor="let f of filtros" [value]="f.valor">{{ f.nombre }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col-12 col-md-8 text-right">
+                <button mat-raised-button type="button" matTooltip="Nuevo Proveedor" class="btn btn-warning btn-sm" (click)="nuevo()" [disabled]="formulario">
+                  <span class="btn-label"><i class="material-icons">add</i></span>
+                  Nuevo Proveedor
+                </button>
+              </div>
+            </div>
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div class="table-responsive" *ngIf="!loading">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>RUT</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Contacto</th>
+                    <th>Estado</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="proveedores.length === 0">
+                    <td colspan="7" class="text-center">Sin registros</td>
+                  </tr>
+                  <tr *ngFor="let p of proveedores">
+                    <td>{{ p.nombre }}</td>
+                    <td>{{ p.rut || '—' }}</td>
+                    <td>{{ p.email || '—' }}</td>
+                    <td>{{ p.telefono || '—' }}</td>
+                    <td>{{ p.contacto || '—' }}</td>
+                    <td>
+                      <span [class]="p.activo ? 'badge badge-success' : 'badge badge-default'">{{ p.activo ? 'Activo' : 'Inactivo' }}</span>
+                    </td>
+                    <td class="td-actions text-right">
+                      <button mat-raised-button type="button" matTooltip="Editar" class="btn btn-warning btn-round" (click)="editar(p)">
+                        <i class="material-icons">edit</i>
+                      </button>
+                      <button *ngIf="p.activo" mat-raised-button type="button" matTooltip="Desactivar" class="btn btn-danger btn-round" (click)="desactivar(p)">
+                        <i class="material-icons">close</i>
+                      </button>
+                      <button *ngIf="!p.activo" mat-raised-button type="button" matTooltip="Reactivar" class="btn btn-success btn-round" (click)="reactivar(p)">
+                        <i class="material-icons">done</i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card-footer" *ngIf="total > pageSize">
+            <ngb-pagination [(page)]="page" [pageSize]="pageSize" [collectionSize]="total" [maxSize]="5" [boundaryLinks]="true" (pageChange)="cargar()"></ngb-pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

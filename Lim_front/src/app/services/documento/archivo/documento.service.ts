@@ -21,6 +21,11 @@ export class DocumentoService {
   editarDocumento(documento, idDocumento) {
     return this.http.put(this.url_backend + '/editar/' + idDocumento, documento);
   }
+  //REEMPLAZAR EL ARCHIVO DE UN DOCUMENTO (RF-010.2): PUT /api/v1/archivos/:id/archivo (Admin), FormData con el campo 'pdf'
+  reemplazarArchivo(idDocumento, formData: FormData, token: string) {
+    return this.http.put(environment.url + '/api/v1/archivos/' + idDocumento + '/archivo', formData,
+      { headers: new HttpHeaders({ 'x-access-token': token || '' }) });
+  }
 
   //ELIMINAR DOCUMENTO
   eliminarDocumento(idDocumento) {
