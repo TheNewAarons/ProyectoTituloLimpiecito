@@ -24,6 +24,8 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
+// RNF-SEC-01 (AUT-015): los documentos internos de uploads/ ya no se sirven sin sesión (las imágenes de la app sí).
+app.use('/web-limpiecito/uploads', require('./middleware/documentos-protegidos'));
 app.use('/web-limpiecito/uploads', express.static(path.resolve('uploads')));
 // RF-WEB-03: nosniff para que una imagen con contenido HTML no se interprete como documento.
 app.use('/web-limpiecito/uploads_limpiecitoweb', express.static(path.resolve('uploads_limpiecitoweb'), {
@@ -328,6 +330,8 @@ app.use(process.env.PREFIJO + '/api/v1/auditoria', autenticar, requerirRol.apply
 // RF-WEB-02: publicar/despublicar documentos como PDF descargables (solo Admin).
 const ArchivosV1 = require('./api/v1/archivos/routes');
 app.use(process.env.PREFIJO + '/api/v1/archivos', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), ArchivosV1);
+// RNF-SEC-01 (AUT-015): contenido de documentos internos con sesión (Administrador; LVL_ARCHIVO es el rol de consulta de Archivo).
+app.use(process.env.PREFIJO + '/api/v1/documentos', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES.concat(['LVL_ARCHIVO'])), require('./api/v1/documentos/routes'));
 
 // RF-WEB-02: portal público de PDFs (sin auth, con rate limit por IP dentro del router).
 const PublicV1 = require('./api/v1/public/routes');
