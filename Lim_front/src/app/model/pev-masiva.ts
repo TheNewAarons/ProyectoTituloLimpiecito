@@ -37,6 +37,8 @@ export interface PlanAsignacion {
   filas: FilaPlan[];
   resumen: { a_crear: number; ya_asignadas: number; con_error: number; repetidas_en_la_seleccion: number };
   asignaciones_creadas?: number[];
+  // RF-PEV-02 (obs. 12): cronogramas activos donde se reflejará la asignación; sin_cronograma null = no se pudo verificar.
+  cronograma?: { cronogramas: { id: number; mes: number; anio: number }[]; sin_cronograma: boolean | null };
 }
 
 export interface RespuestaPev<T> {

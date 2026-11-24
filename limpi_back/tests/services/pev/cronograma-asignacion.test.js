@@ -99,3 +99,23 @@ describe('destinoVistaPrevia', () => {
     expect(await servicio.destinoVistaPrevia(8, 8, '2026-11-23')).toEqual({ cronogramas: [], sin_cronograma: null });
   });
 });
+
+describe('listarPorCronograma', () => {
+  it('cronograma inexistente: null', async () => {
+    db.sequelize.query.mockResolvedValueOnce([]);
+    expect(await servicio.listarPorCronograma(999)).toBeNull();
+  });
+
+  it('busca asignaciones del cliente/turno que tocan el mes (no anuladas) y arma nombres', async () => {
+    db.sequelize.query
+      .mockResolvedValueOnce([{ id: 89, clienteId: 1, turnoId: 1, mes: 2, anio: 2028 }])
+      .mockResolvedValueOnce([{ id: 70, estado: 'ACTIVA', fecha_desde: '2028-02-10', fecha_hasta: null, actividad_id: 2, actividad: 'Barrido 1',
+        sector: 'Sector 1', area: 'Area 1.1', trabajador_id: 4, trabajador_nombre: 'Ana', trabajador_apellido: 'Rojas', n_empleado: 1004 }]);
+    const r = await servicio.listarPorCronograma(89);
+    expect(r.cronograma).toEqual({ id: 89, mes: 2, anio: 2028, cliente_id: 1, turno_id: 1 });
+    expect(r.asignaciones).toEqual([expect.objectContaining({ id: 70, actividad: 'Barrido 1', trabajador: 'Ana Rojas', n_empleado: 1004 })]);
+    const llamada = db.sequelize.query.mock.calls[1];
+    expect(llamada[0]).toMatch(/estado <> 'ANULADA'/);
+    expect(llamada[1].replacements).toEqual({ cliente: 1, turno: 1, inicio: '2028-02-01', fin: '2028-02-29' }); // año bisiesto
+  });
+});

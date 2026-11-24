@@ -18,5 +18,7 @@ router.post('/asignaciones', asyncHandler(controlador.crearAsignacion));
 router.patch('/asignaciones/:id/cerrar', asyncHandler(controlador.cerrarAsignacion));
 router.patch('/asignaciones/:id/anular', asyncHandler(controlador.anularAsignacion));
 router.get('/asignaciones/:id/cumplimiento', asyncHandler(controlador.verCumplimiento));
+// RF-PEV-02 (AUT-016, obs. 12): asignaciones vigentes en el mes de un cronograma (panel de Ver Cronograma).
+router.get('/cronogramas/:id/asignaciones', asyncHandler(require('./cronograma-controlador').asignacionesDelCronograma));
 
 module.exports = router;
