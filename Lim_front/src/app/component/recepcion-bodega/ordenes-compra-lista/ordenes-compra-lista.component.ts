@@ -25,6 +25,7 @@ export class OrdenesCompraListaComponent implements OnInit {
   pageSize = 20;
   total = 0;
   loading = false;
+  enviando = false;
 
   constructor(
     private recepcionService: RecepcionBodegaService,
@@ -64,9 +65,11 @@ export class OrdenesCompraListaComponent implements OnInit {
 
   // RF-BOD-03: crea una OC BORRADOR por proveedor con los faltantes de la lista de compra
   generar(): void {
+    this.enviando = true;
     this.alertas.loading();
     this.recepcionService.generarOrdenes().subscribe(
       (r) => {
+        this.enviando = false;
         const d = r.data;
         const partes: string[] = [];
         if (d.omitidas.length) { partes.push(d.omitidas.length + ' proveedor(es) ya tenían un borrador.'); }
@@ -79,7 +82,10 @@ export class OrdenesCompraListaComponent implements OnInit {
         this.estado = 'BORRADOR';
         this.filtrar();
       },
-      (error: HttpErrorResponse) => mostrarErrorBodega(error, this.alertas, this.loginService)
+      (error: HttpErrorResponse) => {
+        this.enviando = false;
+        mostrarErrorBodega(error, this.alertas, this.loginService);
+      }
     );
   }
 
@@ -97,14 +103,19 @@ export class OrdenesCompraListaComponent implements OnInit {
       cancelButtonText: 'Cancelar'
     }).then((resultado) => {
       if (!resultado.value) { return; }
+      this.enviando = true;
       this.alertas.loading();
       this.recepcionService.enviarOrden(o.id).subscribe(
         () => {
+          this.enviando = false;
           this.alertas.cerrarAlerta();
           this.alertas.alertaExitoMsj('Orden enviada al proveedor');
           this.cargar();
         },
-        (error: HttpErrorResponse) => mostrarErrorBodega(error, this.alertas, this.loginService)
+        (error: HttpErrorResponse) => {
+          this.enviando = false;
+          mostrarErrorBodega(error, this.alertas, this.loginService);
+        }
       );
     });
   }
