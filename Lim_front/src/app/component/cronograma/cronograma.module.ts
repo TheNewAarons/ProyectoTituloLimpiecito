@@ -14,10 +14,12 @@ import { DialogCronogramaComponent } from './dialog-cronograma/dialog-cronograma
 import { EditarCronogramaComponent } from './editar-cronograma/editar-cronograma.component';
 import { DialogAgregarComponent } from './dialog-agregar/dialog-agregar.component';
 import { EstadoCronogramaPipe } from 'src/app/pipe/estado-cronograma.pipe';
+import { AsignacionesCronogramaComponent } from './asignaciones-cronograma/asignaciones-cronograma.component'; // RF-PEV-02 (obs. 12)
 
 @NgModule({
   declarations: [
     CrearCronogramaComponent,
+    AsignacionesCronogramaComponent,
     VerClientesComponent,
     VerCronogramasComponent,
     VerCronogramaComponent,

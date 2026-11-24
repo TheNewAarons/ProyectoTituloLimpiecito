@@ -1,0 +1,46 @@
+<!-- RF-PEV-02 (obs. 12): asignaciones de actividades que tocan el mes de este cronograma -->
+<div class="row" *ngIf="!sinPermiso">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header card-header-info card-header-icon">
+        <div class="card-icon"><i class="material-icons">group_add</i></div>
+        <h4 class="card-title">Asignaciones de actividades</h4>
+        <p class="card-category" *ngIf="!cargando && !error">
+          {{ asignaciones.length }} asignación(es) en el mes · {{ trabajadores }} trabajador(es) con asignación activa.
+          Se crean en <a routerLink="/pev/asignacion-masiva">Asignación PEV</a>.
+        </p>
+      </div>
+      <div class="card-body">
+        <div class="text-center text-muted" *ngIf="cargando">Cargando asignaciones…</div>
+        <div class="alert alert-warning" *ngIf="error">No se pudieron cargar las asignaciones del cronograma.</div>
+        <p class="text-muted" *ngIf="!cargando && !error && asignaciones.length === 0">
+          No hay actividades asignadas a trabajadores para este cliente, turno y mes.
+        </p>
+        <div class="table-responsive" *ngIf="!cargando && asignaciones.length > 0">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Actividad</th>
+                <th>Sector / Área</th>
+                <th>Trabajador</th>
+                <th>Vigencia</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of asignaciones" [class.text-muted]="a.estado !== 'ACTIVA'">
+                <td>{{ a.actividad }}</td>
+                <td>{{ a.sector }} / {{ a.area }}</td>
+                <td>{{ a.trabajador }} <span class="text-muted small">N° {{ a.n_empleado }}</span></td>
+                <td>{{ a.fecha_desde | date: 'dd/MM/yyyy' }} – {{ a.fecha_hasta ? (a.fecha_hasta | date: 'dd/MM/yyyy') : 'vigente' }}</td>
+                <td>
+                  <span class="badge" [ngClass]="a.estado === 'ACTIVA' ? 'badge-success' : 'badge-secondary'">{{ a.estado }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
