@@ -21,6 +21,7 @@ export interface UsuarioDetalle{
   //telefono:number
   estado: string
   roleId: number
+  role?: { nombre: string }
   exp: number
   iat: number
 }

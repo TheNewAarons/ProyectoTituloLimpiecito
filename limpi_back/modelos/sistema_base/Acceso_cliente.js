@@ -8,7 +8,7 @@ module.exports = db.sequelize.define(
     id: {
       type: Sequelize.INTEGER,
       primaryKey: true,
-      autoIncrment: true
+      autoIncrement: true
     },
     nombre:{
       type: Sequelize.STRING
