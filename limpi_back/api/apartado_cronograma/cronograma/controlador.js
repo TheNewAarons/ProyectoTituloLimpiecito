@@ -1,8 +1,39 @@
 const logicaDB = require('./logica')
+const fechaLib = require('../../../libs/fecha')
+
+/**
+ * AUT-017 (obs. 13): reglas de fechas al crear un cronograma. `mes` es base 0 (Enero = 0), como lo guarda y lee la
+ * pantalla (MesPipe). Año actual o siguiente (Santiago); inicio y término dentro de ese mes; término >= inicio.
+ * @returns {string|null} mensaje de error o null si es válido
+ */
+function validarFechasCronograma(c) {
+    if (!c || typeof c !== 'object') return 'Faltan los datos del cronograma.'
+    const mes = Number(c.mes)
+    const anio = Number(c.anio)
+    const actual = Number(fechaLib.hoySantiago().slice(0, 4))
+    if (!Number.isInteger(mes) || mes < 0 || mes > 11) return 'El mes no es válido.'
+    if (!Number.isInteger(anio) || anio < actual || anio > actual + 1) return 'El año debe ser ' + actual + ' o ' + (actual + 1) + '.'
+    const ymd = (v) => (typeof v === 'string' ? v : (v instanceof Date ? v.toISOString() : '')).slice(0, 10)
+    const inicio = ymd(c.fecha_inicio)
+    const termino = ymd(c.fecha_termino)
+    if (!fechaLib.esFechaValida(inicio) || !fechaLib.esFechaValida(termino)) return 'Indica la fecha de inicio y de término (YYYY-MM-DD).'
+    const mm = (mes + 1 < 10 ? '0' : '') + (mes + 1)
+    const primero = anio + '-' + mm + '-01'
+    const ultimo = anio + '-' + mm + '-' + String(new Date(Date.UTC(anio, mes + 1, 0)).getUTCDate()).padStart(2, '0')
+    if (inicio < primero || inicio > ultimo || termino < primero || termino > ultimo) {
+        return 'Las fechas deben estar dentro del mes elegido (' + primero + ' a ' + ultimo + ').'
+    }
+    if (termino < inicio) return 'La fecha de término no puede ser anterior a la de inicio.'
+    return null
+}
 
 const crearCronograma = async(req,res) => {
     let cronograma_crear = req.body.cronograma
     let lineas_cronograma = req.body.lineas_cronograma
+    // AUT-017 (obs. 13): fechas realistas antes de crear (400 con mensaje).
+    const errorFechas = validarFechasCronograma(cronograma_crear)
+    if (errorFechas) return res.status(400).json({ mensaje: errorFechas })
+    if (!Array.isArray(lineas_cronograma)) return res.status(400).json({ mensaje: 'Faltan las líneas del cronograma.' })
     try{
         let cronograma = await logicaDB.crearCronogramaDB(cronograma_crear)
         for(let i = 0; i< lineas_cronograma.length; i++){
@@ -238,6 +269,7 @@ const eliminarCronograma = async(req,res) => {
 }
 
 module.exports = {
+    validarFechasCronograma,
     crearCronograma,
     editarCronograma,
     crearLineaCronograma,
