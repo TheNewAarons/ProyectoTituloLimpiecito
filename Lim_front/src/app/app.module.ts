@@ -57,6 +57,7 @@ import { RestriccionGuardService } from './services/guard/restriccion-guard.serv
 import { ArchivoGuardService } from './services/guard/archivo-guard.service';
 import { AppGuardService } from './services/guard/app_guard.service';
 import { LvlAppGuardService } from './services/guard/lvl-app-guard.service';
+import { RolGuardService } from './services/guard/rol-guard.service';
 
 import { NgxCleaveDirectiveModule } from 'ngx-cleave-directive';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -128,7 +129,7 @@ export class MaterialModule {}
     NgbModule.forRoot()
   ],
   declarations: [AppComponent, AdminLayoutComponent, AuthLayoutComponent, LoginComponent, RecuperarPasswordComponent,RecuperarPassAppComponent],
-  providers: [AuthGuardService, RestriccionGuardService, ArchivoGuardService, AppGuardService, LvlAppGuardService],
+  providers: [AuthGuardService, RestriccionGuardService, ArchivoGuardService, AppGuardService, LvlAppGuardService, RolGuardService],
   bootstrap: [AppComponent]
 })
 export class AppModule {}
