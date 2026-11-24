@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { formatDate } from '@angular/common';
 import swal from 'sweetalert2';
 
 //SERVICIOS
@@ -118,9 +119,9 @@ export class LiquidacionComponent implements OnInit {
     return '🕐 En espera';
   }
 
-  //SOLO LAS LIQUIDACIONES EN_ESPERA SON SELECCIONABLES
+  //SOLO LAS LIQUIDACIONES CERRADAS (estado 0) Y EN_ESPERA SON SELECCIONABLES (el backend rechaza las abiertas)
   esSeleccionable(centroTrabajador): boolean {
-    return this.estadoPago(centroTrabajador) === 'EN_ESPERA';
+    return this.estadoPago(centroTrabajador) === 'EN_ESPERA' && !!centroTrabajador.liquidacione && centroTrabajador.liquidacione.estado == 0;
   }
 
   //COMPROBAR SI UNA LIQUIDACION ESTA SELECCIONADA
@@ -160,7 +161,7 @@ export class LiquidacionComponent implements OnInit {
 
   //MARCAR UNA LIQUIDACION COMO PAGADA
   marcarComoPagada(centroTrabajador): void {
-    const hoy = new Date().toISOString().substring(0, 10);
+    const hoy = formatDate(new Date(), 'yyyy-MM-dd', 'en-US'); // hora local, no UTC
     swal.fire({
       title: 'Marcar como pagada',
       html: '<label>Fecha de pago</label>' +
@@ -203,7 +204,7 @@ export class LiquidacionComponent implements OnInit {
     if (this.seleccionadas.length === 0) {
       return;
     }
-    const hoy = new Date().toISOString().substring(0, 10);
+    const hoy = formatDate(new Date(), 'yyyy-MM-dd', 'en-US'); // hora local, no UTC
     const cantidad = this.seleccionadas.length;
     const monto = this.montoSeleccionadas();
     swal.fire({

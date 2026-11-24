@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import swal from 'sweetalert2';
 
 import { CatalogoWebService } from '../../../services/catalogo-web/catalogo-web.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
@@ -177,6 +178,27 @@ export class CatalogoItemsComponent implements OnInit {
       // Si falla, se recarga para que el interruptor vuelva al estado real.
       (e: HttpErrorResponse) => { mostrarError(e, this.alertas, this.loginService); this.cargar(); }
     );
+  }
+
+  eliminar(item: CatalogoItem): void {
+    swal.fire({
+      title: '¿Eliminar "' + item.nombre + '"?',
+      text: 'Se borra definitivamente del catálogo. No se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (!result.value) return;
+      this.catalogo.eliminar(item.id).subscribe(
+        () => {
+          this.alertas.showNotification('Ítem eliminado');
+          if (this.form && this.form.id === item.id) this.cancelar();
+          this.cargar();
+        },
+        (e: HttpErrorResponse) => { mostrarError(e, this.alertas, this.loginService); this.cargar(); }
+      );
+    });
   }
 
   mover(indice: number, paso: number) {

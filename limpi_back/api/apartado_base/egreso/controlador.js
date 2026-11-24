@@ -13,6 +13,15 @@ const crearEgreso = async (req, res) => {
         usuarioId: egreso.usuarioId,
         cajaId: egreso.cajaId
     };
+    // RF-FAC-01: datos del documento; una FACTURA nace PENDIENTE (no descuenta caja hasta marcarla pagada)
+    const TIPOS_DOCUMENTO = ['FACTURA', 'BOLETA', 'OTRO'];
+    if (TIPOS_DOCUMENTO.indexOf(egreso.tipo_documento) !== -1) {
+        egresoData.tipo_documento = egreso.tipo_documento;
+        egresoData.numero_documento = egreso.numero_documento || null;
+        egresoData.fecha_emision = egreso.fecha_emision || null;
+        egresoData.fecha_vencimiento = egreso.tipo_documento === 'FACTURA' ? (egreso.fecha_vencimiento || null) : null;
+        egresoData.estado_pago = egreso.tipo_documento === 'FACTURA' ? 'PENDIENTE' : 'PAGADA';
+    }
     try {
         let egreso = await logicaDB.crearEgresoDB(egresoData, actorDeRequest(req))
         return res.json({mensaje:'Listo'})

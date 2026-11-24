@@ -19,5 +19,6 @@ router.get('/:id', asyncHandler(controlador.obtener));
 router.post('/', subirImagen('imagen'), asyncHandler(controlador.crear));
 router.put('/:id', subirImagen('imagen'), asyncHandler(controlador.editar));
 router.delete('/:id', asyncHandler(controlador.despublicar));
+router.delete('/:id/eliminar', asyncHandler(controlador.eliminar));
 
 module.exports = router;

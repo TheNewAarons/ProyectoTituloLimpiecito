@@ -12,6 +12,7 @@ jest.mock('../../libs/multer_publicaciones', () => ({
 jest.mock('../../modelos/sistema_web/Catalogo_item', () => {
   const instancia = (data) => Object.assign(data, {
     update: jest.fn(async (c) => Object.assign(data, c)),
+    destroy: jest.fn(async () => { mockFilas.splice(mockFilas.indexOf(data), 1); }),
     get: () => Object.assign({}, data)
   });
   return {
@@ -99,6 +100,22 @@ describe('administración', () => {
     const res = await request(app).delete('/admin/1').set('x-access-token', ADMIN);
     expect(res.body.data.publicado).toBe(false);
     expect(mockFilas.find((f) => f.id === 1)).toBeTruthy();
+  });
+
+  it('DELETE /:id/eliminar rechaza un ítem publicado (409) sin borrarlo', async () => {
+    const res = await request(app).delete('/admin/1/eliminar').set('x-access-token', ADMIN);
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('ITEM_PUBLICADO');
+    expect(mockFilas.find((f) => f.id === 1)).toBeTruthy();
+  });
+
+  it('DELETE /:id/eliminar borra un ítem despublicado y su imagen', async () => {
+    mockFilas.find((f) => f.id === 1).publicado = false;
+    const res = await request(app).delete('/admin/1/eliminar').set('x-access-token', ADMIN);
+    expect(res.status).toBe(200);
+    expect(mockFilas.find((f) => f.id === 1)).toBeUndefined();
+    expect(borrarImagen).toHaveBeenCalledWith('a.jpg');
+    expect((await request(app).delete('/admin/2/eliminar').set('x-access-token', OPERACIONES)).status).toBe(403);
   });
 
   it('id inexistente 404, id inválido 400', async () => {
