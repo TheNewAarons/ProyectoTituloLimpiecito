@@ -49,6 +49,7 @@ export class ProductividadPevComponent implements OnInit, OnDestroy {
   sectores: FilaProductividadSector[] = [];
   cumplimiento: number | null = null;
   verificacion: number | null = null;
+  verificacionTotal: number | null = null; // total del período (KPI sin filtro de supervisor, obs. 1)
   observaciones: number | null = null;
   etiquetas: string[] = [];
   series: SerieGrafico[] = [];
@@ -126,8 +127,6 @@ export class ProductividadPevComponent implements OnInit, OnDestroy {
 
   // Obs. 1 (AUT-012): con un supervisor elegido, el KPI Verificación es el de su fila del ranking (el ranking trae a todos);
   // sin supervisor, el total del período.
-  verificacionTotal: number | null = null;
-
   actualizarVerificacion(): void {
     if (this.supervisor === null || this.supervisor === undefined) {
       this.verificacion = this.verificacionTotal;
