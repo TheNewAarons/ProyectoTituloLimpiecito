@@ -9,6 +9,7 @@ import { RestriccionGuardService } from './services/guard/restriccion-guard.serv
 import { ArchivoGuardService } from './services/guard/archivo-guard.service';
 import { AppGuardService } from './services/guard/app_guard.service';
 import { LvlAppGuardService } from './services/guard/lvl-app-guard.service';
+import { RolGuardService } from './services/guard/rol-guard.service';
 
 /** RECUPERAR PASS */
 // PASS USUARIO SISTEMA
@@ -34,6 +35,7 @@ export const AppRoutes: Routes = [
     path: '',
     component: AdminLayoutComponent,
     canActivate: [AuthGuardService],
+    canActivateChild: [RolGuardService],
     children: [
       {
         path: '',
