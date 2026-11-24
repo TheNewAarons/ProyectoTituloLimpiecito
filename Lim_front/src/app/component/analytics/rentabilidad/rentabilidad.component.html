@@ -36,7 +36,7 @@
                   [valor]="meta ? meta.totales.clientes_en_perdida : null"></app-kpi-card>
               </div>
             </div>
-            <app-grafico tipo="bar" titulo="Top 10 clientes por margen" [etiquetas]="etiquetas" [series]="series"></app-grafico>
+            <app-grafico tipo="bar" [pesos]="true" titulo="Top 10 clientes por margen" [etiquetas]="etiquetas" [series]="series"></app-grafico>
             <div class="table-responsive">
               <table class="table">
                 <thead>
