@@ -55,10 +55,17 @@ export class AsignacionesActividadComponent implements OnInit {
     if (!this.actividadId) { return; }
     this.cargando = true;
     this.servicio.deActividad(this.actividadId).subscribe(
-      (r) => { this.asignaciones = r.data; this.cargando = false; },
+      (r) => {
+        this.asignaciones = r.data;
+        this.total = r.meta && r.meta.total !== undefined ? Number(r.meta.total) : r.data.length;
+        this.cargando = false;
+      },
       (e: HttpErrorResponse) => { this.cargando = false; mostrarError(e, this.alertas, this.loginService); }
     );
   }
+
+  // Total que informa el backend: si supera lo cargado (tope 100), se avisa en pantalla.
+  total = 0;
 
   visibles(): AsignacionPev[] {
     return this.asignaciones.filter((a) => this.verAnuladas || a.estado !== 'ANULADA');

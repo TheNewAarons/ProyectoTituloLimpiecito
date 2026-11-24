@@ -162,9 +162,9 @@ export class AsignacionMasivaComponent implements OnInit {
     );
   }
 
-  // RF-PEV-02 (obs. 12): "oct-2026, nov-2026" para el aviso de la vista previa.
-  textoCronogramas(cronogramas: { mes: number; anio: number }[]): string {
-    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-    return (cronogramas || []).map((c) => (MESES[c.mes - 1] || c.mes) + '-' + c.anio).join(', ');
+  // RF-PEV-02 (obs. 12): "01/11/2026 – 30/11/2026, …" (por fechas del cronograma, no por mes/anio).
+  textoCronogramas(cronogramas: { inicio: string; fin: string }[]): string {
+    const dma = (ymd: string) => (ymd ? ymd.split('-').reverse().join('/') : '?');
+    return (cronogramas || []).map((c) => dma(c.inicio) + ' – ' + dma(c.fin)).join(', ');
   }
 }

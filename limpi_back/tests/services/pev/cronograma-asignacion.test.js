@@ -1,6 +1,7 @@
 /**
  * RF-PEV-02 (AUT-016, obs. 12) — services/pev/cronograma-asignacion.js: la asignación se refleja en el Cronograma.
- * BD simulada por patrón de SQL: cronogramas activos, linea_cronogramas y trabajadores_cronogramas en memoria.
+ * Los destinos se eligen por FECHAS (fecha_termino >= fecha de inicio), no por mes/anio: la pantalla guarda `mes`
+ * base 0 y hay datos con otra convención. BD simulada por patrón de SQL.
  */
 const mem = { cronogramas: [], lineas: [], trabajadores: [], sqls: [] };
 jest.mock('../../../database/database', () => ({
@@ -8,11 +9,13 @@ jest.mock('../../../database/database', () => ({
     query: jest.fn(async (sql, o) => {
       const r = (o && o.replacements) || {};
       mem.sqls.push({ sql: sql, r: r, t: o && o.transaction });
-      if (/FROM cronogramas/.test(sql)) {
+      if (/FROM cronogramas WHERE clienteId/.test(sql)) {
         return mem.cronogramas
-          .filter((c) => c.clienteId === r.cliente && c.turnoId === r.turno && c.estado === r.activo && (c.anio > r.anio || (c.anio === r.anio && c.mes >= r.mes)))
-          .sort((a, b) => a.anio - b.anio || a.mes - b.mes);
+          .filter((c) => c.clienteId === r.cliente && c.turnoId === r.turno && c.estado === r.activo && c.fin >= r.desde)
+          .sort((a, b) => (a.inicio < b.inicio ? -1 : 1))
+          .map((c) => ({ id: c.id, inicio: c.inicio, fin: c.fin }));
       }
+      if (/FROM cronogramas WHERE id/.test(sql)) return mem.cronogramas.filter((c) => c.id === r.id);
       const tabla = /linea_cronogramas/.test(sql) ? mem.lineas : mem.trabajadores;
       const col = /linea_cronogramas/.test(sql) ? 'tareaId' : 'trabajadoreId';
       if (/^SELECT id FROM/.test(sql)) return tabla.filter((f) => f.cronogramaId === r.c && f[col] === r.v);
@@ -34,12 +37,12 @@ const base = { clienteId: 8, turnoId: 8, fechaDesde: '2026-11-23', tareaId: 500,
 beforeEach(() => {
   jest.clearAllMocks();
   mem.cronogramas = [
-    { id: 1, clienteId: 8, turnoId: 8, mes: 10, anio: 2026, estado: 1 }, // mes anterior: no
-    { id: 2, clienteId: 8, turnoId: 8, mes: 11, anio: 2026, estado: 1 }, // mes de inicio: sí
-    { id: 3, clienteId: 8, turnoId: 8, mes: 1, anio: 2027, estado: 1 },  // posterior (año siguiente): sí
-    { id: 4, clienteId: 8, turnoId: 8, mes: 12, anio: 2026, estado: 2 }, // finalizado: no
-    { id: 5, clienteId: 8, turnoId: 9, mes: 11, anio: 2026, estado: 1 }, // otro turno: no
-    { id: 6, clienteId: 7, turnoId: 8, mes: 11, anio: 2026, estado: 1 }  // otro cliente: no
+    { id: 1, clienteId: 8, turnoId: 8, mes: 9, anio: 2026, inicio: '2026-10-01', fin: '2026-10-31', estado: 1 },  // terminó antes: no
+    { id: 2, clienteId: 8, turnoId: 8, mes: 10, anio: 2026, inicio: '2026-11-01', fin: '2026-11-30', estado: 1 }, // en curso (mes base 0): sí
+    { id: 3, clienteId: 8, turnoId: 8, mes: 0, anio: 2027, inicio: '2027-01-01', fin: '2027-01-31', estado: 1 },  // posterior: sí
+    { id: 4, clienteId: 8, turnoId: 8, mes: 11, anio: 2026, inicio: '2026-12-01', fin: '2026-12-31', estado: 2 }, // finalizado: no
+    { id: 5, clienteId: 8, turnoId: 9, mes: 10, anio: 2026, inicio: '2026-11-01', fin: '2026-11-30', estado: 1 }, // otro turno: no
+    { id: 6, clienteId: 7, turnoId: 8, mes: 10, anio: 2026, inicio: '2026-11-01', fin: '2026-11-30', estado: 1 }  // otro cliente: no
   ];
   mem.lineas = [];
   mem.trabajadores = [];
@@ -47,21 +50,29 @@ beforeEach(() => {
 });
 
 describe('sincronizar', () => {
-  it('agrega la tarea y asocia al trabajador en los cronogramas activos del cliente/turno desde el mes de inicio', async () => {
+  it('agrega la tarea y asocia al trabajador en los cronogramas activos vigentes desde la fecha de inicio', async () => {
     const r = await servicio.sincronizar(t, base, ctx);
     expect(r.cronogramas.map((c) => [c.id, c.tarea_agregada, c.trabajador_asociado])).toEqual([[2, true, true], [3, true, true]]);
+    expect(r.cronogramas[0]).toMatchObject({ inicio: '2026-11-01', fin: '2026-11-30' });
     expect(mem.lineas.map((l) => [l.cronogramaId, l.tareaId])).toEqual([[2, 500], [3, 500]]);
     expect(mem.trabajadores.map((l) => [l.cronogramaId, l.trabajadoreId])).toEqual([[2, 13], [3, 13]]);
     expect(auditar).toHaveBeenCalledTimes(4);
-    expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ transaction: t, entidad: 'linea_cronogramas', accion: 'CREAR' }));
+    expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ transaction: t, entidad: 'linea_cronogramas', accion: 'CREAR', entidad_id: 100 }));
     expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ transaction: t, entidad: 'trabajadores_cronogramas', accion: 'CREAR' }));
   });
 
-  it('bloquea los cronogramas destino (FOR UPDATE) y todo va en la transacción recibida', async () => {
+  it('elige por fechas y no por mes/anio (un cronograma con mes base 1 en los datos igual se reconoce)', async () => {
+    mem.cronogramas = [{ id: 9, clienteId: 8, turnoId: 8, mes: 11, anio: 2026, inicio: '2026-11-01', fin: '2026-11-30', estado: 1 }];
+    const r = await servicio.sincronizar(t, base, ctx);
+    expect(r.cronogramas.map((c) => c.id)).toEqual([9]);
+  });
+
+  it('bloquea los cronogramas destino (FOR UPDATE), filtra por fecha_termino y todo va en la transacción recibida', async () => {
     await servicio.sincronizar(t, base, ctx);
     const sel = mem.sqls.find((s) => /FROM cronogramas/.test(s.sql));
+    expect(sel.sql).toMatch(/DATE\(fecha_termino\) >= :desde/);
     expect(sel.sql).toMatch(/FOR UPDATE$/);
-    expect(sel.r).toMatchObject({ cliente: 8, turno: 8, activo: 1, anio: 2026, mes: 11 });
+    expect(sel.r).toMatchObject({ cliente: 8, turno: 8, activo: 1, desde: '2026-11-23' });
     expect(mem.sqls.every((s) => s.t === t)).toBe(true);
   });
 
@@ -81,12 +92,21 @@ describe('sincronizar', () => {
     expect(mem.sqls.filter((s) => /^INSERT/.test(s.sql))).toHaveLength(0);
     expect(auditar).not.toHaveBeenCalled();
   });
+
+  it('si el driver no devuelve el id insertado, la auditoría registra null (no el id del cronograma)', async () => {
+    db.sequelize.query.mockImplementationOnce(async () => [{ id: 2, inicio: '2026-11-01', fin: '2026-11-30' }]) // destinos
+      .mockImplementationOnce(async () => [])         // existe linea
+      .mockImplementationOnce(async () => undefined)  // insert linea sin id
+      .mockImplementationOnce(async () => [{ id: 1 }]); // existe trabajador
+    await servicio.sincronizar(t, base, ctx);
+    expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ entidad: 'linea_cronogramas', entidad_id: null }));
+  });
 });
 
 describe('destinoVistaPrevia', () => {
   it('lista los cronogramas destino sin bloquear ni escribir', async () => {
     const r = await servicio.destinoVistaPrevia(8, 8, '2026-11-23');
-    expect(r).toEqual({ cronogramas: [{ id: 2, mes: 11, anio: 2026 }, { id: 3, mes: 1, anio: 2027 }], sin_cronograma: false });
+    expect(r).toEqual({ cronogramas: [{ id: 2, inicio: '2026-11-01', fin: '2026-11-30' }, { id: 3, inicio: '2027-01-01', fin: '2027-01-31' }], sin_cronograma: false });
     expect(mem.sqls[0].sql).not.toMatch(/FOR UPDATE/);
   });
 
@@ -102,20 +122,19 @@ describe('destinoVistaPrevia', () => {
 
 describe('listarPorCronograma', () => {
   it('cronograma inexistente: null', async () => {
-    db.sequelize.query.mockResolvedValueOnce([]);
     expect(await servicio.listarPorCronograma(999)).toBeNull();
   });
 
-  it('busca asignaciones del cliente/turno que tocan el mes (no anuladas) y arma nombres', async () => {
+  it('usa el período por FECHAS del cronograma, excluye anuladas y arma nombres', async () => {
     db.sequelize.query
-      .mockResolvedValueOnce([{ id: 89, clienteId: 1, turnoId: 1, mes: 2, anio: 2028 }])
+      .mockResolvedValueOnce([{ id: 89, clienteId: 1, turnoId: 1, mes: 1, anio: 2028, inicio: '2028-02-01', fin: '2028-02-29' }])
       .mockResolvedValueOnce([{ id: 70, estado: 'ACTIVA', fecha_desde: '2028-02-10', fecha_hasta: null, actividad_id: 2, actividad: 'Barrido 1',
         sector: 'Sector 1', area: 'Area 1.1', trabajador_id: 4, trabajador_nombre: 'Ana', trabajador_apellido: 'Rojas', n_empleado: 1004 }]);
     const r = await servicio.listarPorCronograma(89);
-    expect(r.cronograma).toEqual({ id: 89, mes: 2, anio: 2028, cliente_id: 1, turno_id: 1 });
+    expect(r.cronograma).toMatchObject({ id: 89, inicio: '2028-02-01', fin: '2028-02-29', cliente_id: 1, turno_id: 1 });
     expect(r.asignaciones).toEqual([expect.objectContaining({ id: 70, actividad: 'Barrido 1', trabajador: 'Ana Rojas', n_empleado: 1004 })]);
     const llamada = db.sequelize.query.mock.calls[1];
     expect(llamada[0]).toMatch(/estado <> 'ANULADA'/);
-    expect(llamada[1].replacements).toEqual({ cliente: 1, turno: 1, inicio: '2028-02-01', fin: '2028-02-29' }); // año bisiesto
+    expect(llamada[1].replacements).toEqual({ cliente: 1, turno: 1, inicio: '2028-02-01', fin: '2028-02-29' });
   });
 });

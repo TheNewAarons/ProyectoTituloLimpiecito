@@ -307,3 +307,24 @@ describe('anular asignación (sin borrado físico)', () => {
       .rejects.toMatchObject({ code: 'ESTADO_INVALIDO', httpStatus: 409 });
   });
 });
+
+// RF-PEV-02 (AUT-016, obs. 12): crearEnTx refleja la asignación en el Cronograma en la misma transacción.
+describe('crear asignación → cronograma', () => {
+  const cronograma = require('../../../services/pev/cronograma-asignacion');
+
+  it('llama a sincronizar con la transacción, cliente, turno, fecha, tarea puente y trabajador, y devuelve los cronogramas', async () => {
+    const espia = jest.spyOn(cronograma, 'sincronizar').mockResolvedValue({ cronogramas: [{ id: 89, inicio: '2026-03-01', fin: '2026-03-31', tarea_agregada: true, trabajador_asociado: true }] });
+    const creada = await servicio.crear(BASE, CTX);
+    expect(espia).toHaveBeenCalledWith(mockTransaccion,
+      { clienteId: 10, turnoId: 3, fechaDesde: '2026-03-01', tareaId: creada.tarea_id, trabajadorId: 4 },
+      { usuario: CTX.usuario, ip: CTX.ip });
+    expect(creada.cronogramas).toEqual([expect.objectContaining({ id: 89, trabajador_asociado: true })]);
+    espia.mockRestore();
+  });
+
+  it('si sincronizar falla, crear falla (la transacción completa se revierte)', async () => {
+    const espia = jest.spyOn(cronograma, 'sincronizar').mockRejectedValue(new Error('fallo cronograma'));
+    await expect(servicio.crear(BASE, CTX)).rejects.toThrow('fallo cronograma');
+    espia.mockRestore();
+  });
+});

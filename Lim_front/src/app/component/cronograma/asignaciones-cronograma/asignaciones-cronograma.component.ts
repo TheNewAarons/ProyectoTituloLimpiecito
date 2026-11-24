@@ -27,6 +27,7 @@ export class AsignacionesCronogramaComponent implements OnChanges {
       (e: HttpErrorResponse) => {
         this.cargando = false;
         // Sin permiso (no Admin): el panel se oculta en vez de mostrar un error.
+        this.asignaciones = []; // no dejar datos viejos junto al aviso de error
         if (e.status === 401 || e.status === 403) { this.sinPermiso = true; } else { this.error = true; }
       }
     );

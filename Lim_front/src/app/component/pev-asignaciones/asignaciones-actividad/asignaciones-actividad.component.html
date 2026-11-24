@@ -33,6 +33,9 @@
           <strong>{{ activas() }}</strong> trabajador(es) con la actividad activa · {{ asignaciones.length }} asignación(es) en total.
         </p>
         <p class="text-muted" *ngIf="actividadId && !cargando && asignaciones.length === 0">Esta actividad no tiene asignaciones.</p>
+        <p class="text-warning" *ngIf="total > asignaciones.length">
+          Se muestran las {{ asignaciones.length }} más recientes de {{ total }} asignaciones; los conteos consideran solo las mostradas.
+        </p>
 
         <div class="table-responsive" *ngIf="visibles().length > 0">
           <table class="table">
