@@ -17,7 +17,7 @@ const db = require('../../../database/database');
 const Proveedor = require('../../../modelos/sistema_bodega/Proveedor');
 const { auditar } = require('../../../services/auditoria');
 const AppError = require('../../../libs/app-error');
-const { crear, editar, desactivar } = require('../../../services/bodega/proveedores');
+const { crear, editar, desactivar, reactivar } = require('../../../services/bodega/proveedores');
 
 function instanciaProveedor(data) {
   const inst = Object.assign({}, data);
@@ -174,6 +174,27 @@ describe('services/bodega/proveedores', () => {
         code: 'PROVEEDOR_NO_ENCONTRADO',
         httpStatus: 404
       });
+    });
+  });
+
+  describe('reactivar', () => {
+    it('activo vuelve a 1 y audita ACTIVAR', async () => {
+      fakeTransaction();
+      const proveedor = instanciaProveedor({ id: 1, nombre: 'ACME', activo: 0 });
+      Proveedor.findById.mockResolvedValue(proveedor);
+
+      const resultado = await reactivar(1, { usuario, ip: '127.0.0.1' });
+
+      expect(proveedor.update).toHaveBeenCalledWith({ activo: 1 }, expect.anything());
+      expect(resultado.activo).toBe(1);
+      expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ entidad: 'proveedores', accion: 'ACTIVAR' }));
+    });
+
+    it('lanza PROVEEDOR_NO_ENCONTRADO (404) si no existe', async () => {
+      fakeTransaction();
+      Proveedor.findById.mockResolvedValue(null);
+
+      await expect(reactivar(999, { usuario })).rejects.toMatchObject({ code: 'PROVEEDOR_NO_ENCONTRADO', httpStatus: 404 });
     });
   });
 });

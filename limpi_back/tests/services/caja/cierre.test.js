@@ -64,6 +64,14 @@ describe('services/caja/cierre', () => {
       await expect(cerrarMes('2026-10', { usuario })).rejects.toMatchObject({ code: 'CAJA_NO_EXISTE' });
     });
 
+    it('lanza PERIODO_FUTURO si el mes aún no comienza, sin abrir transacción', async () => {
+      const siguiente = new Date();
+      siguiente.setMonth(siguiente.getMonth() + 2);
+      const periodo = siguiente.toISOString().slice(0, 7);
+      await expect(cerrarMes(periodo, { usuario })).rejects.toMatchObject({ code: 'PERIODO_FUTURO', httpStatus: 409 });
+      expect(db.sequelize.transaction).not.toHaveBeenCalled();
+    });
+
     it('lanza MES_YA_CERRADO si la caja del periodo ya está cerrada', async () => {
       fakeTransaction();
       Caja.findAll.mockResolvedValue([instanciaCaja({ id: 1, periodo: '2026-10', estado: 0 })]);

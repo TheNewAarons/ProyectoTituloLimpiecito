@@ -19,7 +19,9 @@
             </button>
           </div>
           <div class="card-body">
-            <iframe [src]="url_documento | safe" width="100%" height="700px"> </iframe>
+            <iframe *ngIf="url_documento" [src]="url_documento | safe" width="100%" height="700px"> </iframe>
+            <div *ngIf="errorArchivo" class="alert alert-warning">{{ errorArchivo }}</div>
+            <div *ngIf="!url_documento && !errorArchivo" class="text-center text-muted py-5">Cargando documento…</div>
             <!-- <object [data]="url_documento | safe" type="application/pdf" width="100%">
               <embed [src]="url_documento | safe" />
             </object> -->

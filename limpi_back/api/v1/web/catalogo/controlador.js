@@ -85,6 +85,18 @@ const despublicar = async (req, res) => {
   res.json({ ok: true, data: servicio.aAdmin(item), meta: {} });
 };
 
+// Borrado definitivo: solo ítems ya despublicados, para que nunca desaparezca algo visible en la web por error.
+const eliminar = async (req, res) => {
+  const item = await buscar(req.params.id);
+  if (item.publicado) {
+    throw new AppError('ITEM_PUBLICADO', 'despublica el ítem antes de eliminarlo', 409);
+  }
+  const imagen = item.imagen;
+  await item.destroy();
+  if (imagen) borrarImagen(imagen);
+  res.json({ ok: true, data: { id: item.id }, meta: {} });
+};
+
 // Reordena según la posición en `ids`; todos deben existir. Los ítems no incluidos conservan su orden.
 const reordenar = async (req, res) => {
   const ids = servicio.validarOrden(req.body);
@@ -99,4 +111,4 @@ const reordenar = async (req, res) => {
   res.json({ ok: true, data: await aAdminConApp(filas), meta: { total: filas.length } });
 };
 
-module.exports = { listar, obtener, crear, editar, despublicar, reordenar };
+module.exports = { listar, obtener, crear, editar, despublicar, eliminar, reordenar };
