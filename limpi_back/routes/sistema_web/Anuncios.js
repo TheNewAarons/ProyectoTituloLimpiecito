@@ -10,6 +10,9 @@ const Sequelize = require('sequelize');
 
 //Importar modelos
 const Anuncio = require('../../modelos/sistema_web/Anuncio');
+// Obs. 22-23 (AUT-019): la imagen se valida por contenido (jpg/png/webp) y borrar un archivo ausente no detiene el backend.
+const { validarMagicBytes } = require('../../libs/multer_publicaciones');
+const borrarSinFallar = (ruta) => { try { if (ruta) fs.unlinkSync(path.resolve(ruta)); } catch (e) { /* ya no existe: se ignora */ } };
 
 
 //crear anuncio
@@ -18,10 +21,20 @@ anuncios_web.post('/crear_anuncio/crear', multer.single('imagen'),  async (req, 
   //const anuncio = JSON.parse(req.body.anuncio);
   const { titulo, sub_titulo, descripcion, usuarioId } = req.body;
 
+  if (!req.file) {
+    return res.status(400).json({ existe: false, mensaje: 'Debe subir una imagen (jpg, png o webp).' });
+  }
+  try {
+    await validarMagicBytes(req.file.path);
+  } catch (e) {
+    borrarSinFallar(req.file.path);
+    return res.status(400).json({ existe: false, mensaje: 'El archivo debe ser una imagen jpg, png o webp.' });
+  }
+
   let existe_anuncios = await Anuncio.count();
 
   if(existe_anuncios >= 1){
-    await fs.unlinkSync(path.resolve(req.file.path));
+    borrarSinFallar(req.file.path);
     return res.json({ existe: true, mensaje: 'Solo puede crear un anuncio' });
     
 
@@ -96,7 +109,7 @@ anuncios_web.delete('/eliminar_anuncio/eliminar/:idAnuncio', async (req, res) =>
     });
 
     if (result == 1) {
-      await fs.unlinkSync(path.resolve(anuncio.imagen));
+      borrarSinFallar(anuncio.imagen);
 
     }
     
