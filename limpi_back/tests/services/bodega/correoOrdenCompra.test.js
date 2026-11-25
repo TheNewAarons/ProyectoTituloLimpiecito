@@ -50,6 +50,22 @@ describe('services/bodega/correoOrdenCompra', () => {
       expect(html).toContain('Código 10');
       expect(html).toMatch(/Total unidades<\/td>\s*<td[^>]*>8<\/td>/);
     });
+
+    it('muestra precio unitario, subtotal y total en CLP; avisa si hay líneas sin precio', () => {
+      const orden = ordenFake({
+        items: [{ producto_id: 10, cantidad: 3, costo_unitario: '12500' }, { producto_id: 11, cantidad: 2, costo_unitario: null }]
+      });
+      const { html } = renderizarOrden(orden);
+      expect(html).toContain('$12.500');
+      expect(html).toMatch(/>Total<\/td>\s*<td[^>]*>\$37\.500<\/td>/);
+      expect(html).toContain('sin precio registrado');
+    });
+
+    it('sin líneas sin precio no muestra el aviso', () => {
+      const { html } = renderizarOrden(ordenFake({ items: [{ producto_id: 10, cantidad: 1, costo_unitario: 0 }] }));
+      expect(html).not.toContain('sin precio registrado');
+      expect(html).toMatch(/>Total<\/td>\s*<td[^>]*>\$0<\/td>/);
+    });
   });
 
   describe('crearTransporteDesdeEnv', () => {

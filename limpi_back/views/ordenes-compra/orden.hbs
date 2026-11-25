@@ -75,20 +75,33 @@
                 <tr>
                   <th align="left" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;width:40px;">#</th>
                   <th align="left" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;">Producto</th>
-                  <th align="right" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;width:90px;">Cantidad</th>
+                  <th align="right" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;width:70px;">Cantidad</th>
+                  <th align="right" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;width:90px;">Precio unit.</th>
+                  <th align="right" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;width:100px;">Subtotal</th>
                 </tr>
                 {{#each items}}
                 <tr>
                   <td style="padding:10px 8px;border-bottom:1px solid #e3e7eb;color:#777777;">{{this.numero}}</td>
                   <td style="padding:10px 8px;border-bottom:1px solid #e3e7eb;">{{this.nombre}}<div style="font-size:11px;color:#999999;">Código {{this.producto_id}}</div></td>
                   <td align="right" style="padding:10px 8px;border-bottom:1px solid #e3e7eb;font-weight:bold;">{{this.cantidad}}</td>
+                  <td align="right" style="padding:10px 8px;border-bottom:1px solid #e3e7eb;white-space:nowrap;">{{this.precio}}</td>
+                  <td align="right" style="padding:10px 8px;border-bottom:1px solid #e3e7eb;white-space:nowrap;">{{this.subtotal}}</td>
                 </tr>
                 {{/each}}
                 <tr>
-                  <td colspan="2" align="right" style="padding:12px 8px;font-weight:bold;color:#0072b4;">Total unidades</td>
-                  <td align="right" style="padding:12px 8px;font-weight:bold;color:#0072b4;font-size:15px;">{{totalUnidades}}</td>
+                  <td colspan="2" align="right" style="padding:12px 8px 4px 8px;color:#777777;">Total unidades</td>
+                  <td align="right" style="padding:12px 8px 4px 8px;font-weight:bold;">{{totalUnidades}}</td>
+                  <td colspan="2">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td colspan="4" align="right" style="padding:8px;font-weight:bold;color:#0072b4;font-size:15px;">Total</td>
+                  <td align="right" style="padding:8px;font-weight:bold;color:#ffffff;background-color:#0072b4;font-size:15px;white-space:nowrap;">{{total}}</td>
                 </tr>
               </table>
+              <p style="margin:8px 0 0 0;font-size:11px;color:#999999;text-align:right;">Montos en pesos chilenos (CLP).</p>
+              {{#if hayItemsSinPrecio}}
+              <p style="margin:8px 0 0 0;padding:8px 10px;font-size:12px;color:#8a6d00;background-color:#fff8e1;border-left:3px solid #ff9800;">Hay productos sin precio registrado (—); el total no los incluye. Le pedimos indicar su precio al confirmar la orden.</p>
+              {{/if}}
             </td>
           </tr>
 

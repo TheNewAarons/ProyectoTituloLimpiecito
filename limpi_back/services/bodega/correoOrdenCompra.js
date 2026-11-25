@@ -47,6 +47,16 @@ function crearTransporteDesdeEnv() {
 }
 
 /**
+ * Peso chileno entero con separador de miles: 12345 -> "$12.345" (sin depender del ICU de Node).
+ * @param {number} monto
+ * @returns {string}
+ */
+function formatoClp(monto) {
+  const entero = Math.round(monto);
+  return (entero < 0 ? '-$' : '$') + String(Math.abs(entero)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+/**
  * @param {object} orden instancia Orden_compra con `proveedor` e `items` cargados
  * @param {Object<number, string>} [nombresProducto] nombre por producto_id; si falta, "Producto <id>"
  * @returns {{html: string, asunto: string}}
@@ -55,11 +65,18 @@ function renderizarOrden(orden, nombresProducto) {
   const nombres = nombresProducto || {};
   const proveedor = orden.proveedor || {};
   const items = (orden.items || []).map(function (item, i) {
+    const cantidad = Number(item.cantidad);
+    const tienePrecio = item.costo_unitario !== null && item.costo_unitario !== undefined;
+    const precio = tienePrecio ? Number(item.costo_unitario) : null;
     return {
       numero: i + 1,
       producto_id: item.producto_id,
       nombre: nombres[item.producto_id] || 'Producto ' + item.producto_id,
-      cantidad: Number(item.cantidad)
+      cantidad: cantidad,
+      precio: tienePrecio ? formatoClp(precio) : '—',
+      subtotalNumero: tienePrecio ? precio * cantidad : 0,
+      subtotal: tienePrecio ? formatoClp(precio * cantidad) : '—',
+      sinPrecio: !tienePrecio
     };
   });
   const datos = {
@@ -72,7 +89,9 @@ function renderizarOrden(orden, nombresProducto) {
     proveedorContacto: proveedor.contacto || '',
     items: items,
     totalProductos: items.length,
-    totalUnidades: items.reduce(function (total, item) { return total + item.cantidad; }, 0)
+    totalUnidades: items.reduce(function (total, item) { return total + item.cantidad; }, 0),
+    total: formatoClp(items.reduce(function (total, item) { return total + item.subtotalNumero; }, 0)),
+    hayItemsSinPrecio: items.some(function (item) { return item.sinPrecio; })
   };
   const html = obtenerPlantilla()(datos);
   return { html: html, asunto: 'Orden de compra #' + orden.id };
