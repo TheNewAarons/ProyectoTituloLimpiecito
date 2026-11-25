@@ -40,7 +40,7 @@
                     <td>{{ p.fecha_publicacion | date: 'dd-MM-yyyy HH:mm' }}</td>
                     <td>{{ p.fecha_expiracion ? (p.fecha_expiracion | date: 'dd-MM-yyyy HH:mm') : 'Sin expiración' }}</td>
                     <td><span class="badge" [ngClass]="claseEstado(p)">{{ estado(p) }}</span></td>
-                    <td class="text-right">
+                    <td class="td-actions text-right">
                       <button mat-raised-button type="button" matTooltip="Editar" class="btn btn-warning btn-round" [routerLink]="['/pagina_web/editar-anuncio', p.id]">
                         <i class="material-icons">edit</i>
                       </button>
@@ -74,7 +74,7 @@
                       <td><img *ngIf="a.imagen" class="img-anuncio" [src]="url_imagen + a.imagen" [alt]="a.titulo" /></td>
                       <td>{{ a.titulo }}<br /><small>{{ a.sub_titulo }}</small></td>
                       <td>{{ a.descripcion }}</td>
-                      <td class="text-right">
+                      <td class="td-actions text-right">
                         <button mat-raised-button type="button" matTooltip="Eliminar" class="btn btn-danger btn-round" (click)="eliminarAntiguo(a.id)">
                           <i class="material-icons">delete</i>
                         </button>
