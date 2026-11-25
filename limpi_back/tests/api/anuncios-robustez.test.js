@@ -15,6 +15,7 @@ jest.mock('../../modelos/sistema_intranet/acceso_laboral', () => ({ findOne: jes
 jest.mock('../../modelos/sistema_web/Anuncio', () => ({
   count: jest.fn(), findAll: jest.fn(), create: jest.fn(), findById: jest.fn(), destroy: jest.fn(), update: jest.fn()
 }));
+jest.mock('../../modelos/sistema_web/Publicacion', () => ({ findAll: jest.fn() }));
 jest.mock('../../services/auditoria', () => ({ auditar: jest.fn(async () => ({})) }));
 
 const fs = require('fs');
@@ -23,6 +24,8 @@ const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const Anuncio = require('../../modelos/sistema_web/Anuncio');
+const Publicacion = require('../../modelos/sistema_web/Publicacion');
+const { filtroVigentes } = require('../../services/web/publicacion');
 const { auditar } = require('../../services/auditoria');
 const { autenticar, requerirRol } = require('../../middleware/auth');
 const { manejadorErrores } = require('../../middleware/errores');
@@ -80,6 +83,7 @@ beforeEach(() => {
   anuncio = { id: 7, imagen: 'uploads_limpiecitoweb/no-existe.jpg', update: jest.fn(async function (c) { Object.assign(anuncio, c); return anuncio; }) };
   Anuncio.count.mockResolvedValue(0);
   Anuncio.findAll.mockResolvedValue([]);
+  Publicacion.findAll.mockResolvedValue([]);
   Anuncio.create.mockImplementation(async (d) => Object.assign({ id: 8 }, d));
   Anuncio.findById.mockImplementation(async (id) => (Number(id) === 7 ? anuncio : null));
   Anuncio.destroy.mockResolvedValue(1);
@@ -90,6 +94,32 @@ describe('legacy /anuncios_web con sesión (obs. 24)', () => {
     const r = await request(app()).get('/anuncios_web/obtener_anuncio/obtener/');
     expect(r.status).toBe(200);
     expect(r.body).toEqual({ anuncios: [], cant_anuncios: 0 });
+  });
+
+  it('RF-WEB-03: entrega solo publicaciones vigentes en formato legacy y luego los anuncios antiguos', async () => {
+    Publicacion.findAll.mockResolvedValue([
+      { id: 3, titulo: 'Día de la Madre', cuerpo: '<p>Saludos &amp; <strong>flores</strong></p>', imagen: 'abc.jpg' },
+      { id: 4, titulo: 'Sin imagen', cuerpo: 'Texto', imagen: null }
+    ]);
+    Anuncio.findAll.mockResolvedValue([{ id: 1, titulo: 'Viejo', sub_titulo: 'S', descripcion: 'D', imagen: 'uploads_limpiecitoweb/v.jpg', usuarioId: 1 }]);
+    const r = await request(app()).get('/anuncios_web/obtener_anuncio/obtener/');
+    expect(r.status).toBe(200);
+    expect(r.body.cant_anuncios).toBe(3);
+    expect(r.body.anuncios).toEqual([
+      { id: 3, titulo: 'Día de la Madre', sub_titulo: '', descripcion: 'Saludos & flores', imagen: 'uploads_limpiecitoweb/publicaciones/abc.jpg', usuarioId: null, origen: 'publicacion' },
+      { id: 4, titulo: 'Sin imagen', sub_titulo: '', descripcion: 'Texto', imagen: null, usuarioId: null, origen: 'publicacion' },
+      { id: 1, titulo: 'Viejo', sub_titulo: 'S', descripcion: 'D', imagen: 'uploads_limpiecitoweb/v.jpg', usuarioId: 1, origen: 'anuncio' }
+    ]);
+    // La vigencia (incluida fecha_expiracion) se filtra en la BD con la misma regla del endpoint v1.
+    const where = Publicacion.findAll.mock.calls[0][0].where;
+    const ahora = where.fecha_publicacion[Object.getOwnPropertySymbols(where.fecha_publicacion)[0]];
+    expect(where).toEqual(filtroVigentes(ahora));
+  });
+
+  it('RF-WEB-03: si falla la BD responde 400 como antes', async () => {
+    Publicacion.findAll.mockRejectedValue(new Error('caída'));
+    const r = await request(app()).get('/anuncios_web/obtener_anuncio/obtener/');
+    expect(r.status).toBe(400);
   });
 
   it('crear, editar y eliminar sin sesión: 401 sin tocar la BD', async () => {

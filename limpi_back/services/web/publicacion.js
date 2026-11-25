@@ -199,11 +199,31 @@ function aPublico(p) {
   };
 }
 
+/**
+ * Proyección al formato legacy de /anuncios_web/obtener_anuncio (lo que lee la web pública):
+ * `imagen` relativa a url_short, como guardaba el flujo antiguo; `descripcion` en texto plano.
+ * @param {object} p
+ * @returns {{id:number, titulo:string, sub_titulo:string, descripcion:string, imagen:(string|null), usuarioId:null, origen:string}}
+ */
+function aLegacy(p) {
+  const plana = p && p.get ? p.get({ plain: true }) : p;
+  return {
+    id: plana.id,
+    titulo: plana.titulo,
+    sub_titulo: '',
+    descripcion: sanitizarTitulo(plana.cuerpo),
+    imagen: plana.imagen ? 'uploads_limpiecitoweb/publicaciones/' + plana.imagen : null,
+    usuarioId: null,
+    origen: 'publicacion'
+  };
+}
+
 module.exports = {
   sanitizarCuerpo: sanitizarCuerpo,
   sanitizarTitulo: sanitizarTitulo,
   validarPayload: validarPayload,
   filtroVigentes: filtroVigentes,
   esVigente: esVigente,
-  aPublico: aPublico
+  aPublico: aPublico,
+  aLegacy: aLegacy
 };

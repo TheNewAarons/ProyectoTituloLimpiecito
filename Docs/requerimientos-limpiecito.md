@@ -556,7 +556,7 @@ Implementar la lógica en un servicio (`services/bodega/cruceStock.js`) con test
 
 **Criterios:** [x] Un anuncio aparece al llegar su fecha y desaparece al expirar — `tests/api/publicaciones-vigencia-xss.v1.test.js` (vigencia evaluando el `where` real con reloj fijo) + smoke local contra MySQL (una publicación con expiración en 5 s aparece y desaparece del listado público). [x] HTML malicioso en el cuerpo se sanitiza — 8 vectores XSS más el título en el mismo test + smoke local (`script`, `onclick`, `javascript:` y protocol-relative eliminados).
 
-> **Nota de alcance:** los datos de contacto complementarios NO se implementaron (ver `Docs/DECISIONES.md` D-098) y la administración es solo por API (sin UI de frontend, ver D-099).
+> **Nota de alcance:** los datos de contacto complementarios NO se implementaron (ver `Docs/DECISIONES.md` D-098) La pantalla *Página Web → Anuncios* administra las publicaciones (fecha de publicación, `fecha_expiracion` opcional, despublicar) y `GET /anuncios_web/obtener_anuncio/obtener/`, que lee la web pública, entrega las publicaciones vigentes en el formato antiguo seguidas de los anuncios antiguos aún no eliminados (reemplaza D-099).
 
 **Complementario del alcance (sin código de backlog):** exponer en el portal los datos de contacto de la empresa gestionables desde el sistema. Implementar sólo si no agrega más de 1 pt; si no, registrar en `docs/DECISIONES.md`.
 

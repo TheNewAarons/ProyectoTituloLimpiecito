@@ -1,8 +1,11 @@
 import { Injectable } from '@angular/core';
 
 import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment'
 import { LoginService } from '../login/login.service';
+import { Publicacion } from '../../model/publicacion';
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +13,8 @@ import { LoginService } from '../login/login.service';
 export class AnuncioService {
 
   public url_backend;
+  // RF-WEB-03: los anuncios se administran como publicaciones (con fecha de publicación y expiración opcional).
+  private url_publicaciones = environment.url + '/api/v1/web/publicaciones';
 
   constructor(private http: HttpClient, private loginService: LoginService) {
     this.url_backend = environment.url + "/anuncios_web";
@@ -20,36 +25,34 @@ export class AnuncioService {
     return { headers: new HttpHeaders({ 'x-access-token': this.loginService.getToken() || '' }) };
   }
 
-  // Obs. 23: reemplazar la imagen (la ruta antigua de editar solo cambia textos).
-  reemplazarImagen(idAnuncio, formData: FormData) {
-    return this.http.put(environment.url + '/api/v1/web/anuncios/' + idAnuncio + '/imagen', formData, this.conSesion());
+  listarPublicaciones(): Observable<Publicacion[]> {
+    return this.http.get<{ data: Publicacion[] }>(this.url_publicaciones, this.conSesion()).pipe(map((r) => r.data));
   }
 
-  //crear contactanos . genera solicitud de contacto
-  crearAnuncio(anuncio) {
-    // console.log(anuncio);
-    let url = this.url_backend + '/crear_anuncio/crear/';
-    //url += '?token=' + this._usuarioService.token;
-
-    return this.http.post(url, anuncio, this.conSesion());
+  obtenerPublicacion(id: number): Observable<Publicacion> {
+    return this.http.get<{ data: Publicacion }>(this.url_publicaciones + '/' + id, this.conSesion()).pipe(map((r) => r.data));
   }
 
-  //Editar publicacion sin imagen
-
-  editarAnuncio(anuncio, idAnuncio) {
-    return this.http.put(this.url_backend + '/editar_anuncio/editar/' + idAnuncio, anuncio, this.conSesion());
+  crearPublicacion(fd: FormData): Observable<Publicacion> {
+    return this.http.post<{ data: Publicacion }>(this.url_publicaciones, fd, this.conSesion()).pipe(map((r) => r.data));
   }
 
-  //ELIMINAR Anuncio
+  editarPublicacion(id: number, fd: FormData): Observable<Publicacion> {
+    return this.http.put<{ data: Publicacion }>(this.url_publicaciones + '/' + id, fd, this.conSesion()).pipe(map((r) => r.data));
+  }
+
+  // DELETE despublica (no borra): deja de mostrarse en la web y puede volver a publicarse editándola.
+  despublicarPublicacion(id: number): Observable<Publicacion> {
+    return this.http.delete<{ data: Publicacion }>(this.url_publicaciones + '/' + id, this.conSesion()).pipe(map((r) => r.data));
+  }
+
+  //ELIMINAR Anuncio (solo anuncios antiguos, sin fechas)
   eliminarAnuncio(idAnuncio) {
     return this.http.delete(this.url_backend + '/eliminar_anuncio/eliminar/' + idAnuncio, this.conSesion());
   }
-  //OBTENER anuncios
+  //OBTENER anuncios (lo que ve la web pública: publicaciones vigentes + anuncios antiguos)
   obtenerAnuncios() {
     return this.http.get(this.url_backend + '/obtener_anuncio/obtener/');
   }
-
-
-
 
 }

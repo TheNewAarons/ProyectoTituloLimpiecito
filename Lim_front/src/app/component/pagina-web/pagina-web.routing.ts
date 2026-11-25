@@ -12,5 +12,9 @@ export const PaginaWebRoutes: Routes = [
     path: 'pagina_web/crear-anuncio',
     component: CrearAnuncioComponent
   },
-  
+  {
+    path: 'pagina_web/editar-anuncio/:id',
+    component: CrearAnuncioComponent
+  },
+
 ];

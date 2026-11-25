@@ -234,9 +234,9 @@ se puede descargar aunque se conozca su id.
 **Criterios:** (.1) un anuncio queda con fechas de publicación y expiración; (.2) al editar uno vigente la web muestra el nuevo
 contenido; (.3) uno eliminado deja de mostrarse; (.4) aparece al llegar su fecha y desaparece al expirar; el HTML malicioso se
 sanitiza.
-> La pantalla *Página Web → Anuncios* todavía usa el flujo legacy `/anuncios_web`, que no implementa las reglas de
-> RF-WEB-03. Lo que cumple el criterio son las **publicaciones v1** (`/api/v1/web/publicaciones`, solo Administrador), que
-> aún no tienen pantalla: la prueba es por API. Campos: `titulo`, `cuerpo`, `fecha_publicacion`, `fecha_expiracion`
+> La pantalla *Página Web → Anuncios* administra las **publicaciones v1** (`/api/v1/web/publicaciones`, solo Administrador):
+> se puede probar desde la pantalla (crear con fecha de expiración y ver el estado Vigente → Expirado) o por API. La web
+> pública lee `GET /anuncios_web/obtener_anuncio/obtener/`, que ya entrega solo las vigentes. Campos: `titulo`, `cuerpo`, `fecha_publicacion`, `fecha_expiracion`
 > (ISO 8601 con zona), `publicado` y la imagen opcional en `imagen` (multipart).
 1. **.1** Crear con fecha de expiración en 5 minutos:
    `curl -s -X POST -H "x-access-token: $TOKEN" -F titulo='Anuncio prueba' -F cuerpo='Texto' -F publicado=true -F fecha_publicacion=<ahora con zona, ej. 2026-11-21T12:00:00-03:00> -F fecha_expiracion=<ahora+5min con zona> -F imagen=@anuncio.jpg $API/web/publicaciones`

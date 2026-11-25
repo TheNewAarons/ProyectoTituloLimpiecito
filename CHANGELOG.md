@@ -5,6 +5,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/). C
 ## [Sin publicar]
 
 ### Corregido
+- **RF-WEB-03** — Anuncios con vigencia desde la pantalla (rama `feature/RF-WEB-03-ui-vigencia-anuncios-aaron`, sin migración): *Página Web → Anuncios* crea/edita/despublica publicaciones v1 con fecha de publicación y `fecha_expiracion` opcional (al llegar, deja de mostrarse solo); `GET /anuncios_web/obtener_anuncio/obtener/` (lo que lee la web pública) entrega primero las publicaciones vigentes en el formato antiguo (`sub_titulo` vacío, `descripcion` en texto plano) y luego los anuncios antiguos, que se listan aparte y solo se pueden eliminar.
 - **RF-CAJA-02** — Pagar una liquidación (individual o en lote) con `fecha_pago` en el mes actual ya no falla con "no existe caja para el periodo": se abre la caja del mes en curso si falta (D-042). Meses pasados sin caja siguen rechazándose.
 - **RF-CAJA-01** — Vista de caja: etiquetas "devengado" (centros de costo, incluye liquidaciones en espera) vs "en caja" (solo pagado) para evitar totales aparentemente inconsistentes (D-043).
 
