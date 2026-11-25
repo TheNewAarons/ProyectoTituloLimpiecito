@@ -7,7 +7,7 @@ import { RecepcionBodegaService } from '../../../services/recepcion-bodega/recep
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { LoginService } from '../../../services/login/login.service';
 import {
-  OrdenRecepcion, ResultadoRecepcion, DocumentoRecepcion, ETIQUETA_ORDEN, BADGE_ORDEN, DOCUMENTOS_RECEPCION
+  OrdenRecepcion, LineaRecepcion, ResultadoRecepcion, DocumentoRecepcion, ETIQUETA_ORDEN, BADGE_ORDEN, DOCUMENTOS_RECEPCION
 } from '../../../model/recepcion-bodega';
 import { mostrarErrorBodega } from '../../solicitudes-bodega/solicitudes-bodega.errores';
 
@@ -29,6 +29,9 @@ export class OrdenRecepcionComponent implements OnInit {
   badge = BADGE_ORDEN;
   loading = false;
   enviando = false;
+  // RF-BOD-03: edición del borrador (cantidad por item_id e items marcados para quitar)
+  cantidadesOc: { [itemId: number]: number } = {};
+  quitados: number[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -50,9 +53,12 @@ export class OrdenRecepcionComponent implements OnInit {
         this.orden = r.data;
         this.cantidades = {};
         this.costos = {};
+        this.cantidadesOc = {};
+        this.quitados = [];
         this.orden.items.forEach((l) => {
           this.cantidades[l.item_id] = l.pendiente;
           this.costos[l.item_id] = l.costo_unitario;
+          this.cantidadesOc[l.item_id] = l.cantidad;
         });
         this.documento = { documento_tipo: null, documento_numero: '', observacion: '' };
         this.loading = false;
@@ -140,6 +146,85 @@ export class OrdenRecepcionComponent implements OnInit {
           this.resultado = r.data;
           this.alertas.alertaExitoMsj('Recepción N° ' + r.data.recepcion_id + ' registrada',
             'La orden quedó ' + this.etiqueta[r.data.estado] + '.');
+          this.cargar();
+        },
+        (error: HttpErrorResponse) => {
+          this.enviando = false;
+          mostrarErrorBodega(error, this.alertas, this.loginService);
+        }
+      );
+    });
+  }
+
+  get esBorrador(): boolean {
+    return !!this.orden && this.orden.estado === 'BORRADOR';
+  }
+
+  get lineasBorrador(): LineaRecepcion[] {
+    return this.orden ? this.orden.items.filter((l) => this.quitados.indexOf(l.item_id) === -1) : [];
+  }
+
+  //CANTIDAD DE LA OC: ENTERO MAYOR A 0 (PUEDE SUPERAR EL FALTANTE; EL BACKEND VUELVE A VALIDAR)
+  errorCantidadOc(itemId: number): string {
+    const valor = Number(this.cantidadesOc[itemId]);
+    return this.cantidadesOc[itemId] !== null && Number.isInteger(valor) && valor > 0 ? '' : 'Ingrese un entero mayor a 0';
+  }
+
+  quitar(itemId: number): void {
+    this.quitados.push(itemId);
+  }
+
+  hayCambios(): boolean {
+    return this.quitados.length > 0
+      || (!!this.orden && this.orden.items.some((l) => Number(this.cantidadesOc[l.item_id]) !== l.cantidad));
+  }
+
+  puedeGuardar(): boolean {
+    return this.esBorrador && !this.enviando && this.hayCambios() && this.lineasBorrador.length > 0
+      && this.lineasBorrador.every((l) => !this.errorCantidadOc(l.item_id));
+  }
+
+  guardar(): void {
+    if (!this.puedeGuardar()) { return; }
+    const items = this.lineasBorrador
+      .filter((l) => Number(this.cantidadesOc[l.item_id]) !== l.cantidad)
+      .map((l) => ({ id: l.item_id, cantidad: Number(this.cantidadesOc[l.item_id]) }));
+    this.enviando = true;
+    this.recepcionService.actualizarOrden(this.orden.id, { items: items, eliminar: this.quitados }).subscribe(
+      () => {
+        this.enviando = false;
+        this.alertas.alertaExitoMsj('Orden actualizada');
+        this.cargar();
+      },
+      (error: HttpErrorResponse) => {
+        this.enviando = false;
+        mostrarErrorBodega(error, this.alertas, this.loginService);
+      }
+    );
+  }
+
+  enviar(): void {
+    if (!this.esBorrador || this.enviando || this.hayCambios()) { return; }
+    swal.fire({
+      title: '¿Enviar la orden N° ' + this.orden.id + '?',
+      text: 'Se enviará por correo a ' + (this.orden.proveedor || 'el proveedor') + ' y ya no podrá editarse.',
+      icon: 'warning',
+      showCancelButton: true,
+      buttonsStyling: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      customClass: { confirmButton: 'btn btn-success', cancelButton: 'btn btn-danger' },
+      confirmButtonText: 'Si, ¡Enviar!',
+      cancelButtonText: 'Cancelar'
+    }).then((resultado) => {
+      if (!resultado.value) { return; }
+      this.enviando = true;
+      this.alertas.loading();
+      this.recepcionService.enviarOrden(this.orden.id).subscribe(
+        () => {
+          this.enviando = false;
+          this.alertas.cerrarAlerta();
+          this.alertas.alertaExitoMsj('Orden enviada al proveedor');
           this.cargar();
         },
         (error: HttpErrorResponse) => {

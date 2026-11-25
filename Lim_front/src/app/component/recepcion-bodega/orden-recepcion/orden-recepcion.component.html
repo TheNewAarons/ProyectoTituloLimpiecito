@@ -19,7 +19,47 @@
                 <strong>Proveedor:</strong> {{ orden.proveedor || '—' }} ·
                 <strong>Estado:</strong> <span [class]="badge[orden.estado]">{{ etiqueta[orden.estado] }}</span>
               </p>
-              <p class="text-warning" *ngIf="!orden.recibible">Solo se puede recibir una orden Enviada o Recibida parcial.</p>
+              <p class="text-warning" *ngIf="!orden.recibible && !esBorrador">Solo se puede recibir una orden Enviada o Recibida parcial.</p>
+
+              <!-- RF-BOD-03: borrador editable (cantidades y quitar productos) antes de enviar -->
+              <div *ngIf="esBorrador">
+                <p>Ajusta las cantidades o quita productos, guarda y luego envía la orden al proveedor.</p>
+                <div class="table-responsive">
+                  <table class="table tabla-compacta">
+                    <thead>
+                      <tr>
+                        <th class="text-left">Producto</th>
+                        <th class="text-right">Costo Unitario</th>
+                        <th class="text-right">Cantidad</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngIf="lineasBorrador.length === 0">
+                        <td colspan="4" class="text-center">Sin registros</td>
+                      </tr>
+                      <tr *ngFor="let l of lineasBorrador">
+                        <td class="text-left">{{ l.producto || ('Producto ' + l.producto_id) }}</td>
+                        <td class="text-right">{{ l.costo_unitario === null ? '—' : (l.costo_unitario | currency:'CLP':'symbol':'1.0-0') }}</td>
+                        <td class="text-right">
+                          <mat-form-field class="example-full-width">
+                            <input matInput type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1"
+                              placeholder="Cantidad" [name]="'cantidadOc' + l.item_id" [(ngModel)]="cantidadesOc[l.item_id]">
+                          </mat-form-field>
+                          <small class="text-danger" *ngIf="errorCantidadOc(l.item_id)">{{ errorCantidadOc(l.item_id) }}</small>
+                        </td>
+                        <td class="td-actions text-right">
+                          <button mat-raised-button type="button" matTooltip="Quitar Producto" class="btn btn-danger btn-round"
+                            (click)="quitar(l.item_id)" [disabled]="enviando || lineasBorrador.length === 1">
+                            <i class="material-icons">close</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <small class="text-warning" *ngIf="hayCambios()">Tienes cambios sin guardar. Guárdalos antes de enviar.</small>
+              </div>
 
               <div class="row" *ngIf="orden.recibible">
                 <div class="col-md-3">
@@ -43,7 +83,7 @@
                 <div class="col-12"><small class="text-danger" *ngIf="errorDocumento()">{{ errorDocumento() }}</small></div>
               </div>
 
-              <div class="table-responsive">
+              <div class="table-responsive" *ngIf="!esBorrador">
                 <table class="table tabla-compacta">
                   <thead>
                     <tr>
@@ -134,6 +174,20 @@
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer" *ngIf="!loading && esBorrador">
+            <div class="row w-100">
+              <div class="col-12 text-right">
+                <button mat-raised-button type="button" class="btn btn-success mb-2" [disabled]="!puedeGuardar()" (click)="guardar()">
+                  <span class="btn-label"><i class="material-icons">save</i></span>
+                  Guardar
+                </button>
+                <button mat-raised-button type="button" class="btn btn-success mb-2" [disabled]="enviando || hayCambios()" (click)="enviar()">
+                  <span class="btn-label"><i class="material-icons">done</i></span>
+                  Enviar Al Proveedor
+                </button>
               </div>
             </div>
           </div>

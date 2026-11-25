@@ -37,6 +37,11 @@ export class RecepcionBodegaService {
     return this.http.post<RespuestaBodega<ResultadoGenerarOrdenes>>(this.url_bodega + '/ordenes-compra/desde-lista', {}, { headers: this.obtenerCabeceras() });
   }
 
+  //EDITAR OC EN BORRADOR: AJUSTAR CANTIDADES Y QUITAR ITEMS (RF-BOD-03)
+  actualizarOrden(id: number, cambios: { items: { id: number, cantidad: number }[], eliminar: number[] }): Observable<RespuestaBodega<{ id: number, estado: string }>> {
+    return this.http.patch<RespuestaBodega<{ id: number, estado: string }>>(this.url_bodega + '/ordenes-compra/' + id, cambios, { headers: this.obtenerCabeceras() });
+  }
+
   //ENVIAR OC AL PROVEEDOR POR CORREO (RF-BOD-03)
   enviarOrden(id: number): Observable<RespuestaBodega<{ id: number, estado: string }>> {
     return this.http.post<RespuestaBodega<{ id: number, estado: string }>>(this.url_bodega + '/ordenes-compra/' + id + '/enviar', {}, { headers: this.obtenerCabeceras() });
