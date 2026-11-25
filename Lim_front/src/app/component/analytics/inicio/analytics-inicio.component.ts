@@ -1,38 +1,80 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { FiltrosAnalytics, RangoPeriodo } from '../../../model/analytics';
-import { generarMeses, idDesdeQuery, mesActualSantiago, rangoDesdeQuery } from '../compartido/filtro-periodo/filtro-periodo.component';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Observable, of, Subject } from 'rxjs';
+import { catchError, map, takeUntil } from 'rxjs/operators';
+import { AnalyticsService } from '../../../services/analytics/analytics.service';
+import { LoginService } from '../../../services/login/login.service';
+import { FilaGastosGenerales, FilaRentabilidad, PuntoTendencia, ResumenFinanciero, SerieGrafico } from '../../../model/analytics';
+import { generarMeses, mesActualSantiago } from '../compartido/filtro-periodo/filtro-periodo.component';
 
-// RF-BI-01a: inicio de Analytics; los filtros viajan por query params a cada tablero y vuelven con el botón Volver.
+// RF-BI-01a: inicio de Analytics = resumen del mes + una tarjeta por tablero. Los datos financieros
+// solo los pide el Administrador (el backend responde 403 a Operaciones). Cada dato falla por separado.
 @Component({
   selector: 'app-analytics-inicio',
   templateUrl: './analytics-inicio.component.html'
 })
-export class AnalyticsInicioComponent implements OnInit {
-  filtros: FiltrosAnalytics = { desde: generarMeses(mesActualSantiago(), 3)[2], hasta: mesActualSantiago(), centroCostoId: null, clienteId: null };
+export class AnalyticsInicioComponent implements OnInit, OnDestroy {
+  readonly hasta = mesActualSantiago();
+  readonly desde = generarMeses(this.hasta, 3)[2];
+  private readonly desdeTendencia = generarMeses(this.hasta, 6)[5];
 
-  constructor(private route: ActivatedRoute) {}
+  esAdmin = false;
+  cargando = true;
+  resumen: ResumenFinanciero | null = null;
+  etiquetas: string[] = [];
+  series: SerieGrafico[] = [];
+  topCliente: FilaRentabilidad | null = null;
+  clientesEnPerdida: number | null = null;
+  stockCritico: number | null = null;
+  porcentajeMerma: number | null = null;
+  cumplimiento: number | null = null;
+
+  private destroy$ = new Subject<void>();
+
+  constructor(private analyticsService: AnalyticsService, private loginService: LoginService) {}
 
   ngOnInit(): void {
-    const q = this.route.snapshot.queryParamMap;
-    const rango = rangoDesdeQuery(q);
-    this.filtros = {
-      desde: rango ? rango.desde : this.filtros.desde,
-      hasta: rango ? rango.hasta : this.filtros.hasta,
-      centroCostoId: idDesdeQuery(q, 'centro_costo_id'),
-      clienteId: idDesdeQuery(q, 'cliente_id')
-    };
+    const usuario = this.loginService.obtenerDatosUsuario();
+    this.esAdmin = !!(usuario && usuario.role && usuario.role.nombre === 'Administrador');
+
+    this.pedir(this.analyticsService.stockCriticoBodega().pipe(map((r) => r.data.length)))
+      .subscribe((n: number | null) => this.stockCritico = n);
+    this.pedir(this.analyticsService.mermaBodega(this.desde, this.hasta).pipe(map((r) => r.meta.porcentaje_merma)))
+      .subscribe((p: number | null) => this.porcentajeMerma = p);
+    this.pedir(this.analyticsService.productividad('trabajadores', { desde: this.desde, hasta: this.hasta }).pipe(
+      map((r) => r.meta.cumplimiento_pct === undefined ? null : r.meta.cumplimiento_pct)
+    )).subscribe((p: number | null) => this.cumplimiento = p);
+
+    if (!this.esAdmin) {
+      this.cargando = false;
+      return;
+    }
+    this.pedir(this.analyticsService.resumenFinanciero(this.hasta).pipe(map((r) => r.data)))
+      .subscribe((r: ResumenFinanciero | null) => { this.resumen = r; this.cargando = false; });
+    this.pedir(this.analyticsService.tendenciaFinanciera(this.desdeTendencia, this.hasta).pipe(map((r) => r.data)))
+      .subscribe((puntos: PuntoTendencia[] | null) => {
+        if (!puntos) { return; }
+        this.etiquetas = puntos.map((p: PuntoTendencia): string => p.periodo);
+        this.series = [
+          { etiqueta: 'Ingresos', datos: puntos.map((p: PuntoTendencia): number => p.ingresos) },
+          { etiqueta: 'Egresos', datos: puntos.map((p: PuntoTendencia): number => p.egresos) },
+          { etiqueta: 'Utilidad', datos: puntos.map((p: PuntoTendencia): number => p.utilidad) }
+        ];
+      });
+    this.pedir(this.analyticsService.rentabilidad(this.desde, this.hasta)).subscribe((r) => {
+      if (!r) { return; }
+      // Ya viene ordenado por margen_con_estimado desc; la fila de gastos generales no es un cliente.
+      this.topCliente = (r.data.filter((f: FilaRentabilidad | FilaGastosGenerales) => f.tipo === 'CLIENTE')[0] as FilaRentabilidad) || null;
+      this.clientesEnPerdida = r.meta.totales.clientes_en_perdida;
+    });
   }
 
-  cambiarPeriodo(rango: RangoPeriodo): void {
-    this.filtros = { ...this.filtros, desde: rango.desde, hasta: rango.hasta };
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  cambiarCentro(id: number | null): void {
-    this.filtros = { ...this.filtros, centroCostoId: id };
-  }
-
-  cambiarCliente(id: number | null): void {
-    this.filtros = { ...this.filtros, clienteId: id };
+  // Un tablero sin datos o con error no bloquea el resto: muestra "Sin datos".
+  private pedir<T>(fuente: Observable<T>): Observable<T | null> {
+    return fuente.pipe(catchError(() => of(null)), takeUntil(this.destroy$));
   }
 }
