@@ -28,6 +28,9 @@ jest.mock('../../modelos/sistema_base/Egreso', () => ({
 jest.mock('../../modelos/sistema_base/CcEgreso', () => ({
   findAll: jest.fn()
 }));
+jest.mock('../../modelos/sistema_base/Centro_costo', () => ({
+  findAll: jest.fn()
+}));
 
 const jwt = require('jsonwebtoken');
 const Role = require('../../modelos/sistema_base/Role');
@@ -35,6 +38,7 @@ const pagoService = require('../../services/facturas/pago');
 const CcIngreso = require('../../modelos/sistema_base/CcIngreso');
 const Egreso = require('../../modelos/sistema_base/Egreso');
 const CcEgreso = require('../../modelos/sistema_base/CcEgreso');
+const Centro = require('../../modelos/sistema_base/Centro_costo');
 const AppError = require('../../libs/app-error');
 
 const routerFacturas = require('../../api/v1/facturas/routes');
@@ -211,6 +215,15 @@ describe('API /api/v1 (facturas: ingresos/egresos/resumen)', () => {
       const res = await request(app).get('/api/v1/ingresos').set('x-access-token', TOKEN_ADMIN);
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ ok: true, data: [{ id: 1 }, { id: 2 }], meta: { total: 2 } });
+    });
+
+    it('agrega numero_cc del centro de costo de cada ingreso', async () => {
+      CcIngreso.findAll.mockResolvedValue([{ id: 1, centroCostoId: 7 }, { id: 2, centroCostoId: 7 }, { id: 3, centroCostoId: null }]);
+      Centro.findAll.mockResolvedValue([{ id: 7, numero_cc: 'CC-007' }]);
+      const res = await request(app).get('/api/v1/ingresos').set('x-access-token', TOKEN_ADMIN);
+      expect(res.status).toBe(200);
+      expect(res.body.data.map((f) => f.numero_cc)).toEqual(['CC-007', 'CC-007', null]);
+      expect(Centro.findAll).toHaveBeenCalledTimes(1);
     });
   });
 

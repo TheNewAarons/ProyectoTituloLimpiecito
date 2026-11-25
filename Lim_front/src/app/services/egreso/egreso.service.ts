@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment'
 import { LoginService } from '../login/login.service';
 import { ApiOkResponse } from '../../model/liquidacion-pago';
-import { ResumenFacturas } from '../../model/factura-pago';
+import { IngresoFactura, ResumenFacturas } from '../../model/factura-pago';
 import { Egreso } from '../../model/egreso';
 
 
@@ -74,6 +74,18 @@ export class EgresoService {
       { motivo },
       { headers: this.obtenerCabeceras() }
     );
+  }
+
+  /** ========= RF-FAC-01: Ingresos de centros de costo (/api/v1/ingresos) ========= */
+
+  //LISTAR INGRESOS CON SU ESTADO DE PAGO
+  obtenerIngresos(): Observable<ApiOkResponse<IngresoFactura[]>> {
+    return this.http.get<ApiOkResponse<IngresoFactura[]>>(this.url_backend_v1 + '/ingresos', { headers: this.obtenerCabeceras() });
+  }
+
+  //CAMBIAR EL ESTADO DE PAGO DE UN INGRESO: pagar { fecha_pago } · anular/revertir { motivo }
+  cambiarEstadoIngreso(id: number, accion: 'pagar' | 'anular' | 'revertir', body: { fecha_pago?: string, motivo?: string }): Observable<ApiOkResponse<IngresoFactura>> {
+    return this.http.patch<ApiOkResponse<IngresoFactura>>(this.url_backend_v1 + '/ingresos/' + id + '/' + accion, body, { headers: this.obtenerCabeceras() });
   }
 
   //RESUMEN DE FACTURAS POR COBRAR/POR PAGAR (INFORMATIVO, FUERA DEL SALDO DE CAJA)
