@@ -7,6 +7,8 @@ import { AnalyticsService } from '../../../services/analytics/analytics.service'
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { generarMeses, mesActualSantiago } from '../compartido/filtro-periodo/filtro-periodo.component';
 
+type PestanaBodega = 'consumo' | 'compras' | 'merma' | 'critico';
+
 // RF-BI-03: consumo de bodega. Solicitado = lo pedido; consumido = lo entregado (D-BI-03-1). Rango por defecto: últimos 6 meses.
 @Component({
   selector: 'app-consumo-bodega',
@@ -17,6 +19,14 @@ export class ConsumoBodegaComponent implements OnInit {
   desde = generarMeses(this.hasta, 6)[5];
   productoId: number | null = null;
   agrupar: 'supervisor' | 'centro_costo' = 'supervisor';
+  // Secciones del dashboard (todas se cargan juntas; la pestaña solo elige qué se ve)
+  pestanas: { id: PestanaBodega, etiqueta: string, icono: string }[] = [
+    { id: 'consumo', etiqueta: 'Consumo', icono: 'local_shipping' },
+    { id: 'compras', etiqueta: 'Compras', icono: 'shopping_cart' },
+    { id: 'merma', etiqueta: 'Merma', icono: 'remove_shopping_cart' },
+    { id: 'critico', etiqueta: 'Stock crítico', icono: 'warning' }
+  ];
+  pestana: PestanaBodega = 'consumo';
 
   top: FilaTopProducto[] = [];
   grupos: FilaConsumoGrupo[] = [];
