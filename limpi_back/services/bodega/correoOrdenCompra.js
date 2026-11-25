@@ -12,6 +12,8 @@ const AppError = require('../../libs/app-error');
 const fecha = require('../../libs/fecha');
 
 const PLANTILLA_PATH = path.join(__dirname, '..', '..', 'views', 'ordenes-compra', 'orden.hbs');
+// Logo embebido como adjunto inline (cid): se ve sin depender de una URL pública.
+const LOGO_PATH = path.join(__dirname, '..', '..', 'views', 'ordenes-compra', 'logo-limpiecito.png');
 let plantillaCompilada = null;
 
 /**
@@ -46,18 +48,31 @@ function crearTransporteDesdeEnv() {
 
 /**
  * @param {object} orden instancia Orden_compra con `proveedor` e `items` cargados
+ * @param {Object<number, string>} [nombresProducto] nombre por producto_id; si falta, "Producto <id>"
  * @returns {{html: string, asunto: string}}
  */
-function renderizarOrden(orden) {
+function renderizarOrden(orden, nombresProducto) {
+  const nombres = nombresProducto || {};
+  const proveedor = orden.proveedor || {};
+  const items = (orden.items || []).map(function (item, i) {
+    return {
+      numero: i + 1,
+      producto_id: item.producto_id,
+      nombre: nombres[item.producto_id] || 'Producto ' + item.producto_id,
+      cantidad: Number(item.cantidad)
+    };
+  });
   const datos = {
     empresaNombre: process.env.EMPRESA_NOMBRE || 'Aseo Limpiecito',
     empresaRut: process.env.EMPRESA_RUT || '',
     numeroOrden: orden.id,
-    fecha: fecha.hoySantiago(),
-    proveedorNombre: orden.proveedor ? orden.proveedor.nombre : '',
-    items: (orden.items || []).map(function (item) {
-      return { producto_id: item.producto_id, cantidad: item.cantidad };
-    })
+    fecha: fecha.hoySantiago().split('-').reverse().join('/'),
+    proveedorNombre: proveedor.nombre || '',
+    proveedorRut: proveedor.rut || '',
+    proveedorContacto: proveedor.contacto || '',
+    items: items,
+    totalProductos: items.length,
+    totalUnidades: items.reduce(function (total, item) { return total + item.cantidad; }, 0)
   };
   const html = obtenerPlantilla()(datos);
   return { html: html, asunto: 'Orden de compra #' + orden.id };
@@ -69,17 +84,19 @@ function renderizarOrden(orden) {
  * @param {object} orden instancia Orden_compra con `proveedor` e `items`
  * @param {string} emailDestino
  * @param {object} [transporte] transporte Nodemailer inyectado (tests); por defecto se crea desde env
+ * @param {Object<number, string>} [nombresProducto] nombre por producto_id para el detalle
  * @returns {Promise<void>}
  */
-async function enviarCorreoOrdenCompra(orden, emailDestino, transporte) {
+async function enviarCorreoOrdenCompra(orden, emailDestino, transporte, nombresProducto) {
   const t = transporte || crearTransporteDesdeEnv();
-  const { html, asunto } = renderizarOrden(orden);
+  const { html, asunto } = renderizarOrden(orden, nombresProducto);
   try {
     await t.sendMail({
       from: process.env.SMTP_USER,
       to: emailDestino,
       subject: asunto,
-      html: html
+      html: html,
+      attachments: [{ filename: 'logo-limpiecito.png', path: LOGO_PATH, cid: 'logo-limpiecito' }]
     });
   } catch (err) {
     // Solo code/responseCode (p.ej. 'EAUTH', 535): nunca err.message ni err.config, que en

@@ -152,6 +152,7 @@ async function validarProductosConProveedor(items, proveedorId, transaction, loc
   if (sinProveedor.length > 0) {
     throw new AppError('PRODUCTO_SIN_PROVEEDOR', 'hay productos sin el proveedor de la orden asignado', 409, { productos: sinProveedor });
   }
+  return productos.reduce(function (m, p) { m[p.id] = p.nombre; return m; }, {});
 }
 
 /**
@@ -178,13 +179,13 @@ async function enviar(id, contexto) {
     throw new AppError('ORDEN_SIN_ITEMS', 'la orden no tiene items, no se puede enviar', 409);
   }
   // Bloqueo (spec regla 3): todo item debe apuntar a un producto con el mismo proveedor de la orden.
-  await validarProductosConProveedor(orden.items, orden.proveedor_id);
+  const nombresProducto = await validarProductosConProveedor(orden.items, orden.proveedor_id);
 
   const emailDestino = orden.proveedor.email;
   const accion = orden.estado === 'ENVIADA' ? 'REENVIAR' : 'ENVIAR';
 
   try {
-    await enviarCorreoOrdenCompra(orden, emailDestino, contexto.transporte);
+    await enviarCorreoOrdenCompra(orden, emailDestino, contexto.transporte, nombresProducto);
   } catch (errorEnvio) {
     await registrarIntentoFallido(id, contexto, errorEnvio);
     throw errorEnvio;

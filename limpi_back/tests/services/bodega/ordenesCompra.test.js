@@ -85,7 +85,7 @@ describe('services/bodega/ordenesCompra', () => {
 
       const resultado = await enviar(1, { usuario, ip: '127.0.0.1', transporte });
 
-      expect(enviarCorreoOrdenCompra).toHaveBeenCalledWith(orden, 'proveedor@test.com', transporte);
+      expect(enviarCorreoOrdenCompra).toHaveBeenCalledWith(orden, 'proveedor@test.com', transporte, { 10: 'Producto 10' });
       expect(orden.update).toHaveBeenCalledWith(
         expect.objectContaining({ estado: 'ENVIADA', enviada_a_email: 'proveedor@test.com' }),
         expect.anything()

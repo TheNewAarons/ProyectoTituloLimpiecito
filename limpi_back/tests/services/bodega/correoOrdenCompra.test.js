@@ -41,6 +41,15 @@ describe('services/bodega/correoOrdenCompra', () => {
       expect(asunto).toBe('Orden de compra #42');
       expect(html).toContain('42');
     });
+
+    it('muestra el nombre del producto (escapado), su código y el total de unidades', () => {
+      const orden = ordenFake({ items: [{ producto_id: 10, cantidad: 5 }, { producto_id: 11, cantidad: '3' }] });
+      const { html } = renderizarOrden(orden, { 10: 'Cloro <gel>' });
+      expect(html).toContain('Cloro &lt;gel&gt;');
+      expect(html).toContain('Producto 11');
+      expect(html).toContain('Código 10');
+      expect(html).toMatch(/Total unidades<\/td>\s*<td[^>]*>8<\/td>/);
+    });
   });
 
   describe('crearTransporteDesdeEnv', () => {
@@ -68,6 +77,8 @@ describe('services/bodega/correoOrdenCompra', () => {
       const llamada = transporte.sendMail.mock.calls[0][0];
       expect(llamada.to).toBe('proveedor@test.com');
       expect(llamada.subject).toBe('Orden de compra #1');
+      expect(llamada.attachments).toEqual([expect.objectContaining({ cid: 'logo-limpiecito' })]);
+      expect(require('fs').existsSync(llamada.attachments[0].path)).toBe(true);
     });
 
     it('lanza ENVIO_FALLIDO (502) si sendMail rechaza, sin exponer credenciales', async () => {
