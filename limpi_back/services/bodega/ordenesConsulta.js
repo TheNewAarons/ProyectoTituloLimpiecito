@@ -17,7 +17,7 @@ const Recepcion_item = require('../../modelos/sistema_bodega/Recepcion_item');
 
 const porId = (filas) => filas.reduce((m, f) => { m[f.id] = f; return m; }, {});
 const numeroONulo = (v) => v === null || v === undefined ? null : Number(v);
-const pendiente = (l) => Math.max(Number(l.cantidad) - Number(l.cantidad_recibida || 0), 0);
+const pendiente = (l) => Math.max(Number(l.cantidad) - Number(l.cantidad_recibida || 0) - Number(l.cantidad_rechazada || 0), 0);
 
 /**
  * @param {{estados?: string[], page:number, limit:number}} filtros
@@ -26,7 +26,7 @@ async function listar(filtros) {
   const where = filtros.estados ? { estado: { [Op.in]: filtros.estados } } : {};
   const r = await Orden_compra.findAndCountAll({ where: where, order: [['id', 'DESC']], limit: filtros.limit, offset: (filtros.page - 1) * filtros.limit });
   const ids = r.rows.map((o) => o.id);
-  const lineas = ids.length ? await Orden_compra_item.findAll({ where: { orden_id: { [Op.in]: ids } }, attributes: ['orden_id', 'cantidad', 'cantidad_recibida'] }) : [];
+  const lineas = ids.length ? await Orden_compra_item.findAll({ where: { orden_id: { [Op.in]: ids } }, attributes: ['orden_id', 'cantidad', 'cantidad_recibida', 'cantidad_rechazada'] }) : [];
   const proveedores = porId(await Proveedor.findAll({ where: { id: { [Op.in]: Array.from(new Set(r.rows.map((o) => o.proveedor_id))) } }, attributes: ['id', 'nombre'] }));
   return {
     data: r.rows.map((o) => {
@@ -58,7 +58,8 @@ async function detalleRecepcion(id) {
     recibible: orden.estado === 'ENVIADA' || orden.estado === 'RECIBIDA_PARCIAL',
     items: lineas.map((l) => ({
       item_id: l.id, producto_id: l.producto_id, producto: productos[l.producto_id] ? productos[l.producto_id].nombre : null,
-      cantidad: Number(l.cantidad), cantidad_recibida: Number(l.cantidad_recibida || 0), pendiente: pendiente(l),
+      cantidad: Number(l.cantidad), cantidad_recibida: Number(l.cantidad_recibida || 0),
+      cantidad_rechazada: Number(l.cantidad_rechazada || 0), pendiente: pendiente(l),
       costo_unitario: numeroONulo(l.costo_unitario)
     })),
     recepciones: recepciones.map((r) => ({
@@ -66,7 +67,8 @@ async function detalleRecepcion(id) {
       observacion: r.observacion, estado: r.estado, historica: Boolean(r.historica),
       items: lineasRecepcion.filter((li) => li.recepcion_id === r.id).map((li) => ({
         item_id: li.orden_item_id, producto_id: li.producto_id, producto: productos[li.producto_id] ? productos[li.producto_id].nombre : null,
-        cantidad: Number(li.cantidad), costo_unitario: numeroONulo(li.costo_unitario)
+        cantidad: Number(li.cantidad), costo_unitario: numeroONulo(li.costo_unitario),
+        cantidad_rechazada: Number(li.cantidad_rechazada || 0), motivo_rechazo: li.motivo_rechazo || null
       }))
     }))
   };

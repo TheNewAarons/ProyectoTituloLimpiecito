@@ -180,16 +180,16 @@ async function sumarFaltantePendiente(transaction) {
   return porProducto;
 }
 
-// Σ (cantidad - cantidad_recibida, minimo 0) de items de ordenes ENVIADA/RECIBIDA_PARCIAL, por producto_id.
+// Σ (cantidad - cantidad_recibida - cantidad_rechazada, minimo 0) de items de ordenes ENVIADA/RECIBIDA_PARCIAL, por producto_id.
 async function sumarPendienteOrdenes(transaction) {
   const ordenes = await Orden_compra.findAll({ where: { estado: { [Op.in]: ESTADOS_ORDEN_PENDIENTE } }, attributes: ['id'], transaction: transaction });
   const idsOrden = ordenes.map((o) => o.id);
   const items = idsOrden.length
-    ? await Orden_compra_item.findAll({ where: { orden_id: { [Op.in]: idsOrden } }, attributes: ['producto_id', 'cantidad', 'cantidad_recibida'], transaction: transaction })
+    ? await Orden_compra_item.findAll({ where: { orden_id: { [Op.in]: idsOrden } }, attributes: ['producto_id', 'cantidad', 'cantidad_recibida', 'cantidad_rechazada'], transaction: transaction })
     : [];
   const porProducto = {};
   items.forEach((i) => {
-    const pendiente = Math.max(Number(i.cantidad) - Number(i.cantidad_recibida), 0);
+    const pendiente = Math.max(Number(i.cantidad) - Number(i.cantidad_recibida) - Number(i.cantidad_rechazada || 0), 0);
     if (pendiente > 0) porProducto[i.producto_id] = (porProducto[i.producto_id] || 0) + pendiente;
   });
   return porProducto;

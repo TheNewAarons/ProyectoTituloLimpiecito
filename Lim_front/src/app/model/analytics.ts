@@ -175,6 +175,28 @@ export interface FilaFrecuenciaCompra {
   dias_promedio_entre_compras: number | null;
 }
 
+// RF-BOD-04: merma (unidades rechazadas al recibir órdenes de compra) por producto
+export interface FilaMerma {
+  producto_id: number;
+  producto: string;
+  recibido: number;
+  rechazado: number;
+  porcentaje_merma: number;
+  costo_merma: number;
+  recepciones_con_rechazo: number;
+  ultimo_motivo: string | null;
+}
+
+export interface MetaMerma {
+  desde: string;
+  hasta: string;
+  recibido: number;
+  rechazado: number;
+  porcentaje_merma: number;
+  costo_merma: number;
+  por_mes: { periodo: string, recibido: number, rechazado: number }[];
+}
+
 export interface FilaStockCritico {
   producto_id: number;
   producto: string;

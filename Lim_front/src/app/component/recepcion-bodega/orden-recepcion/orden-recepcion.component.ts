@@ -7,7 +7,7 @@ import { RecepcionBodegaService } from '../../../services/recepcion-bodega/recep
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { LoginService } from '../../../services/login/login.service';
 import {
-  OrdenRecepcion, ResultadoRecepcion, DocumentoRecepcion, ETIQUETA_ORDEN, BADGE_ORDEN, DOCUMENTOS_RECEPCION
+  OrdenRecepcion, LineaRecepcion, ResultadoRecepcion, DocumentoRecepcion, ETIQUETA_ORDEN, BADGE_ORDEN, DOCUMENTOS_RECEPCION
 } from '../../../model/recepcion-bodega';
 import { mostrarErrorBodega } from '../../solicitudes-bodega/solicitudes-bodega.errores';
 
@@ -22,6 +22,9 @@ export class OrdenRecepcionComponent implements OnInit {
   orden: OrdenRecepcion = null;
   cantidades: { [itemId: number]: number } = {};
   costos: { [itemId: number]: number } = {};
+  // RF-BOD-04 merma: unidades rechazadas y su motivo por línea
+  rechazadas: { [itemId: number]: number } = {};
+  motivos: { [itemId: number]: string } = {};
   documento: DocumentoRecepcion = { documento_tipo: null, documento_numero: '', observacion: '' };
   documentos = DOCUMENTOS_RECEPCION;
   resultado: ResultadoRecepcion = null;
@@ -29,6 +32,9 @@ export class OrdenRecepcionComponent implements OnInit {
   badge = BADGE_ORDEN;
   loading = false;
   enviando = false;
+  // RF-BOD-03: edición del borrador (cantidad por item_id e items marcados para quitar)
+  cantidadesOc: { [itemId: number]: number } = {};
+  quitados: number[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -50,9 +56,16 @@ export class OrdenRecepcionComponent implements OnInit {
         this.orden = r.data;
         this.cantidades = {};
         this.costos = {};
+        this.rechazadas = {};
+        this.motivos = {};
+        this.cantidadesOc = {};
+        this.quitados = [];
         this.orden.items.forEach((l) => {
           this.cantidades[l.item_id] = l.pendiente;
           this.costos[l.item_id] = l.costo_unitario;
+          this.rechazadas[l.item_id] = 0;
+          this.motivos[l.item_id] = '';
+          this.cantidadesOc[l.item_id] = l.cantidad;
         });
         this.documento = { documento_tipo: null, documento_numero: '', observacion: '' };
         this.loading = false;
@@ -70,8 +83,27 @@ export class OrdenRecepcionComponent implements OnInit {
     if (this.cantidades[itemId] === null || this.cantidades[itemId] === undefined || !Number.isInteger(valor) || valor < 0) {
       return 'Ingrese un entero mayor o igual a 0';
     }
-    if (valor > pendiente) { return 'No puede superar lo pendiente (' + pendiente + ')'; }
+    if (valor + this.rechazada(itemId) > pendiente) { return 'Recibido más rechazado no puede superar lo pendiente (' + pendiente + ')'; }
     return '';
+  }
+
+  //RECHAZO OPCIONAL: VACIO = 0; SI ES MAYOR A 0, EL MOTIVO ES OBLIGATORIO
+  rechazada(itemId: number): number {
+    return Number(this.rechazadas[itemId]) || 0;
+  }
+
+  errorRechazo(itemId: number): string {
+    const valor = this.rechazadas[itemId];
+    if (valor !== null && valor !== undefined && String(valor) !== '' && (!Number.isInteger(Number(valor)) || Number(valor) < 0)) {
+      return 'Ingrese un entero mayor o igual a 0';
+    }
+    const motivo = (this.motivos[itemId] || '').trim();
+    if (this.rechazada(itemId) > 0 && !motivo) { return 'Indique el motivo del rechazo'; }
+    return motivo.length > 255 ? 'El motivo admite hasta 255 caracteres' : '';
+  }
+
+  get totalRechazado(): number {
+    return this.orden ? this.orden.items.reduce((a, l) => a + this.rechazada(l.item_id), 0) : 0;
   }
 
   //COSTO REAL OPCIONAL: VACIO = COSTO DE LA ORDEN; SI SE INGRESA, ENTERO >= 0 (CLP)
@@ -98,9 +130,10 @@ export class OrdenRecepcionComponent implements OnInit {
   }
 
   puedeConfirmar(): boolean {
-    return !!this.orden && this.orden.recibible && !this.enviando && this.totalARecibir > 0
+    return !!this.orden && this.orden.recibible && !this.enviando && this.totalARecibir + this.totalRechazado > 0
       && !this.errorDocumento()
-      && this.orden.items.every((l) => l.pendiente === 0 || (!this.errorLinea(l.item_id, l.pendiente) && !this.errorCosto(l.item_id)));
+      && this.orden.items.every((l) => l.pendiente === 0
+        || (!this.errorLinea(l.item_id, l.pendiente) && !this.errorCosto(l.item_id) && !this.errorRechazo(l.item_id)));
   }
 
   confirmar() {
@@ -108,9 +141,13 @@ export class OrdenRecepcionComponent implements OnInit {
     const items = this.orden.items
       .filter((l) => l.pendiente > 0)
       .map((l) => {
-        const linea: { item_id: number, cantidad_recibida: number, costo_unitario?: number } = {
+        const linea: { item_id: number, cantidad_recibida: number, costo_unitario?: number, cantidad_rechazada?: number, motivo_rechazo?: string } = {
           item_id: l.item_id, cantidad_recibida: Number(this.cantidades[l.item_id])
         };
+        if (this.rechazada(l.item_id) > 0) {
+          linea.cantidad_rechazada = this.rechazada(l.item_id);
+          linea.motivo_rechazo = this.motivos[l.item_id].trim();
+        }
         const costo = this.costos[l.item_id];
         if (costo !== null && costo !== undefined && String(costo) !== '') { linea.costo_unitario = Number(costo); }
         return linea;
@@ -122,7 +159,8 @@ export class OrdenRecepcionComponent implements OnInit {
     };
     swal.fire({
       title: '¿Confirmar recepción?',
-      text: 'Se sumarán ' + this.totalARecibir + ' unidades al stock y se asignarán a las solicitudes pendientes más antiguas.',
+      text: 'Se sumarán ' + this.totalARecibir + ' unidades al stock y se asignarán a las solicitudes pendientes más antiguas.'
+        + (this.totalRechazado ? ' Se registrarán ' + this.totalRechazado + ' unidades rechazadas (no entran al stock).' : ''),
       icon: 'question',
       showCancelButton: true,
       buttonsStyling: false,
@@ -140,6 +178,85 @@ export class OrdenRecepcionComponent implements OnInit {
           this.resultado = r.data;
           this.alertas.alertaExitoMsj('Recepción N° ' + r.data.recepcion_id + ' registrada',
             'La orden quedó ' + this.etiqueta[r.data.estado] + '.');
+          this.cargar();
+        },
+        (error: HttpErrorResponse) => {
+          this.enviando = false;
+          mostrarErrorBodega(error, this.alertas, this.loginService);
+        }
+      );
+    });
+  }
+
+  get esBorrador(): boolean {
+    return !!this.orden && this.orden.estado === 'BORRADOR';
+  }
+
+  get lineasBorrador(): LineaRecepcion[] {
+    return this.orden ? this.orden.items.filter((l) => this.quitados.indexOf(l.item_id) === -1) : [];
+  }
+
+  //CANTIDAD DE LA OC: ENTERO MAYOR A 0 (PUEDE SUPERAR EL FALTANTE; EL BACKEND VUELVE A VALIDAR)
+  errorCantidadOc(itemId: number): string {
+    const valor = Number(this.cantidadesOc[itemId]);
+    return this.cantidadesOc[itemId] !== null && Number.isInteger(valor) && valor > 0 ? '' : 'Ingrese un entero mayor a 0';
+  }
+
+  quitar(itemId: number): void {
+    this.quitados.push(itemId);
+  }
+
+  hayCambios(): boolean {
+    return this.quitados.length > 0
+      || (!!this.orden && this.orden.items.some((l) => Number(this.cantidadesOc[l.item_id]) !== l.cantidad));
+  }
+
+  puedeGuardar(): boolean {
+    return this.esBorrador && !this.enviando && this.hayCambios() && this.lineasBorrador.length > 0
+      && this.lineasBorrador.every((l) => !this.errorCantidadOc(l.item_id));
+  }
+
+  guardar(): void {
+    if (!this.puedeGuardar()) { return; }
+    const items = this.lineasBorrador
+      .filter((l) => Number(this.cantidadesOc[l.item_id]) !== l.cantidad)
+      .map((l) => ({ id: l.item_id, cantidad: Number(this.cantidadesOc[l.item_id]) }));
+    this.enviando = true;
+    this.recepcionService.actualizarOrden(this.orden.id, { items: items, eliminar: this.quitados }).subscribe(
+      () => {
+        this.enviando = false;
+        this.alertas.alertaExitoMsj('Orden actualizada');
+        this.cargar();
+      },
+      (error: HttpErrorResponse) => {
+        this.enviando = false;
+        mostrarErrorBodega(error, this.alertas, this.loginService);
+      }
+    );
+  }
+
+  enviar(): void {
+    if (!this.esBorrador || this.enviando || this.hayCambios()) { return; }
+    swal.fire({
+      title: '¿Enviar la orden N° ' + this.orden.id + '?',
+      text: 'Se enviará por correo a ' + (this.orden.proveedor || 'el proveedor') + ' y ya no podrá editarse.',
+      icon: 'warning',
+      showCancelButton: true,
+      buttonsStyling: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      customClass: { confirmButton: 'btn btn-success', cancelButton: 'btn btn-danger' },
+      confirmButtonText: 'Si, ¡Enviar!',
+      cancelButtonText: 'Cancelar'
+    }).then((resultado) => {
+      if (!resultado.value) { return; }
+      this.enviando = true;
+      this.alertas.loading();
+      this.recepcionService.enviarOrden(this.orden.id).subscribe(
+        () => {
+          this.enviando = false;
+          this.alertas.cerrarAlerta();
+          this.alertas.alertaExitoMsj('Orden enviada al proveedor');
           this.cargar();
         },
         (error: HttpErrorResponse) => {

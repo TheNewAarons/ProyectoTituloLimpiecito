@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import {
-  FilaConsumoGrupo, FilaConsumoMes, FilaFrecuenciaCompra, FilaStockCritico, FilaTopProducto, RangoPeriodo, SerieGrafico
+  FilaConsumoGrupo, FilaConsumoMes, FilaFrecuenciaCompra, FilaMerma, FilaStockCritico, MetaMerma, FilaTopProducto, RangoPeriodo, SerieGrafico
 } from '../../../model/analytics';
 import { AnalyticsService } from '../../../services/analytics/analytics.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { generarMeses, mesActualSantiago } from '../compartido/filtro-periodo/filtro-periodo.component';
+
+type PestanaBodega = 'consumo' | 'compras' | 'merma' | 'critico';
 
 // RF-BI-03: consumo de bodega. Solicitado = lo pedido; consumido = lo entregado (D-BI-03-1). Rango por defecto: últimos 6 meses.
 @Component({
@@ -17,11 +19,24 @@ export class ConsumoBodegaComponent implements OnInit {
   desde = generarMeses(this.hasta, 6)[5];
   productoId: number | null = null;
   agrupar: 'supervisor' | 'centro_costo' = 'supervisor';
+  // Secciones del dashboard (todas se cargan juntas; la pestaña solo elige qué se ve)
+  pestanas: { id: PestanaBodega, etiqueta: string, icono: string }[] = [
+    { id: 'consumo', etiqueta: 'Consumo', icono: 'local_shipping' },
+    { id: 'compras', etiqueta: 'Compras', icono: 'shopping_cart' },
+    { id: 'merma', etiqueta: 'Merma', icono: 'remove_shopping_cart' },
+    { id: 'critico', etiqueta: 'Stock crítico', icono: 'warning' }
+  ];
+  pestana: PestanaBodega = 'consumo';
 
   top: FilaTopProducto[] = [];
   grupos: FilaConsumoGrupo[] = [];
   frecuencia: FilaFrecuenciaCompra[] = [];
   critico: FilaStockCritico[] = [];
+  // RF-BOD-04: merma de recepciones
+  merma: FilaMerma[] = [];
+  metaMerma: MetaMerma | null = null;
+  etiquetasMerma: string[] = [];
+  seriesMerma: SerieGrafico[] = [];
   totalEntregado: number | null = null;
   solicitudesEntregadas: number | null = null;
   etiquetas: string[] = [];
@@ -45,13 +60,20 @@ export class ConsumoBodegaComponent implements OnInit {
 
   cargar(): void {
     this.cargando = true;
-    let pendientes = 4;
+    let pendientes = 5;
     const listo = () => { pendientes--; if (pendientes === 0) this.cargando = false; };
     const error = (msj: string) => () => { listo(); this.alertas.alertaErrorMsj(msj); };
     this.analyticsService.topProductosBodega(this.desde, this.hasta, 20).subscribe((r) => { this.top = r.data; listo(); }, error('No se pudo cargar el ranking de productos'));
     this.cargarMensual(listo, error);
     this.cargarGrupos(listo, error);
     this.analyticsService.frecuenciaCompraBodega(this.desde, this.hasta).subscribe((r) => { this.frecuencia = r.data; listo(); }, error('No se pudo cargar la frecuencia de compra'));
+    this.analyticsService.mermaBodega(this.desde, this.hasta).subscribe((r) => {
+      this.merma = r.data;
+      this.metaMerma = r.meta;
+      this.etiquetasMerma = r.meta.por_mes.map((f): string => f.periodo);
+      this.seriesMerma = [{ etiqueta: 'Unidades rechazadas', datos: r.meta.por_mes.map((f): number => f.rechazado) }];
+      listo();
+    }, error('No se pudo cargar la merma de recepciones'));
     // Stock crítico es el estado actual: no depende del período, pero se refresca junto con el resto.
     this.analyticsService.stockCriticoBodega().subscribe((r) => { this.critico = r.data; }, () => this.alertas.alertaErrorMsj('No se pudo cargar el stock crítico'));
   }

@@ -13,5 +13,6 @@ module.exports = {
   topProductos: responder(bodega.topProductos),
   consumo: responder(bodega.consumo),
   frecuenciaCompra: responder(bodega.frecuenciaCompra),
-  stockCritico: responder(bodega.stockCritico)
+  stockCritico: responder(bodega.stockCritico),
+  merma: responder(bodega.merma) // RF-BOD-04
 };

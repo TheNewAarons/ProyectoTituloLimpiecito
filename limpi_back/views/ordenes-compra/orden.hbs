@@ -1,24 +1,124 @@
-<!-- RF-BOD-03: plantilla Handlebars de orden de compra (autoescape activo; nunca usar triple llaves). -->
-<div>
-  <h2>{{empresaNombre}}</h2>
-  <p>RUT: {{empresaRut}}</p>
-  <h3>Orden de compra #{{numeroOrden}}</h3>
-  <p>Fecha: {{fecha}}</p>
-  <p>Proveedor: {{proveedorNombre}}</p>
-  <table border="1" cellpadding="6" cellspacing="0">
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th>Cantidad</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#each items}}
-      <tr>
-        <td>{{this.producto_id}}</td>
-        <td>{{this.cantidad}}</td>
-      </tr>
-      {{/each}}
-    </tbody>
+<!-- RF-BOD-03: plantilla Handlebars de orden de compra (autoescape activo; nunca usar triple llaves).
+     Correo HTML: tablas + estilos en línea (los clientes de correo ignoran <style> y CSS moderno).
+     Colores del logotipo Limpiecito: azul #0072b4, verde #00a03a. -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orden de compra N° {{numeroOrden}}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#333333;">
+  <span style="display:none;max-height:0;overflow:hidden;">Orden de compra N° {{numeroOrden}} de {{empresaNombre}}: {{totalUnidades}} unidades en {{totalProductos}} producto(s).</span>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6f8;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e3e7eb;">
+
+          <!-- Encabezado con logo -->
+          <tr>
+            <td align="center" style="padding:24px 24px 16px 24px;">
+              <img src="cid:logo-limpiecito" width="200" alt="{{empresaNombre}}" style="display:block;width:200px;max-width:100%;height:auto;border:0;">
+            </td>
+          </tr>
+          <tr>
+            <td style="height:4px;line-height:4px;font-size:0;background-color:#00a03a;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="background-color:#0072b4;padding:18px 24px;color:#ffffff;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="font-size:20px;font-weight:bold;color:#ffffff;">Orden de compra</td>
+                  <td align="right" style="font-size:20px;font-weight:bold;color:#ffffff;">N° {{numeroOrden}}</td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding-top:4px;font-size:13px;color:#d6e9f5;">Fecha de emisión: {{fecha}}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Saludo -->
+          <tr>
+            <td style="padding:24px 24px 8px 24px;font-size:14px;line-height:21px;">
+              <p style="margin:0 0 12px 0;">Estimado/a {{#if proveedorContacto}}{{proveedorContacto}}{{else}}proveedor{{/if}}:</p>
+              <p style="margin:0;">Junto con saludar, le enviamos la siguiente orden de compra. Le agradeceremos confirmar su recepción y la fecha estimada de despacho respondiendo a este correo.</p>
+            </td>
+          </tr>
+
+          <!-- Datos de emisor y proveedor -->
+          <tr>
+            <td style="padding:16px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;line-height:19px;">
+                <tr>
+                  <td width="50%" valign="top" style="padding:12px;background-color:#f4f8fb;border-left:3px solid #0072b4;">
+                    <div style="font-size:11px;font-weight:bold;color:#0072b4;text-transform:uppercase;letter-spacing:0.5px;">Emisor</div>
+                    <div style="font-weight:bold;">{{empresaNombre}}</div>
+                    {{#if empresaRut}}<div>RUT: {{empresaRut}}</div>{{/if}}
+                  </td>
+                  <td width="12" style="font-size:0;">&nbsp;</td>
+                  <td width="50%" valign="top" style="padding:12px;background-color:#f4f8fb;border-left:3px solid #00a03a;">
+                    <div style="font-size:11px;font-weight:bold;color:#00a03a;text-transform:uppercase;letter-spacing:0.5px;">Proveedor</div>
+                    <div style="font-weight:bold;">{{proveedorNombre}}</div>
+                    {{#if proveedorRut}}<div>RUT: {{proveedorRut}}</div>{{/if}}
+                    {{#if proveedorContacto}}<div>Contacto: {{proveedorContacto}}</div>{{/if}}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Detalle -->
+          <tr>
+            <td style="padding:8px 24px 0 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;border-collapse:collapse;">
+                <tr>
+                  <th align="left" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;width:40px;">#</th>
+                  <th align="left" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;">Producto</th>
+                  <th align="right" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;width:70px;">Cantidad</th>
+                  <th align="right" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;width:90px;">Precio unit.</th>
+                  <th align="right" style="padding:10px 8px;background-color:#0072b4;color:#ffffff;font-weight:bold;width:100px;">Subtotal</th>
+                </tr>
+                {{#each items}}
+                <tr>
+                  <td style="padding:10px 8px;border-bottom:1px solid #e3e7eb;color:#777777;">{{this.numero}}</td>
+                  <td style="padding:10px 8px;border-bottom:1px solid #e3e7eb;">{{this.nombre}}<div style="font-size:11px;color:#999999;">Código {{this.producto_id}}</div></td>
+                  <td align="right" style="padding:10px 8px;border-bottom:1px solid #e3e7eb;font-weight:bold;">{{this.cantidad}}</td>
+                  <td align="right" style="padding:10px 8px;border-bottom:1px solid #e3e7eb;white-space:nowrap;">{{this.precio}}</td>
+                  <td align="right" style="padding:10px 8px;border-bottom:1px solid #e3e7eb;white-space:nowrap;">{{this.subtotal}}</td>
+                </tr>
+                {{/each}}
+                <tr>
+                  <td colspan="2" align="right" style="padding:12px 8px 4px 8px;color:#777777;">Total unidades</td>
+                  <td align="right" style="padding:12px 8px 4px 8px;font-weight:bold;">{{totalUnidades}}</td>
+                  <td colspan="2">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td colspan="4" align="right" style="padding:8px;font-weight:bold;color:#0072b4;font-size:15px;">Total</td>
+                  <td align="right" style="padding:8px;font-weight:bold;color:#ffffff;background-color:#0072b4;font-size:15px;white-space:nowrap;">{{total}}</td>
+                </tr>
+              </table>
+              <p style="margin:8px 0 0 0;font-size:11px;color:#999999;text-align:right;">Montos en pesos chilenos (CLP).</p>
+              {{#if hayItemsSinPrecio}}
+              <p style="margin:8px 0 0 0;padding:8px 10px;font-size:12px;color:#8a6d00;background-color:#fff8e1;border-left:3px solid #ff9800;">Hay productos sin precio registrado (—); el total no los incluye. Le pedimos indicar su precio al confirmar la orden.</p>
+              {{/if}}
+            </td>
+          </tr>
+
+          <!-- Pie -->
+          <tr>
+            <td style="padding:16px 24px 24px 24px;font-size:13px;line-height:19px;">
+              <p style="margin:0;">Saludos cordiales,<br><strong>{{empresaNombre}}</strong></p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="background-color:#f4f6f8;padding:14px 24px;font-size:11px;line-height:16px;color:#999999;border-top:1px solid #e3e7eb;">
+              Correo generado automáticamente por el sistema de {{empresaNombre}}. Ante cualquier duda, responda a este correo.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
   </table>
-</div>
+</body>
+</html>

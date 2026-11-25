@@ -50,6 +50,7 @@ router.patch('/proveedores/:id/reactivar', ADMIN_Y_OPERACIONES, asyncHandler(pro
 
 router.patch('/productos/:id/proveedor', ADMIN_Y_OPERACIONES, asyncHandler(productos.asignarProveedor));
 
+router.post('/ordenes-compra', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCompra.crear));
 router.get('/ordenes-compra/:id', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCompra.obtener));
 router.patch('/ordenes-compra/:id', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCompra.actualizar));
 router.post('/ordenes-compra/:id/enviar', ADMIN_Y_OPERACIONES, asyncHandler(ordenesCompra.enviar));

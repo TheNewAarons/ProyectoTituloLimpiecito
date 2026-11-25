@@ -13,23 +13,37 @@
                 <app-filtro-periodo [desde]="desde" [hasta]="hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
               </div>
             </div>
-            <p class="text-muted">"Solicitado" es lo pedido por los supervisores; "consumido" es lo efectivamente entregado por bodega.</p>
-
             <div class="row">
-              <div class="col-12 col-sm-6 col-lg-4">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <app-kpi-card titulo="Unidades entregadas" icono="local_shipping" color="success" formato="numero" [cargando]="cargando"
                   [valor]="totalEntregado" [detalle]="productoId ? nombreProductoElegido() : 'Todos los productos'"></app-kpi-card>
               </div>
-              <div class="col-12 col-sm-6 col-lg-4">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <app-kpi-card titulo="Solicitudes entregadas" icono="assignment_turned_in" color="info" formato="numero" [cargando]="cargando"
                   [valor]="solicitudesEntregadas" detalle="En el período"></app-kpi-card>
               </div>
-              <div class="col-12 col-sm-6 col-lg-4">
+              <div class="col-12 col-sm-6 col-lg-3">
+                <app-kpi-card titulo="Unidades rechazadas" icono="remove_shopping_cart" [color]="metaMerma?.rechazado ? 'rose' : 'success'" formato="numero"
+                  [cargando]="cargando" [valor]="metaMerma?.rechazado" [detalle]="(metaMerma?.porcentaje_merma || 0) + ' % de lo recepcionado'"></app-kpi-card>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-3">
                 <app-kpi-card titulo="Productos bajo mínimo" icono="warning" [color]="critico.length ? 'rose' : 'success'" formato="numero"
                   [cargando]="cargando" [valor]="critico.length" detalle="Estado actual"></app-kpi-card>
               </div>
             </div>
 
+            <ul class="nav nav-pills nav-pills-info justify-content-center mb-3" role="tablist">
+              <li class="nav-item" *ngFor="let p of pestanas">
+                <a class="nav-link" role="tab" tabindex="0" [class.active]="pestana === p.id" [attr.aria-selected]="pestana === p.id"
+                  (click)="pestana = p.id" (keydown.enter)="pestana = p.id">
+                  <i class="material-icons">{{ p.icono }}</i> {{ p.etiqueta }}
+                  <span class="badge badge-pill badge-danger ml-1" *ngIf="p.id === 'critico' && critico.length">{{ critico.length }}</span>
+                </a>
+              </li>
+            </ul>
+
+            <div *ngIf="pestana === 'consumo'" role="tabpanel">
+            <p class="text-muted">"Solicitado" es lo pedido por los supervisores; "consumido" es lo efectivamente entregado por bodega.</p>
             <div class="row">
               <div class="col-12 col-sm-8 col-lg-4">
                 <mat-form-field class="w-100">
@@ -99,8 +113,10 @@
                 </tbody>
               </table>
             </div>
-
-            <h4 class="mt-4">Frecuencia de compra</h4>
+            </div>
+            <div *ngIf="pestana === 'compras'" role="tabpanel">
+            <h4>Frecuencia de compra</h4>
+            <p class="text-muted">Cada cuántos días se compra cada producto según las órdenes de compra enviadas.</p>
             <div class="table-responsive">
               <table class="table">
                 <thead>
@@ -126,8 +142,47 @@
                 </tbody>
               </table>
             </div>
-
-            <div class="d-flex flex-wrap align-items-center mt-4">
+            </div>
+            <div *ngIf="pestana === 'merma'" role="tabpanel">
+            <h4>Merma en recepciones</h4>
+            <p class="text-muted">Unidades rechazadas al recibir órdenes de compra (dañadas, vencidas o que no llegaron). No entran al stock.</p>
+            <div class="row">
+              <div class="col-12 col-sm-6 col-lg-4">
+                <app-kpi-card titulo="Costo estimado de merma" icono="money_off" color="warning" formato="clp" [cargando]="cargando"
+                  [valor]="metaMerma?.costo_merma" detalle="Según costo de la recepción u orden"></app-kpi-card>
+              </div>
+            </div>
+            <app-grafico tipo="bar" [enteros]="true" titulo="Merma mensual" [etiquetas]="etiquetasMerma" [series]="seriesMerma"></app-grafico>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="text-right">Recibido</th>
+                    <th class="text-right">Rechazado</th>
+                    <th class="text-right">% Merma</th>
+                    <th class="text-right">Costo merma</th>
+                    <th>Último motivo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let f of merma" [class.table-warning]="f.rechazado > 0">
+                    <td>{{ f.producto }}</td>
+                    <td class="text-right">{{ f.recibido | number:'1.0-0':'es-CL' }}</td>
+                    <td class="text-right">{{ f.rechazado | number:'1.0-0':'es-CL' }}</td>
+                    <td class="text-right">{{ f.porcentaje_merma | number:'1.0-1':'es-CL' }} %</td>
+                    <td class="text-right">{{ f.costo_merma ? (f.costo_merma | currency:'CLP':'symbol':'1.0-0') : '—' }}</td>
+                    <td>{{ f.ultimo_motivo || '—' }}</td>
+                  </tr>
+                  <tr *ngIf="!cargando && merma.length === 0">
+                    <td colspan="6" class="text-center text-muted">Sin recepciones en el período.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            </div>
+            <div *ngIf="pestana === 'critico'" role="tabpanel">
+            <div class="d-flex flex-wrap align-items-center">
               <h4 class="mr-3 mb-0">Stock crítico</h4>
               <a mat-raised-button routerLink="/bodega/inicio" class="btn btn-info btn-sm">
                 <span class="btn-label"><i class="material-icons">tune</i></span>
@@ -156,6 +211,7 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
             </div>
           </div>
         </div>

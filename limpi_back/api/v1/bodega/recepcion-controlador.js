@@ -29,6 +29,7 @@ function entero(valor, campo, min, max) {
 }
 
 // Sin `items` se recibe todo lo pendiente. Con `items`: enteros >= 0 (0 = no llegó), sin item_id repetidos.
+// RF-BOD-04 merma: cantidad_rechazada opcional por línea, con motivo_rechazo obligatorio si es > 0.
 function validarRecepcion(body) {
   if (!body || body.items === undefined) return null;
   if (!Array.isArray(body.items) || body.items.length === 0 || body.items.length > MAX_ITEMS) {
@@ -42,6 +43,16 @@ function validarRecepcion(body) {
     vistos[itemId] = true;
     if (typeof item.cantidad_recibida !== 'number') throw invalido('items[' + i + '].cantidad_recibida debe ser numerico', { campo: 'items[' + i + '].cantidad_recibida' });
     const linea = { item_id: itemId, cantidad_recibida: entero(item.cantidad_recibida, 'items[' + i + '].cantidad_recibida', 0) };
+    // RF-BOD-04 merma: unidades rechazadas (entero >= 0); si hay, el motivo es obligatorio
+    if (item.cantidad_rechazada !== undefined && item.cantidad_rechazada !== null) {
+      if (typeof item.cantidad_rechazada !== 'number') throw invalido('items[' + i + '].cantidad_rechazada debe ser numerico', { campo: 'items[' + i + '].cantidad_rechazada' });
+      linea.cantidad_rechazada = entero(item.cantidad_rechazada, 'items[' + i + '].cantidad_rechazada', 0);
+    }
+    if (linea.cantidad_rechazada > 0) {
+      const motivo = typeof item.motivo_rechazo === 'string' ? item.motivo_rechazo.trim() : '';
+      if (!motivo || motivo.length > 255) throw invalido('items[' + i + '].motivo_rechazo es obligatorio (hasta 255 caracteres) si hay unidades rechazadas', { campo: 'items[' + i + '].motivo_rechazo' });
+      linea.motivo_rechazo = motivo;
+    }
     // RF-BOD-04b: costo real CLP entero; sin él se usa el de la OC
     if (item.costo_unitario !== undefined && item.costo_unitario !== null) {
       if (typeof item.costo_unitario !== 'number') throw invalido('items[' + i + '].costo_unitario debe ser numerico', { campo: 'items[' + i + '].costo_unitario' });

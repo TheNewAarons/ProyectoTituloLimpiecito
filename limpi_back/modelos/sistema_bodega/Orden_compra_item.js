@@ -30,6 +30,12 @@ const Orden_compra_item = db.sequelize.define(
             allowNull: false,
             defaultValue: 0
         },
+        // RF-BOD-04 merma (migración 20261125180000): unidades rechazadas al recibir; ya no quedan pendientes
+        cantidad_rechazada:{
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            defaultValue: 0
+        },
         // CLP entero
         costo_unitario:{
             type: Sequelize.DECIMAL(14, 0),
