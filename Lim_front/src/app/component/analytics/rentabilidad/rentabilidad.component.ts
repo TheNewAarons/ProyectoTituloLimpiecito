@@ -1,10 +1,11 @@
+import { ActivatedRoute } from '@angular/router';
 import { Component, OnInit } from '@angular/core';
 import {
   DetalleRentabilidad, FilaGastosGenerales, FilaRentabilidad, MetaRentabilidad, RangoPeriodo, SerieGrafico
 } from '../../../model/analytics';
 import { AnalyticsService } from '../../../services/analytics/analytics.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
-import { generarMeses, mesActualSantiago } from '../compartido/filtro-periodo/filtro-periodo.component';
+import { generarMeses, idDesdeQuery, mesActualSantiago, rangoDesdeQuery } from '../compartido/filtro-periodo/filtro-periodo.component';
 
 // RF-BI-02: Rentabilidad por cliente / centro de costo. Rango por defecto: últimos 3 meses. El detalle se abre en la misma página.
 @Component({
@@ -18,14 +19,21 @@ export class RentabilidadComponent implements OnInit {
   gastos: FilaGastosGenerales | null = null;
   meta: MetaRentabilidad | null = null;
   cargando = true;
+  private centroInicial: number | null = null; // centro elegido en el inicio de Analytics
   etiquetas: string[] = [];
   series: SerieGrafico[] = [];
   detalle: DetalleRentabilidad | null = null;
   cargandoDetalle = false;
 
-  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService) {}
+  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
+    const rango = rangoDesdeQuery(this.route.snapshot.queryParamMap);
+    this.centroInicial = idDesdeQuery(this.route.snapshot.queryParamMap, 'centro_costo_id');
+    if (rango) {
+      this.desde = rango.desde;
+      this.hasta = rango.hasta;
+    }
     this.cargar();
   }
 
@@ -47,6 +55,10 @@ export class RentabilidadComponent implements OnInit {
         this.etiquetas = top.map((f: FilaRentabilidad): string => f.cliente);
         this.series = [{ etiqueta: 'Margen', datos: top.map((f: FilaRentabilidad): number => f.margen) }];
         this.cargando = false;
+        if (this.centroInicial) {
+          this.verDetalle(this.centroInicial);
+          this.centroInicial = null;
+        }
       },
       () => {
         this.cargando = false;

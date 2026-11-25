@@ -31,6 +31,16 @@ export interface RangoPeriodo {
   hasta: string;
 }
 
+// GET /analytics/periodos: primer mes (YYYY-MM) con datos por dashboard; null si aún no hay datos.
+export interface PrimerosPeriodos {
+  financiero: string | null;
+  rentabilidad: string | null;
+  bodega: string | null;
+  productividad: string | null;
+}
+
+export type FuenteAnalytics = keyof PrimerosPeriodos;
+
 export interface OpcionCliente {
   id: number;
   nombre: string;

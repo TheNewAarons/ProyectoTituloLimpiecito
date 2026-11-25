@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import {
@@ -5,7 +6,7 @@ import {
 } from '../../../model/analytics';
 import { AnalyticsService } from '../../../services/analytics/analytics.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
-import { generarMeses, mesActualSantiago } from '../compartido/filtro-periodo/filtro-periodo.component';
+import { generarMeses, idDesdeQuery, mesActualSantiago, rangoDesdeQuery } from '../compartido/filtro-periodo/filtro-periodo.component';
 
 type Columna = [string, string]; // [título, clave]
 
@@ -58,9 +59,15 @@ export class ProductividadPevComponent implements OnInit, OnDestroy {
   private subsFiltradas: Subscription[] = [];
   private alertaMostrada = false;
 
-  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService) {}
+  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
+    const rango = rangoDesdeQuery(this.route.snapshot.queryParamMap);
+    this.clienteId = idDesdeQuery(this.route.snapshot.queryParamMap, 'cliente_id');
+    if (rango) {
+      this.desde = rango.desde;
+      this.hasta = rango.hasta;
+    }
     this.cargar();
   }
 

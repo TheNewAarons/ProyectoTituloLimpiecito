@@ -1,23 +1,43 @@
 import { Component, OnInit } from '@angular/core';
-import { PuntoTendencia, ResumenFinanciero, SerieGrafico } from '../../../model/analytics';
+import { ActivatedRoute } from '@angular/router';
+import { PuntoTendencia, RangoPeriodo, ResumenFinanciero, SerieGrafico } from '../../../model/analytics';
 import { AnalyticsService } from '../../../services/analytics/analytics.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
+import { generarMeses, mesActualSantiago, rangoDesdeQuery } from '../compartido/filtro-periodo/filtro-periodo.component';
 
-// RF-BI-01: Dashboard financiero. Carga inicial solo con /resumen; la tendencia (12 meses) llega después y no bloquea los KPI.
+// RF-BI-01: Dashboard financiero. KPI del mes `hasta`; la tendencia (desde–hasta, 12 meses por defecto) llega después y no bloquea los KPI.
 @Component({
   selector: 'app-dashboard-financiero',
   templateUrl: './dashboard-financiero.component.html'
 })
 export class DashboardFinancieroComponent implements OnInit {
+  hasta = mesActualSantiago();
+  desde = generarMeses(this.hasta, 12)[11];
   resumen: ResumenFinanciero | null = null;
   cargando = true;
   etiquetas: string[] = [];
   series: SerieGrafico[] = [];
 
-  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService) {}
+  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
-    this.analyticsService.resumenFinanciero().subscribe(
+    const rango = rangoDesdeQuery(this.route.snapshot.queryParamMap);
+    if (rango) {
+      this.desde = rango.desde;
+      this.hasta = rango.hasta;
+    }
+    this.cargar();
+  }
+
+  cambiarPeriodo(rango: RangoPeriodo): void {
+    this.desde = rango.desde;
+    this.hasta = rango.hasta;
+    this.cargar();
+  }
+
+  cargar(): void {
+    this.cargando = true;
+    this.analyticsService.resumenFinanciero(this.hasta).subscribe(
       (r) => {
         this.resumen = r.data;
         this.cargando = false;
@@ -31,7 +51,7 @@ export class DashboardFinancieroComponent implements OnInit {
   }
 
   private cargarTendencia(): void {
-    this.analyticsService.tendenciaFinanciera().subscribe(
+    this.analyticsService.tendenciaFinanciera(this.desde, this.hasta).subscribe(
       (r) => {
         const puntos: PuntoTendencia[] = r.data;
         this.etiquetas = puntos.map((p: PuntoTendencia): string => p.periodo);

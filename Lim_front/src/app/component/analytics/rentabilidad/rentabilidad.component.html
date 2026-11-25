@@ -6,11 +6,16 @@
           <div class="card-header card-header-rose card-header-icon">
             <div class="card-icon"><i class="material-icons">leaderboard</i></div>
             <h4 class="card-title">Rentabilidad por cliente <small *ngIf="meta">{{ meta.desde }} a {{ meta.hasta }}</small></h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Volver a Analytics" class="btn btn-rose btn-sm" routerLink="/analytics/inicio" [queryParams]="{ desde: desde, hasta: hasta, centro_costo_id: detalle?.centro.id }">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+              Volver
+            </button>
           </div>
           <div class="card-body">
             <div class="row">
               <div class="col-12 col-lg-6">
-                <app-filtro-periodo [desde]="desde" [hasta]="hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
+                <app-filtro-periodo fuente="rentabilidad" [desde]="desde" [hasta]="hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
               </div>
             </div>
             <div class="alert alert-warning" *ngIf="meta && !meta.cuadra">

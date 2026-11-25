@@ -9,6 +9,7 @@ const request = require('supertest');
 jest.mock('jsonwebtoken', () => ({ verify: jest.fn() }));
 jest.mock('../../modelos/sistema_base/Role', () => ({ findById: jest.fn() }));
 jest.mock('../../modelos/sistema_base/Usuario', () => ({ findById: jest.fn() }));
+jest.mock('../../services/analytics/periodos', () => ({ primerosPeriodos: jest.fn() }));
 
 const jwt = require('jsonwebtoken');
 const Role = require('../../modelos/sistema_base/Role');
@@ -120,5 +121,23 @@ describe('bordes del gate', () => {
   it('token sin roleId (supervisor/cliente) → 403', async () => {
     jwt.verify.mockImplementation(() => ({ id: 9, correo: 'c@c.com' }));
     esperarError(await get('/bodega/x', 'token-x'), 403, 'FORBIDDEN');
+  });
+});
+
+describe('GET /periodos', () => {
+  const periodos = require('../../services/analytics/periodos');
+  const DATA = { financiero: '2025-11', rentabilidad: '2025-11', bodega: '2025-12', productividad: null };
+
+  it.each(['token-admin', 'token-ops'])('%s recibe el primer mes con datos', async (token) => {
+    periodos.primerosPeriodos.mockResolvedValue(DATA);
+    const res = await get('/periodos', token);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, data: DATA, meta: {} });
+  });
+
+  it('RRHH recibe 403', async () => {
+    const res = await get('/periodos', 'token-rrhh');
+    expect(res.status).toBe(403);
+    expect(periodos.primerosPeriodos).not.toHaveBeenCalled();
   });
 });

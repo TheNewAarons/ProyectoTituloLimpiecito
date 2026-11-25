@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { Component, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import {
@@ -5,7 +6,7 @@ import {
 } from '../../../model/analytics';
 import { AnalyticsService } from '../../../services/analytics/analytics.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
-import { generarMeses, mesActualSantiago } from '../compartido/filtro-periodo/filtro-periodo.component';
+import { generarMeses, mesActualSantiago, rangoDesdeQuery } from '../compartido/filtro-periodo/filtro-periodo.component';
 
 type PestanaBodega = 'consumo' | 'compras' | 'merma' | 'critico';
 
@@ -45,9 +46,14 @@ export class ConsumoBodegaComponent implements OnInit {
   private subMensual: Subscription | null = null;
   private subGrupos: Subscription | null = null;
 
-  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService) {}
+  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
+    const rango = rangoDesdeQuery(this.route.snapshot.queryParamMap);
+    if (rango) {
+      this.desde = rango.desde;
+      this.hasta = rango.hasta;
+    }
     this.cargar();
   }
 

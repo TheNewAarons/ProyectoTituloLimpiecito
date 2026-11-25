@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError, map, shareReplay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { LoginService } from '../login/login.service';
 import {
   DetalleRentabilidad, FiltrosAnalytics, FilaGastosGenerales, FilaRentabilidad, MetaAnalytics, MetaRentabilidad, PuntoTendencia,
-  RespuestaAnalytics, ResumenFinanciero
+  PrimerosPeriodos, RespuestaAnalytics, ResumenFinanciero
 } from '../../model/analytics';
 import {
   AgruparConsumo, FilaConsumoGrupo, FilaConsumoMes, FilaFrecuenciaCompra, FilaStockCritico, FilaMerma, MetaMerma, FilaTopProducto, MetaConsumo
@@ -20,6 +21,7 @@ type FilaRankingRentabilidad = FilaRentabilidad | FilaGastosGenerales;
 })
 export class AnalyticsService {
   public url_analytics: string;
+  private primeros$: Observable<PrimerosPeriodos | null> | null = null;
 
   constructor(private http: HttpClient, private loginService: LoginService) {
     this.url_analytics = environment.url + '/api/v1/analytics';
@@ -47,6 +49,18 @@ export class AnalyticsService {
       }
     });
     return this.http.get<RespuestaAnalytics<T, M>>(this.url_analytics + ruta, { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  // Primer mes con datos por dashboard; una petición por sesión. null si falla (el filtro usa su rango por defecto).
+  primerosPeriodos(): Observable<PrimerosPeriodos | null> {
+    if (!this.primeros$) {
+      this.primeros$ = this.obtener<PrimerosPeriodos>('/periodos', {}).pipe(
+        map((r: RespuestaAnalytics<PrimerosPeriodos>) => r.data),
+        catchError(() => of(null)),
+        shareReplay(1)
+      );
+    }
+    return this.primeros$;
   }
 
   //DASHBOARD FINANCIERO (RF-BI-01)

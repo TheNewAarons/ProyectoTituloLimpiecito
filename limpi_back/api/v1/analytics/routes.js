@@ -28,6 +28,9 @@ productividad.get('/trabajadores', asyncHandler(productividadPev.trabajadores));
 productividad.get('/supervisores', asyncHandler(productividadPev.supervisores));
 productividad.get('/sectores', asyncHandler(productividadPev.sectores));
 
+// Solo meses límite (sin montos): visible para Admin y Operaciones.
+router.get('/periodos', ADMIN_Y_OPS, asyncHandler(require('./periodos').listar));
+
 // noEncontrado corta aquí para que Operaciones no caiga en el gate de solo Admin de abajo.
 router.use('/bodega', ADMIN_Y_OPS, bodega, noEncontrado);
 router.use('/productividad', ADMIN_Y_OPS, productividad, noEncontrado);

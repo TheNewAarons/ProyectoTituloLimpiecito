@@ -6,11 +6,16 @@
           <div class="card-header card-header-rose card-header-icon">
             <div class="card-icon"><i class="material-icons">fact_check</i></div>
             <h4 class="card-title">Productividad PEV <small>{{ desde }} a {{ hasta }}</small></h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Volver a Analytics" class="btn btn-rose btn-sm" routerLink="/analytics/inicio" [queryParams]="{ desde: desde, hasta: hasta, cliente_id: clienteId }">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+              Volver
+            </button>
           </div>
           <div class="card-body">
             <div class="row">
               <div class="col-12 col-lg-6">
-                <app-filtro-periodo [desde]="desde" [hasta]="hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
+                <app-filtro-periodo fuente="productividad" [desde]="desde" [hasta]="hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
               </div>
               <div class="col-12 col-sm-6 col-lg-3">
                 <app-selector-cliente [valor]="clienteId" (cambio)="cambiarCliente($event)"></app-selector-cliente>

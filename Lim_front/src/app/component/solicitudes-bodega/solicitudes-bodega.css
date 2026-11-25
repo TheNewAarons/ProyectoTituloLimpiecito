@@ -3,6 +3,12 @@
   min-height: 44px;
 }
 
+/* Botones redondos de solo ícono en tablas: mismo ancho que alto (si no, el min-height los deja ovalados). */
+.td-actions .btn-round {
+  min-height: 36px;
+  min-width: 36px;
+}
+
 /* Tabla del formulario: sin ancho mínimo para que quepa a 360 px sin scroll propio. */
 .tabla-compacta th,
 .tabla-compacta td {
