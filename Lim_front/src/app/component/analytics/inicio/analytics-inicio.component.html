@@ -9,11 +9,13 @@
         </div>
         <div class="col-12 col-sm-6 col-lg-3">
           <app-kpi-card titulo="Egresos del mes" icono="call_made" color="warning" [cargando]="cargando"
-            [valor]="resumen ? resumen.utilidad_real.egresos : null"></app-kpi-card>
+            [valor]="resumen ? resumen.utilidad_real.egresos : null"
+            [detalle]="resumen ? 'Por pagar: $ ' + (resumen.por_pagar.monto | number:'1.0-0':'es-CL') : ''"></app-kpi-card>
         </div>
         <div class="col-12 col-sm-6 col-lg-3">
           <app-kpi-card titulo="Utilidad del mes" icono="trending_up" color="info" [cargando]="cargando"
-            [valor]="resumen ? resumen.utilidad_real.utilidad : null"></app-kpi-card>
+            [valor]="resumen ? resumen.utilidad_real.utilidad : null"
+            [detalle]="resumen ? 'Ingresos menos egresos' : ''"></app-kpi-card>
         </div>
         <div class="col-12 col-sm-6 col-lg-3">
           <app-kpi-card titulo="Stock crítico" icono="warning" color="rose" formato="numero"
