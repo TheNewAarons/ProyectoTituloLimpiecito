@@ -109,6 +109,11 @@ describe('POST /ordenes-compra/:id/recepcion', () => {
     expect(args[3]).toEqual({ documento_tipo: 'FACTURA', documento_numero: '901', observacion: 'llegó caja dañada' });
   });
 
+  it('RF-BOD-04 merma: unidades rechazadas con motivo (recortado)', async () => {
+    await llamar('post', '/ordenes-compra/10/recepcion', ADMIN, { items: [{ item_id: 100, cantidad_recibida: 3, cantidad_rechazada: 2, motivo_rechazo: ' Rotos ' }] });
+    expect(recepcion.recibir.mock.calls[0][1]).toEqual([{ item_id: 100, cantidad_recibida: 3, cantidad_rechazada: 2, motivo_rechazo: 'Rotos' }]);
+  });
+
   it('acepta 0 por línea', async () => {
     await llamar('post', '/ordenes-compra/10/recepcion', ADMIN, { items: [{ item_id: 100, cantidad_recibida: 0 }, { item_id: 101, cantidad_recibida: 4 }] });
     expect(recepcion.recibir.mock.calls[0][1]).toEqual([{ item_id: 100, cantidad_recibida: 0 }, { item_id: 101, cantidad_recibida: 4 }]);
@@ -125,7 +130,10 @@ describe('POST /ordenes-compra/:id/recepcion', () => {
     ['costo decimal', { items: [{ item_id: 100, cantidad_recibida: 1, costo_unitario: 10.5 }] }],
     ['documento_tipo desconocido', { documento_tipo: 'BOLETA', documento_numero: '1' }],
     ['documento sin número', { documento_tipo: 'GUIA' }],
-    ['número sin tipo', { documento_numero: '12' }]
+    ['número sin tipo', { documento_numero: '12' }],
+    ['rechazo negativo', { items: [{ item_id: 100, cantidad_recibida: 1, cantidad_rechazada: -1, motivo_rechazo: 'x' }] }],
+    ['rechazo sin motivo', { items: [{ item_id: 100, cantidad_recibida: 1, cantidad_rechazada: 2 }] }],
+    ['rechazo con motivo vacío', { items: [{ item_id: 100, cantidad_recibida: 1, cantidad_rechazada: 2, motivo_rechazo: '  ' }] }]
   ])('%s -> 400 VALIDATION_ERROR sin llamar al servicio', async (nombre, body) => {
     const r = await llamar('post', '/ordenes-compra/10/recepcion', ADMIN, body);
     expect(r.status).toBe(400);

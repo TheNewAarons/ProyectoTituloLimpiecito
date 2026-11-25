@@ -22,6 +22,9 @@ export class OrdenRecepcionComponent implements OnInit {
   orden: OrdenRecepcion = null;
   cantidades: { [itemId: number]: number } = {};
   costos: { [itemId: number]: number } = {};
+  // RF-BOD-04 merma: unidades rechazadas y su motivo por línea
+  rechazadas: { [itemId: number]: number } = {};
+  motivos: { [itemId: number]: string } = {};
   documento: DocumentoRecepcion = { documento_tipo: null, documento_numero: '', observacion: '' };
   documentos = DOCUMENTOS_RECEPCION;
   resultado: ResultadoRecepcion = null;
@@ -53,11 +56,15 @@ export class OrdenRecepcionComponent implements OnInit {
         this.orden = r.data;
         this.cantidades = {};
         this.costos = {};
+        this.rechazadas = {};
+        this.motivos = {};
         this.cantidadesOc = {};
         this.quitados = [];
         this.orden.items.forEach((l) => {
           this.cantidades[l.item_id] = l.pendiente;
           this.costos[l.item_id] = l.costo_unitario;
+          this.rechazadas[l.item_id] = 0;
+          this.motivos[l.item_id] = '';
           this.cantidadesOc[l.item_id] = l.cantidad;
         });
         this.documento = { documento_tipo: null, documento_numero: '', observacion: '' };
@@ -76,8 +83,27 @@ export class OrdenRecepcionComponent implements OnInit {
     if (this.cantidades[itemId] === null || this.cantidades[itemId] === undefined || !Number.isInteger(valor) || valor < 0) {
       return 'Ingrese un entero mayor o igual a 0';
     }
-    if (valor > pendiente) { return 'No puede superar lo pendiente (' + pendiente + ')'; }
+    if (valor + this.rechazada(itemId) > pendiente) { return 'Recibido más rechazado no puede superar lo pendiente (' + pendiente + ')'; }
     return '';
+  }
+
+  //RECHAZO OPCIONAL: VACIO = 0; SI ES MAYOR A 0, EL MOTIVO ES OBLIGATORIO
+  rechazada(itemId: number): number {
+    return Number(this.rechazadas[itemId]) || 0;
+  }
+
+  errorRechazo(itemId: number): string {
+    const valor = this.rechazadas[itemId];
+    if (valor !== null && valor !== undefined && String(valor) !== '' && (!Number.isInteger(Number(valor)) || Number(valor) < 0)) {
+      return 'Ingrese un entero mayor o igual a 0';
+    }
+    const motivo = (this.motivos[itemId] || '').trim();
+    if (this.rechazada(itemId) > 0 && !motivo) { return 'Indique el motivo del rechazo'; }
+    return motivo.length > 255 ? 'El motivo admite hasta 255 caracteres' : '';
+  }
+
+  get totalRechazado(): number {
+    return this.orden ? this.orden.items.reduce((a, l) => a + this.rechazada(l.item_id), 0) : 0;
   }
 
   //COSTO REAL OPCIONAL: VACIO = COSTO DE LA ORDEN; SI SE INGRESA, ENTERO >= 0 (CLP)
@@ -104,9 +130,10 @@ export class OrdenRecepcionComponent implements OnInit {
   }
 
   puedeConfirmar(): boolean {
-    return !!this.orden && this.orden.recibible && !this.enviando && this.totalARecibir > 0
+    return !!this.orden && this.orden.recibible && !this.enviando && this.totalARecibir + this.totalRechazado > 0
       && !this.errorDocumento()
-      && this.orden.items.every((l) => l.pendiente === 0 || (!this.errorLinea(l.item_id, l.pendiente) && !this.errorCosto(l.item_id)));
+      && this.orden.items.every((l) => l.pendiente === 0
+        || (!this.errorLinea(l.item_id, l.pendiente) && !this.errorCosto(l.item_id) && !this.errorRechazo(l.item_id)));
   }
 
   confirmar() {
@@ -114,9 +141,13 @@ export class OrdenRecepcionComponent implements OnInit {
     const items = this.orden.items
       .filter((l) => l.pendiente > 0)
       .map((l) => {
-        const linea: { item_id: number, cantidad_recibida: number, costo_unitario?: number } = {
+        const linea: { item_id: number, cantidad_recibida: number, costo_unitario?: number, cantidad_rechazada?: number, motivo_rechazo?: string } = {
           item_id: l.item_id, cantidad_recibida: Number(this.cantidades[l.item_id])
         };
+        if (this.rechazada(l.item_id) > 0) {
+          linea.cantidad_rechazada = this.rechazada(l.item_id);
+          linea.motivo_rechazo = this.motivos[l.item_id].trim();
+        }
         const costo = this.costos[l.item_id];
         if (costo !== null && costo !== undefined && String(costo) !== '') { linea.costo_unitario = Number(costo); }
         return linea;
@@ -128,7 +159,8 @@ export class OrdenRecepcionComponent implements OnInit {
     };
     swal.fire({
       title: '¿Confirmar recepción?',
-      text: 'Se sumarán ' + this.totalARecibir + ' unidades al stock y se asignarán a las solicitudes pendientes más antiguas.',
+      text: 'Se sumarán ' + this.totalARecibir + ' unidades al stock y se asignarán a las solicitudes pendientes más antiguas.'
+        + (this.totalRechazado ? ' Se registrarán ' + this.totalRechazado + ' unidades rechazadas (no entran al stock).' : ''),
       icon: 'question',
       showCancelButton: true,
       buttonsStyling: false,

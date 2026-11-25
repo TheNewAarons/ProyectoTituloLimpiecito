@@ -192,6 +192,37 @@ describe('validaciones', () => {
   });
 });
 
+describe('RF-BOD-04: merma (unidades rechazadas)', () => {
+  beforeEach(() => escenario());
+
+  it('recibe 7 y rechaza 3: solo 7 entran al stock, la línea queda saldada y la orden RECIBIDA', async () => {
+    const r = await recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 7, cantidad_rechazada: 3, motivo_rechazo: 'Envases rotos' }], ctx);
+    expect(r.estado).toBe('RECIBIDA');
+    expect(r.rechazos).toEqual([{ item_id: 100, producto_id: 1, cantidad: 3, motivo: 'Envases rotos' }]);
+    expect(fila('orden_items', 100)).toMatchObject({ cantidad_recibida: 7, cantidad_rechazada: 3 });
+    expect(movs('ENTRADA_COMPRA').map((m) => m.cantidad)).toEqual([7]);
+    expect(tabla('recepcion_items')[0]).toMatchObject({ cantidad: 7, cantidad_rechazada: 3, motivo_rechazo: 'Envases rotos' });
+    expect(tabla('auditoria').filter((a) => a.accion === 'RECEPCION')[0].motivo).toBe('MERMA');
+  });
+
+  it('solo rechazo (0 recibidas): sin movimiento de stock ni asignación, deja de estar pendiente', async () => {
+    const r = await recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 0, cantidad_rechazada: 4, motivo_rechazo: 'No llegó' }], ctx);
+    expect(r.estado).toBe('RECIBIDA_PARCIAL');
+    expect(r.asignaciones).toEqual([]);
+    expect(tabla('movimientos')).toHaveLength(0);
+    expect(tabla('recepcion_items')[0]).toMatchObject({ cantidad: 0, cantidad_rechazada: 4 });
+    expect(tabla('recepcion_items')[0].movimiento_id == null).toBe(true);
+    await expect(recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 7 }], ctx)).rejects.toMatchObject({ code: 'CANTIDAD_EXCEDE_PENDIENTE', details: { pendiente: 6 } });
+  });
+
+  it('recibido + rechazado mayor que lo pendiente -> CANTIDAD_EXCEDE_PENDIENTE sin escribir', async () => {
+    await expect(recepcion.recibir(10, [{ item_id: 100, cantidad_recibida: 8, cantidad_rechazada: 3, motivo_rechazo: 'x' }], ctx))
+      .rejects.toMatchObject({ code: 'CANTIDAD_EXCEDE_PENDIENTE' });
+    expect(tabla('recepciones')).toEqual([]);
+    expect(fila('orden_items', 100)).toMatchObject({ cantidad_recibida: 0 });
+  });
+});
+
 describe('orden de locks y concurrencia', () => {
   it('bloquea orden -> solicitudes (id ASC) -> productos (id ASC), igual que anular (solicitud -> productos)', async () => {
     escenario();

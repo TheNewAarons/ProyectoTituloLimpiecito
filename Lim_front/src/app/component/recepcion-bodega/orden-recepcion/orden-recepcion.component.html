@@ -91,6 +91,7 @@
                       <th class="text-right">Pedido</th>
                       <th class="text-right">Recibido</th>
                       <th class="text-right">Recibir Ahora</th>
+                      <th class="text-right">Rechazar</th>
                       <th class="text-right">Costo Unitario</th>
                     </tr>
                   </thead>
@@ -98,7 +99,10 @@
                     <tr *ngFor="let l of orden.items">
                       <td class="text-left">{{ l.producto || ('Producto ' + l.producto_id) }}</td>
                       <td class="text-right">{{ l.cantidad | number:'1.0-0' }}</td>
-                      <td class="text-right">{{ l.cantidad_recibida | number:'1.0-0' }}</td>
+                      <td class="text-right">
+                        {{ l.cantidad_recibida | number:'1.0-0' }}
+                        <br *ngIf="l.cantidad_rechazada" /><small *ngIf="l.cantidad_rechazada" class="text-danger">{{ l.cantidad_rechazada | number:'1.0-0' }} rechazada(s)</small>
+                      </td>
                       <td class="text-right">
                         <span *ngIf="l.pendiente === 0 || !orden.recibible" class="text-success">{{ l.pendiente === 0 ? 'Completo' : '—' }}</span>
                         <div *ngIf="l.pendiente > 0 && orden.recibible">
@@ -107,6 +111,20 @@
                               [placeholder]="'Pendiente ' + l.pendiente" [name]="'cantidad' + l.item_id" [(ngModel)]="cantidades[l.item_id]">
                           </mat-form-field>
                           <small class="text-danger" *ngIf="errorLinea(l.item_id, l.pendiente)">{{ errorLinea(l.item_id, l.pendiente) }}</small>
+                        </div>
+                      </td>
+                      <td class="text-right">
+                        <span *ngIf="l.pendiente === 0 || !orden.recibible">—</span>
+                        <div *ngIf="l.pendiente > 0 && orden.recibible">
+                          <mat-form-field class="example-full-width">
+                            <input matInput type="number" inputmode="numeric" pattern="[0-9]*" min="0" [max]="l.pendiente" step="1"
+                              placeholder="Dañadas / no llegan" matTooltip="Unidades rechazadas: no entran al stock y dejan de estar pendientes"
+                              [name]="'rechazo' + l.item_id" [(ngModel)]="rechazadas[l.item_id]">
+                          </mat-form-field>
+                          <mat-form-field class="example-full-width" *ngIf="rechazada(l.item_id) > 0">
+                            <input matInput placeholder="Motivo" maxlength="255" [name]="'motivo' + l.item_id" [(ngModel)]="motivos[l.item_id]">
+                          </mat-form-field>
+                          <small class="text-danger" *ngIf="errorRechazo(l.item_id)">{{ errorRechazo(l.item_id) }}</small>
                         </div>
                       </td>
                       <td class="text-right">
@@ -131,6 +149,9 @@
                 <p class="text-warning" *ngFor="let d of resultado.diferencias_precio">
                   {{ nombreProducto(d.producto_id) }}: costo real {{ d.costo_real | currency:'CLP':'symbol':'1.0-0' }} distinto al de la orden ({{ d.costo_oc | currency:'CLP':'symbol':'1.0-0' }}).
                 </p>
+                <p class="text-danger" *ngFor="let m of resultado.rechazos">
+                  {{ nombreProducto(m.producto_id) }}: {{ m.cantidad }} unidad(es) rechazada(s) — {{ m.motivo }}.
+                </p>
                 <p *ngIf="resultado.asignaciones.length === 0">Lo recibido quedó como stock libre (no había faltantes pendientes).</p>
                 <ul *ngIf="resultado.asignaciones.length">
                   <li *ngFor="let a of resultado.asignaciones">
@@ -152,6 +173,7 @@
                         <th class="text-left">Documento</th>
                         <th class="text-left">Producto</th>
                         <th class="text-right">Cantidad</th>
+                        <th class="text-right">Rechazado</th>
                         <th class="text-right">Costo Unitario</th>
                       </tr>
                     </thead>
@@ -168,6 +190,10 @@
                           </td>
                           <td class="text-left">{{ li.producto || ('Producto ' + li.producto_id) }}</td>
                           <td class="text-right">{{ li.cantidad | number:'1.0-0' }}</td>
+                          <td class="text-right">
+                            {{ li.cantidad_rechazada ? (li.cantidad_rechazada | number:'1.0-0') : '—' }}
+                            <br *ngIf="li.motivo_rechazo" /><small *ngIf="li.motivo_rechazo">{{ li.motivo_rechazo }}</small>
+                          </td>
                           <td class="text-right">{{ li.costo_unitario === null ? '—' : (li.costo_unitario | currency:'CLP':'symbol':'1.0-0') }}</td>
                         </tr>
                       </ng-container>

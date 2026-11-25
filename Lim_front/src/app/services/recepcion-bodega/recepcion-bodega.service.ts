@@ -65,7 +65,7 @@ export class RecepcionBodegaService {
 
   //CONFIRMAR RECEPCION POR LINEA
   recibir(
-    id: number, items: { item_id: number, cantidad_recibida: number, costo_unitario?: number }[], documento: DocumentoRecepcion
+    id: number, items: { item_id: number, cantidad_recibida: number, costo_unitario?: number, cantidad_rechazada?: number, motivo_rechazo?: string }[], documento: DocumentoRecepcion
   ): Observable<RespuestaBodega<ResultadoRecepcion>> {
     const body = Object.assign({ items: items }, documento);
     return this.http.post<RespuestaBodega<ResultadoRecepcion>>(this.url_bodega + '/ordenes-compra/' + id + '/recepcion', body, { headers: this.obtenerCabeceras() });

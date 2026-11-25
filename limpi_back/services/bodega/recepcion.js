@@ -4,6 +4,7 @@
  *   orden de compra -> solicitudes FIFO (id ASC) -> productos (id ASC).
  * Recibido: stock += cantidad (ENTRADA_COMPRA) y costo_unitario = último costo real recibido.
  * RF-BOD-04b: cada llamada crea una recepción (recepciones_compra + recepcion_items); cantidad_recibida es caché.
+ * RF-BOD-04 merma: por línea se pueden rechazar unidades (con motivo). No entran al stock y dejan de estar pendientes.
  * Asignación FIFO: el stock disponible cubre faltantes de solicitudes PARCIAL, la más antigua primero
  * (SALIDA_SOLICITUD); las que quedan sin faltante pasan a LISTA_ENTREGA. El excedente queda libre.
  */
@@ -35,24 +36,30 @@ const nulo = (v) => v === null || v === undefined;
 // Mismo criterio que cruceStock (D-054): stock NULL o negativo = 0 disponible.
 const disponible = (p) => { const s = Number(p.stock); return Number.isFinite(s) && s > 0 ? s : 0; };
 
+// RF-BOD-04 merma: lo rechazado tampoco queda pendiente
+const pendiente = (l) => Math.max(Number(l.cantidad) - Number(l.cantidad_recibida || 0) - Number(l.cantidad_rechazada || 0), 0);
+
 /**
- * Cantidades y costo real a recibir por línea. Sin `entradas`, recibe todo lo pendiente de cada línea.
+ * Cantidades, rechazo y costo real a recibir por línea. Sin `entradas`, recibe todo lo pendiente de cada línea.
  * RF-BOD-04b: el costo real por línea es opcional; sin él se usa el costo de la OC.
- * @returns {{linea: object, cantidad: number, costo: number|null}[]}
+ * @returns {{linea: object, cantidad: number, rechazada: number, motivo: string|null, costo: number|null}[]}
  */
 function resolverCantidades(lineas, entradas) {
-  const pendiente = (l) => Math.max(Number(l.cantidad) - Number(l.cantidad_recibida || 0), 0);
   const costoOc = (l) => nulo(l.costo_unitario) ? null : Number(l.costo_unitario);
-  if (!entradas) return lineas.map((l) => ({ linea: l, cantidad: pendiente(l), costo: costoOc(l) }));
+  if (!entradas) return lineas.map((l) => ({ linea: l, cantidad: pendiente(l), rechazada: 0, motivo: null, costo: costoOc(l) }));
   const lineasPorId = porId(lineas);
   return entradas.map((e) => {
     const linea = lineasPorId[e.item_id];
     if (!linea) throw new AppError('ITEM_NO_PERTENECE', 'el item ' + e.item_id + ' no pertenece a la orden', 400, { item_id: e.item_id });
-    if (e.cantidad_recibida > pendiente(linea)) {
-      throw new AppError('CANTIDAD_EXCEDE_PENDIENTE', 'la cantidad recibida supera lo pendiente de la linea', 400,
-        { item_id: linea.id, pendiente: pendiente(linea), cantidad_recibida: e.cantidad_recibida });
+    const rechazada = e.cantidad_rechazada || 0;
+    if (e.cantidad_recibida + rechazada > pendiente(linea)) {
+      throw new AppError('CANTIDAD_EXCEDE_PENDIENTE', 'lo recibido mas lo rechazado supera lo pendiente de la linea', 400,
+        { item_id: linea.id, pendiente: pendiente(linea), cantidad_recibida: e.cantidad_recibida, cantidad_rechazada: rechazada });
     }
-    return { linea: linea, cantidad: e.cantidad_recibida, costo: nulo(e.costo_unitario) ? costoOc(linea) : e.costo_unitario };
+    return {
+      linea: linea, cantidad: e.cantidad_recibida, rechazada: rechazada, motivo: rechazada > 0 ? e.motivo_rechazo : null,
+      costo: nulo(e.costo_unitario) ? costoOc(linea) : e.costo_unitario
+    };
   });
 }
 
@@ -75,13 +82,13 @@ async function recibir(ordenId, entradas, contexto, documento) {
       throw new AppError('ORDEN_NO_RECIBIBLE', 'solo se recibe una orden ENVIADA o RECIBIDA_PARCIAL', 409, { estado: orden.estado });
     }
     const lineas = await Orden_compra_item.findAll({ where: { orden_id: orden.id }, order: [['id', 'ASC']], transaction: t });
-    const recepcion = resolverCantidades(lineas, entradas).filter((r) => r.cantidad > 0);
-    if (!recepcion.length) throw new AppError('SIN_CANTIDADES', 'no hay cantidades para recibir', 400);
+    const recepcion = resolverCantidades(lineas, entradas).filter((r) => r.cantidad > 0 || r.rechazada > 0);
+    if (!recepcion.length) throw new AppError('SIN_CANTIDADES', 'no hay cantidades para recibir ni rechazar', 400);
 
     const recibidoPorProducto = {};
     const costoPorProducto = {};
     const diferencias = [];
-    recepcion.forEach((r) => {
+    recepcion.filter((r) => r.cantidad > 0).forEach((r) => {
       recibidoPorProducto[r.linea.producto_id] = (recibidoPorProducto[r.linea.producto_id] || 0) + r.cantidad;
       if (r.costo !== null) costoPorProducto[r.linea.producto_id] = r.costo;
       if (r.costo !== null && !nulo(r.linea.costo_unitario) && r.costo !== Number(r.linea.costo_unitario)) {
@@ -91,7 +98,7 @@ async function recibir(ordenId, entradas, contexto, documento) {
     const productoIds = Object.keys(recibidoPorProducto).map(Number).sort(ascendente);
 
     // 2) Solicitudes FIFO con faltante de estos productos (la lectura previa solo decide qué bloquear)
-    const candidatas = await Item.findAll({
+    const candidatas = !productoIds.length ? [] : await Item.findAll({
       where: { producto_id: { [Op.in]: productoIds }, cantidad_faltante: { [Op.gt]: 0 } }, attributes: ['solicitud_id'], transaction: t
     });
     const idsCandidatas = unicos(candidatas.map((i) => i.solicitud_id)).sort(ascendente);
@@ -102,14 +109,17 @@ async function recibir(ordenId, entradas, contexto, documento) {
       : []).filter((s) => s.estado === E.PARCIAL);
 
     // 3) Productos
-    const productos = porId(await Producto.findAll({
+    const productos = porId(!productoIds.length ? [] : await Producto.findAll({
       where: { id: { [Op.in]: productoIds } }, order: [['id', 'ASC']], lock: t.LOCK.UPDATE, transaction: t
     }));
 
     // Entrada de lo recibido
-    const ordenAntes = { estado: orden.estado, items: lineas.map((l) => ({ id: l.id, cantidad_recibida: l.cantidad_recibida })) };
+    const ordenAntes = { estado: orden.estado, items: lineas.map((l) => ({ id: l.id, cantidad_recibida: l.cantidad_recibida, cantidad_rechazada: l.cantidad_rechazada })) };
     for (const r of recepcion) {
-      await r.linea.update({ cantidad_recibida: Number(r.linea.cantidad_recibida || 0) + r.cantidad }, { transaction: t });
+      await r.linea.update({
+        cantidad_recibida: Number(r.linea.cantidad_recibida || 0) + r.cantidad,
+        cantidad_rechazada: Number(r.linea.cantidad_rechazada || 0) + r.rechazada
+      }, { transaction: t });
     }
     for (const id of productoIds) {
       const producto = productos[id];
@@ -123,8 +133,10 @@ async function recibir(ordenId, entradas, contexto, documento) {
     }, { transaction: t });
     for (const r of recepcion) {
       const linea = await Recepcion_item.create({
-        recepcion_id: cabecera.id, orden_item_id: r.linea.id, producto_id: r.linea.producto_id, cantidad: r.cantidad, costo_unitario: r.costo
+        recepcion_id: cabecera.id, orden_item_id: r.linea.id, producto_id: r.linea.producto_id, cantidad: r.cantidad, costo_unitario: r.costo,
+        cantidad_rechazada: r.rechazada, motivo_rechazo: r.motivo
       }, { transaction: t });
+      if (r.cantidad === 0) continue; // solo rechazo: no entra stock
       const mov = await kardex.registrar({
         transaction: t, producto: productos[r.linea.producto_id], tipo: M.ENTRADA_COMPRA, cantidad: r.cantidad,
         costoUnitario: r.costo === null ? undefined : r.costo,
@@ -173,19 +185,21 @@ async function recibir(ordenId, entradas, contexto, documento) {
 
     // Estado de la orden
     const lineasActuales = await Orden_compra_item.findAll({ where: { orden_id: orden.id }, transaction: t });
-    const total = lineasActuales.every((l) => Number(l.cantidad_recibida) >= Number(l.cantidad));
+    const total = lineasActuales.every((l) => pendiente(l) === 0);
     await orden.update({ estado: total ? 'RECIBIDA' : 'RECIBIDA_PARCIAL' }, { transaction: t });
 
+    const rechazos = recepcion.filter((r) => r.rechazada > 0)
+      .map((r) => ({ item_id: r.linea.id, producto_id: r.linea.producto_id, cantidad: r.rechazada, motivo: r.motivo }));
     const recibidos = productoIds.map((id) => ({ producto_id: id, cantidad: recibidoPorProducto[id], costo_unitario: costoPorProducto[id] !== undefined ? costoPorProducto[id] : null }));
     await auditar({
       transaction: t, usuario: usuario, entidad: 'ordenes_compra', entidad_id: orden.id, accion: 'RECEPCION',
       antes: ordenAntes,
-      despues: { estado: orden.estado, recepcion_id: cabecera.id, recibidos: recibidos, diferencias_precio: diferencias, asignaciones: asignaciones },
-      motivo: diferencias.length ? 'DIFERENCIA_PRECIO' : null, ip: contexto.ip
+      despues: { estado: orden.estado, recepcion_id: cabecera.id, recibidos: recibidos, rechazos: rechazos, diferencias_precio: diferencias, asignaciones: asignaciones },
+      motivo: [diferencias.length ? 'DIFERENCIA_PRECIO' : null, rechazos.length ? 'MERMA' : null].filter(Boolean).join(',') || null, ip: contexto.ip
     });
 
     return {
-      orden_id: orden.id, recepcion_id: cabecera.id, estado: orden.estado, recibidos: recibidos,
+      orden_id: orden.id, recepcion_id: cabecera.id, estado: orden.estado, recibidos: recibidos, rechazos: rechazos,
       diferencias_precio: diferencias, asignaciones: asignaciones, solicitudes_listas: completas
     };
   }));

@@ -32,7 +32,17 @@ const Recepcion_item = db.sequelize.define(
             type: Sequelize.DECIMAL(14, 0),
             allowNull: true
         },
-        // ENTRADA_COMPRA del kardex (NULL en recepciones históricas)
+        // RF-BOD-04 merma (migración 20261125180000): rechazadas en esta recepción y su motivo
+        cantidad_rechazada:{
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            defaultValue: 0
+        },
+        motivo_rechazo:{
+            type: Sequelize.STRING(255),
+            allowNull: true
+        },
+        // ENTRADA_COMPRA del kardex (NULL en recepciones históricas o líneas solo con rechazo)
         movimiento_id:{
             type: Sequelize.INTEGER,
             allowNull: true

@@ -51,6 +51,7 @@ export interface LineaRecepcion {
   producto: string;
   cantidad: number;
   cantidad_recibida: number;
+  cantidad_rechazada: number; // RF-BOD-04 merma
   pendiente: number;
   costo_unitario: number;
 }
@@ -75,7 +76,10 @@ export interface RecepcionHistorial {
   observacion: string;
   estado: string;
   historica: boolean;
-  items: { item_id: number, producto_id: number, producto: string, cantidad: number, costo_unitario: number }[];
+  items: {
+    item_id: number, producto_id: number, producto: string, cantidad: number, costo_unitario: number,
+    cantidad_rechazada: number, motivo_rechazo: string
+  }[];
 }
 
 export interface OrdenRecepcion {
@@ -93,6 +97,7 @@ export interface ResultadoRecepcion {
   recepcion_id: number;
   estado: EstadoOrden;
   recibidos: { producto_id: number, cantidad: number, costo_unitario: number }[];
+  rechazos: { item_id: number, producto_id: number, cantidad: number, motivo: string }[];
   diferencias_precio: { item_id: number, producto_id: number, costo_oc: number, costo_real: number }[];
   asignaciones: { solicitud_id: number, producto_id: number, cantidad: number }[];
   solicitudes_listas: number[];
