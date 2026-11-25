@@ -9,6 +9,8 @@ const fecha = require('../../../libs/fecha');
 const CcIngreso = require('../../../modelos/sistema_base/CcIngreso');
 const Egreso = require('../../../modelos/sistema_base/Egreso');
 const CcEgreso = require('../../../modelos/sistema_base/CcEgreso');
+const Centro = require('../../../modelos/sistema_base/Centro_costo');
+const Sequelize = require('sequelize');
 const pagoService = require('../../../services/facturas/pago');
 const pendientes = require('../../../services/facturas/pendientes');
 
@@ -86,7 +88,15 @@ async function listarGenerico(modelo, req) {
 
 const listarIngresos = async (req, res) => {
   const r = await listarGenerico(CcIngreso, req);
-  return res.json({ ok: true, data: r.filas, meta: { total: r.filas.length, periodo: r.periodo || null, estado_pago: r.estadoPago || null } });
+  // Pantalla de ingresos: cada fila lleva el número del centro de costo al que pertenece.
+  const ids = r.filas.map((f) => f.centroCostoId).filter((id, i, a) => id && a.indexOf(id) === i);
+  const centros = {};
+  if (ids.length) {
+    (await Centro.findAll({ where: { id: { [Sequelize.Op.in]: ids } }, attributes: ['id', 'numero_cc'] }))
+      .forEach((c) => { centros[c.id] = c.numero_cc; });
+  }
+  const data = r.filas.map((f) => Object.assign(typeof f.toJSON === 'function' ? f.toJSON() : f, { numero_cc: centros[f.centroCostoId] || null }));
+  return res.json({ ok: true, data: data, meta: { total: r.filas.length, periodo: r.periodo || null, estado_pago: r.estadoPago || null } });
 };
 
 const listarEgresos = async (req, res) => {

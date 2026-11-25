@@ -119,7 +119,8 @@ export const ROUTES: RouteInfo[] = [
     children: [
       { path: 'usuarios', title: 'Usuarios', ab: 'Us' },
       { path: 'clientes', title: 'Clientes', ab: 'CL' },
-      { path: 'egreso', title: 'Egresos', ab: 'E' }
+      { path: 'egreso', title: 'Egresos', ab: 'E' },
+      { path: 'ingreso', title: 'Ingresos', ab: 'I', roles: ADMIN } // RF-FAC-01: API solo Admin
     ]
   },
   {

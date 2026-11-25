@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { ClienteComponent } from './cliente/cliente.component';
 import { UsuarioComponent } from './usuario/usuario.component';
 import { EgresoComponent } from './egreso/egreso.component';
+import { IngresoComponent } from './ingreso/ingreso.component';
 
 import { RestriccionGuardService } from '../../services/guard/restriccion-guard.service';
 import { CrearAccesoClienteComponent } from './crear-acceso-cliente/crear-acceso-cliente.component';
@@ -36,6 +37,10 @@ export const GestionRoutes: Routes = [
       {
         path: 'gestion/egreso',
         component: EgresoComponent
+      },
+      {
+        path: 'gestion/ingreso', // RF-FAC-01
+        component: IngresoComponent
       }
     ]
   },

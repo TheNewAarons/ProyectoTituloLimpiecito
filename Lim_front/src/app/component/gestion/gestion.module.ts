@@ -6,6 +6,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ClienteComponent } from './cliente/cliente.component';
 import { UsuarioComponent } from './usuario/usuario.component';
 import { EgresoComponent } from './egreso/egreso.component';
+import { IngresoComponent } from './ingreso/ingreso.component';
 
 import { ClientePevComponent } from './cliente-pev/cliente-pev.component';
 import { FormClienteSectorPevComponent } from './shared/form-cliente-sector-pev/form-cliente-sector-pev.component';
@@ -53,6 +54,7 @@ import { DialogTareaEditarNombreComponent } from './shared/dialog-tarea-editar-n
     ClienteComponent,
     UsuarioComponent,
     EgresoComponent,
+    IngresoComponent,
     CrearClienteComponent,
     VerClienteComponent,
     CrearAccesoClienteComponent,

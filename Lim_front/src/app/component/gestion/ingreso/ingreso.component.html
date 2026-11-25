@@ -1,0 +1,96 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon">
+              <i class="material-icons">receipt</i>
+            </div>
+            <h4 class="card-title">Ingresos</h4>
+          </div>
+          <div class="card-body">
+            <!-- RF-FAC-01: resumen informativo, fuera del saldo de caja -->
+            <div class="row" *ngIf="resumenFacturas">
+              <div class="col-md-12">
+                <p>Por cobrar (facturas pendientes): <b>{{ resumenFacturas.por_cobrar.cantidad }}</b> /
+                  {{ resumenFacturas.por_cobrar.monto_total | currency:'CLP':'symbol':'1.0-0' }}</p>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-8">
+                <mat-form-field class="example-full-width">
+                  <input matInput placeholder="Buscar por centro de costo, descripción o documento" name="busqueda"
+                    [(ngModel)]="busqueda" (ngModelChange)="filtrarIngresos()" type="text" />
+                </mat-form-field>
+              </div>
+              <div class="col-md-4">
+                <mat-form-field class="example-full-width">
+                  <mat-select placeholder="Estado" name="filtroEstado" [(ngModel)]="filtroEstado"
+                    (selectionChange)="filtrarIngresos()">
+                    <mat-option value="">Todos</mat-option>
+                    <mat-option value="Pagada">Pagada</mat-option>
+                    <mat-option value="Pendiente">Pendiente</mat-option>
+                    <mat-option value="Vencida">Vencida</mat-option>
+                    <mat-option value="Anulada">Anulada</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Centro de costo</th>
+                    <th>Descripción</th>
+                    <th>Documento</th>
+                    <th>Monto</th>
+                    <th>Emisión</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let ingreso of ingresosFiltrados | slice: (page - 1) * pageSize : (page - 1) * pageSize + pageSize">
+                    <td>{{ ingreso.numero_cc || '-' }}</td>
+                    <td>{{ ingreso.comentario }}</td>
+                    <td>{{ ingreso.tipo_documento || '-' }} {{ ingreso.numero_documento }}</td>
+                    <td>{{ ingreso.monto | currency:'CLP':'symbol':'1.0-0' }}</td>
+                    <td>{{ (ingreso.fecha_emision || ingreso.fecha) | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ ingreso.fecha_vencimiento ? (ingreso.fecha_vencimiento | date:'dd/MM/yyyy') : '-' }}</td>
+                    <td>
+                      <span [class]="claseBadgeEstadoPago(ingreso)">{{ textoBadgeEstadoPago(ingreso) }}</span>
+                    </td>
+                    <td class="td-actions text-right">
+                      <ng-container *ngIf="esAdmin">
+                        <button *ngIf="ingreso.estado_pago === 'PENDIENTE'" mat-raised-button type="button" title="Marcar Pagado"
+                          class="btn btn-success btn-round" (click)="marcarComoPagado(ingreso)">
+                          <i class="material-icons">attach_money</i>
+                        </button>
+                        <button *ngIf="ingreso.estado_pago === 'PAGADA'" mat-raised-button type="button" title="Revertir Pago"
+                          class="btn btn-warning btn-round" (click)="revertirPagoIngreso(ingreso)">
+                          <i class="material-icons">undo</i>
+                        </button>
+                        <button *ngIf="ingreso.estado_pago !== 'ANULADA'" mat-raised-button type="button" title="Anular Ingreso"
+                          class="btn btn-danger btn-round" (click)="anularIngreso(ingreso)">
+                          <i class="material-icons">close</i>
+                        </button>
+                      </ng-container>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!ingresosFiltrados.length">
+                    <td colspan="8" class="text-center text-muted">Sin ingresos para los filtros elegidos</td>
+                  </tr>
+                </tbody>
+              </table>
+              <ngb-pagination [(page)]="page" [pageSize]="pageSize" [collectionSize]="ingresosFiltrados.length"
+                [maxSize]="5" [rotate]="true" [boundaryLinks]="true">
+              </ngb-pagination>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
