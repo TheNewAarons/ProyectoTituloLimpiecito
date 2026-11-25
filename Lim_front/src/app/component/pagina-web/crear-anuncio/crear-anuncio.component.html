@@ -55,10 +55,17 @@
               <mat-checkbox name="publicado" [(ngModel)]="publicado">Publicado</mat-checkbox>
               <br /><br />
 
-              <label for="imagenAnuncio">{{ id ? 'Cambiar imagen (opcional: jpg, png o webp)' : 'Imagen (opcional: jpg, png o webp)' }}</label><br />
-              <input type="file" id="imagenAnuncio" accept="image/jpeg,image/png,image/webp" (change)="imagenSelecionado($event)" />
+              <label>{{ id ? 'Cambiar imagen (opcional: jpg, png o webp)' : 'Imagen (opcional: jpg, png o webp)' }}</label><br />
+              <span class="btn btn-rose btn-round btn-file">
+                {{ file ? 'Cambiar' : 'Seleccionar' }}
+                <input type="file" accept="image/jpeg,image/png,image/webp" (change)="imagenSelecionado($event)" />
+              </span>
+              <small *ngIf="file" class="text-muted">{{ file.name }}</small>
 
               <div class="modal-footer justify-content-end">
+                <button mat-raised-button type="button" class="btn btn-danger" routerLink="/pagina_web/anuncios" [disabled]="guardando">
+                  Cancelar
+                </button>
                 <button mat-raised-button type="submit" class="btn btn-success" [disabled]="!f1.valid || expiracionInvalida() || guardando">
                   {{ id ? 'Guardar' : 'Crear' }}
                 </button>
