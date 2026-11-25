@@ -8,7 +8,7 @@ import {
   RespuestaAnalytics, ResumenFinanciero
 } from '../../model/analytics';
 import {
-  AgruparConsumo, FilaConsumoGrupo, FilaConsumoMes, FilaFrecuenciaCompra, FilaStockCritico, FilaTopProducto, MetaConsumo
+  AgruparConsumo, FilaConsumoGrupo, FilaConsumoMes, FilaFrecuenciaCompra, FilaStockCritico, FilaMerma, MetaMerma, FilaTopProducto, MetaConsumo
 } from '../../model/analytics';
 import { FiltrosProductividad, MetaProductividad } from '../../model/analytics';
 
@@ -89,6 +89,10 @@ export class AnalyticsService {
 
   frecuenciaCompraBodega(desde: string, hasta: string): Observable<RespuestaAnalytics<FilaFrecuenciaCompra[]>> {
     return this.obtenerBodega<FilaFrecuenciaCompra[]>('/frecuencia-compra', { desde: desde, hasta: hasta });
+  }
+
+  mermaBodega(desde: string, hasta: string): Observable<RespuestaAnalytics<FilaMerma[], MetaMerma>> {
+    return this.obtenerBodega<FilaMerma[], MetaMerma>('/merma', { desde: desde, hasta: hasta });
   }
 
   stockCriticoBodega(): Observable<RespuestaAnalytics<FilaStockCritico[]>> {

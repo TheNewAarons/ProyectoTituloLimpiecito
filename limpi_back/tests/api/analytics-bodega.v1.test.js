@@ -97,6 +97,14 @@ describe('consultas', () => {
     expect(query.mock.calls[0][1].replacements.estados).toEqual(['ENVIADA', 'RECIBIDA_PARCIAL', 'RECIBIDA']);
   });
 
+  it('RF-BOD-04 merma: solo recepciones confirmadas y meta con totales y serie mensual', async () => {
+    const res = await get('/merma?desde=2026-10&hasta=2026-11');
+    expect(res.status).toBe(200);
+    expect(query.mock.calls[0][1].replacements.confirmada).toBe('CONFIRMADA');
+    expect(res.body.meta).toMatchObject({ desde: '2026-10', hasta: '2026-11', rechazado: 0, porcentaje_merma: 0, por_mes: [{ periodo: '2026-10', recibido: 0, rechazado: 0 }, { periodo: '2026-11', recibido: 0, rechazado: 0 }] });
+    expect((await get('/merma', 'token-rrhh')).status).toBe(403);
+  });
+
   it('stock-critico: misma regla que el dashboard de bodega y faltante calculado', async () => {
     query.mockResolvedValueOnce([{ id: 4, nombre: 'Guantes', stock: 1, stock_minimo: 10 }]);
     const res = await get('/stock-critico');

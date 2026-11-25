@@ -22,6 +22,7 @@ bodega.get('/top-productos', asyncHandler(consumoBodega.topProductos));
 bodega.get('/consumo', asyncHandler(consumoBodega.consumo));
 bodega.get('/frecuencia-compra', asyncHandler(consumoBodega.frecuenciaCompra));
 bodega.get('/stock-critico', asyncHandler(consumoBodega.stockCritico));
+bodega.get('/merma', asyncHandler(consumoBodega.merma)); // RF-BOD-04: unidades rechazadas en recepciones
 const productividadPev = require('./productividad'); // RF-BI-04
 productividad.get('/trabajadores', asyncHandler(productividadPev.trabajadores));
 productividad.get('/supervisores', asyncHandler(productividadPev.supervisores));
