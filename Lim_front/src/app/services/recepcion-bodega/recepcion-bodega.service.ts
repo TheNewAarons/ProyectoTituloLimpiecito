@@ -6,7 +6,8 @@ import { LoginService } from '../login/login.service';
 import { RespuestaBodega, SolicitudBodega } from '../../model/solicitud-bodega';
 import {
   OrdenResumen, OrdenRecepcion, ResultadoRecepcion, DocumentoRecepcion, FormatoEntrega, MovimientoBodega, KardexProducto,
-  ConteoResumen, ConteoDetalle, ResultadoAprobacionConteo, Proveedor, DatosProveedor, ResultadoGenerarOrdenes
+  ConteoResumen, ConteoDetalle, ResultadoAprobacionConteo, Proveedor, DatosProveedor, ResultadoGenerarOrdenes,
+  ProductoOc, LineaNuevaOc
 } from '../../model/recepcion-bodega';
 
 // RECEPCIÓN, ENTREGA Y MOVIMIENTOS DE BODEGA (RF-BOD-04) — /api/v1/bodega, formato { ok, data, meta }
@@ -35,6 +36,16 @@ export class RecepcionBodegaService {
   //GENERAR OC BORRADOR DESDE LA LISTA DE COMPRA (RF-BOD-03)
   generarOrdenes(): Observable<RespuestaBodega<ResultadoGenerarOrdenes>> {
     return this.http.post<RespuestaBodega<ResultadoGenerarOrdenes>>(this.url_bodega + '/ordenes-compra/desde-lista', {}, { headers: this.obtenerCabeceras() });
+  }
+
+  //CREAR OC MANUAL EN BORRADOR, SIN DEPENDER DEL STOCK (RF-BOD-03)
+  crearOrden(datos: { proveedor_id: number, items: LineaNuevaOc[] }): Observable<RespuestaBodega<{ id: number, estado: string }>> {
+    return this.http.post<RespuestaBodega<{ id: number, estado: string }>>(this.url_bodega + '/ordenes-compra', datos, { headers: this.obtenerCabeceras() });
+  }
+
+  //PRODUCTOS ACTIVOS (TRAE proveedor_id Y costo_unitario PARA ARMAR LA OC MANUAL)
+  listarProductosActivos(): Observable<RespuestaBodega<ProductoOc[]>> {
+    return this.http.get<RespuestaBodega<ProductoOc[]>>(this.url_bodega + '/productos', { headers: this.obtenerCabeceras() });
   }
 
   //EDITAR OC EN BORRADOR: AJUSTAR CANTIDADES Y QUITAR ITEMS (RF-BOD-03)

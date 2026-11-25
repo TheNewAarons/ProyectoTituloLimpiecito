@@ -59,6 +59,11 @@ export class OrdenesCompraListaComponent implements OnInit {
     this.cargar();
   }
 
+  // RF-BOD-03: OC manual, sin depender del stock
+  nueva(): void {
+    this.router.navigate(['/bodega/ordenes-compra/nueva']);
+  }
+
   ver(id: number) {
     this.router.navigate(['/bodega/ordenes-compra', id]);
   }

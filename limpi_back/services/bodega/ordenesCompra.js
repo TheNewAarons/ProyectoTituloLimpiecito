@@ -234,7 +234,78 @@ async function enviar(id, contexto) {
   });
 }
 
+/**
+ * POST /ordenes-compra — OC manual en BORRADOR, sin depender de la lista de compra por stock.
+ * body: { proveedor_id, items: [{ producto_id, cantidad, costo_unitario? }] }. Cada producto debe
+ * tener asignado el proveedor de la orden (misma regla que enviar()).
+ * @param {{proveedor_id: number, items: {producto_id: number, cantidad: number, costo_unitario?: number}[]}} datos
+ * @param {{usuario: {id: number, contexto: string}, ip?: string}} contexto
+ * @returns {Promise<object>} orden creada con proveedor e items
+ */
+async function crear(datos, contexto) {
+  const d = datos || {};
+  const proveedorId = Number(d.proveedor_id);
+  if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
+    throw new AppError('CAMPO_INVALIDO', 'proveedor_id es obligatorio', 400, { proveedor_id: d.proveedor_id });
+  }
+  if (!Array.isArray(d.items) || d.items.length === 0) {
+    throw new AppError('ORDEN_SIN_ITEMS', 'la orden debe tener al menos un producto', 400);
+  }
+  const vistos = {};
+  const items = d.items.map(function (item) {
+    const productoId = Number(item && item.producto_id);
+    if (!Number.isInteger(productoId) || productoId <= 0) {
+      throw new AppError('CAMPO_INVALIDO', 'producto_id invalido', 400, { producto_id: item && item.producto_id });
+    }
+    const costo = item.costo_unitario === undefined || item.costo_unitario === null || item.costo_unitario === '' ? null : Number(item.costo_unitario);
+    if (vistos[productoId]) {
+      throw new AppError('PRODUCTO_DUPLICADO', 'el producto esta repetido en la orden', 400, { producto_id: productoId });
+    }
+    vistos[productoId] = true;
+    if (!Number.isInteger(item.cantidad) || item.cantidad <= 0) {
+      throw new AppError('CANTIDAD_INVALIDA', 'cantidad debe ser un entero mayor a 0', 400, { producto_id: productoId });
+    }
+    if (costo !== null && (!Number.isInteger(costo) || costo < 0)) {
+      throw new AppError('CAMPO_INVALIDO', 'costo_unitario debe ser un entero CLP mayor o igual a 0', 400, { producto_id: productoId });
+    }
+    return { producto_id: productoId, cantidad: item.cantidad, costo_unitario: costo };
+  });
+
+  return db.sequelize.transaction(async function (t) {
+    const proveedor = await Proveedor.findById(proveedorId, { transaction: t, lock: t.LOCK.SHARE });
+    if (!proveedor) {
+      throw new AppError('PROVEEDOR_NO_ENCONTRADO', 'no existe el proveedor ' + proveedorId, 404, { id: proveedorId });
+    }
+    if (Number(proveedor.activo) !== 1) {
+      throw new AppError('PROVEEDOR_INACTIVO', 'el proveedor esta inactivo', 409, { id: proveedorId });
+    }
+    await validarProductosConProveedor(items, proveedorId, t, t.LOCK.SHARE);
+
+    const orden = await Orden_compra.create({
+      proveedor_id: proveedorId,
+      estado: 'BORRADOR',
+      created_by: contexto.usuario.contexto === 'usuarios' ? contexto.usuario.id : null
+    }, { transaction: t });
+    for (const item of items) {
+      await Orden_compra_item.create(Object.assign({ orden_id: orden.id }, item), { transaction: t });
+    }
+    await auditar({
+      transaction: t,
+      usuario: contexto.usuario,
+      entidad: 'ordenes_compra',
+      entidad_id: orden.id,
+      accion: 'CREAR',
+      motivo: 'MANUAL',
+      antes: null,
+      despues: { orden: orden.get({ plain: true }), items: items },
+      ip: contexto.ip
+    });
+    return obtenerConDetalle(orden.id, t);
+  });
+}
+
 module.exports = {
+  crear: crear,
   obtener: obtener,
   actualizar: actualizar,
   enviar: enviar

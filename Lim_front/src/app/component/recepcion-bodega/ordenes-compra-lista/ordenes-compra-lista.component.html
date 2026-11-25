@@ -11,6 +11,10 @@
               <span class="btn-label"><i class="material-icons">add</i></span>
               Generar Órdenes
             </button>
+            <button mat-raised-button type="button" matTooltip="Crear Orden De Compra Manual" class="btn btn-warning btn-sm" (click)="nueva()" [disabled]="enviando">
+              <span class="btn-label"><i class="material-icons">add</i></span>
+              Crear Orden
+            </button>
           </div>
           <div class="card-body">
             <div class="row">

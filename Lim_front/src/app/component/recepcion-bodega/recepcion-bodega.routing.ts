@@ -9,6 +9,7 @@ import { ConteosListaComponent } from './conteos-lista/conteos-lista.component';
 import { ConteoDetalleComponent } from './conteo-detalle/conteo-detalle.component';
 import { ProveedoresListaComponent } from './proveedores-lista/proveedores-lista.component';
 import { InformeCompraComponent } from './informe-compra/informe-compra.component';
+import { OrdenCompraNuevaComponent } from './orden-compra-nueva/orden-compra-nueva.component';
 
 // 'bodega/solicitudes/:id/formato' tiene un segmento más que 'bodega/solicitudes/:id' (RF-BOD-01): no chocan.
 export const RecepcionBodegaRoutes: Routes = [
@@ -16,6 +17,7 @@ export const RecepcionBodegaRoutes: Routes = [
     path: '',
     children: [
       { path: 'bodega/ordenes-compra', component: OrdenesCompraListaComponent },
+      { path: 'bodega/ordenes-compra/nueva', component: OrdenCompraNuevaComponent }, // RF-BOD-03: antes de ':id'
       { path: 'bodega/ordenes-compra/:id', component: OrdenRecepcionComponent },
       { path: 'bodega/movimientos', component: MovimientosBodegaComponent },
       { path: 'bodega/productos/:id/kardex', component: KardexProductoComponent },

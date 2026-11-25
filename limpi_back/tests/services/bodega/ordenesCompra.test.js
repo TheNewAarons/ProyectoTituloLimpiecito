@@ -6,13 +6,17 @@ jest.mock('../../../database/database', () => ({
   sequelize: { transaction: jest.fn() }
 }));
 jest.mock('../../../modelos/sistema_bodega/Orden_compra', () => ({
-  findById: jest.fn()
+  findById: jest.fn(),
+  create: jest.fn()
 }));
 jest.mock('../../../modelos/sistema_bodega/Orden_compra_item', () => ({
   destroy: jest.fn(),
-  count: jest.fn()
+  count: jest.fn(),
+  create: jest.fn()
 }));
-jest.mock('../../../modelos/sistema_bodega/Proveedor', () => ({}));
+jest.mock('../../../modelos/sistema_bodega/Proveedor', () => ({
+  findById: jest.fn()
+}));
 jest.mock('../../../modelos/sistema_base/Producto', () => ({
   findAll: jest.fn()
 }));
@@ -29,7 +33,8 @@ const Orden_compra_item = require('../../../modelos/sistema_bodega/Orden_compra_
 const Producto = require('../../../modelos/sistema_base/Producto');
 const { auditar } = require('../../../services/auditoria');
 const { enviarCorreoOrdenCompra } = require('../../../services/bodega/correoOrdenCompra');
-const { enviar, actualizar } = require('../../../services/bodega/ordenesCompra');
+const Proveedor = require('../../../modelos/sistema_bodega/Proveedor');
+const { enviar, actualizar, crear } = require('../../../services/bodega/ordenesCompra');
 
 function instanciaItem(data) {
   const inst = Object.assign({}, data);
@@ -68,6 +73,55 @@ describe('services/bodega/ordenesCompra', () => {
     Producto.findAll.mockImplementation((opciones) =>
       Promise.resolve((opciones.where.id || []).map((id) => ({ id: id, nombre: 'Producto ' + id, proveedor_id: undefined })))
     );
+  });
+
+  describe('crear (OC manual)', () => {
+    const contexto = { usuario: { id: 7, contexto: 'usuarios' }, ip: '127.0.0.1' };
+
+    function prepararCreacion(proveedor) {
+      fakeTransaction();
+      Proveedor.findById.mockResolvedValue(proveedor);
+      Producto.findAll.mockImplementation((opciones) =>
+        Promise.resolve((opciones.where.id || []).map((id) => ({ id: id, nombre: 'Producto ' + id, proveedor_id: 4 })))
+      );
+      Orden_compra.create.mockResolvedValue(instanciaOrden({ id: 99, proveedor_id: 4, estado: 'BORRADOR' }));
+      Orden_compra_item.create.mockResolvedValue({});
+      Orden_compra.findById.mockResolvedValue(instanciaOrden({ id: 99, estado: 'BORRADOR' }));
+    }
+
+    it('crea BORRADOR con sus items (costo opcional) y audita CREAR/MANUAL', async () => {
+      prepararCreacion({ id: 4, activo: 1 });
+      const resultado = await crear({
+        proveedor_id: 4,
+        items: [{ producto_id: 10, cantidad: 3, costo_unitario: 1500 }, { producto_id: 11, cantidad: 1 }]
+      }, contexto);
+
+      expect(resultado.id).toBe(99);
+      expect(Orden_compra.create).toHaveBeenCalledWith({ proveedor_id: 4, estado: 'BORRADOR', created_by: 7 }, expect.anything());
+      expect(Orden_compra_item.create).toHaveBeenCalledWith({ orden_id: 99, producto_id: 10, cantidad: 3, costo_unitario: 1500 }, expect.anything());
+      expect(Orden_compra_item.create).toHaveBeenCalledWith({ orden_id: 99, producto_id: 11, cantidad: 1, costo_unitario: null }, expect.anything());
+      expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ accion: 'CREAR', motivo: 'MANUAL', entidad_id: 99 }));
+    });
+
+    it.each([
+      [{ items: [{ producto_id: 10, cantidad: 1 }] }, 'CAMPO_INVALIDO'],
+      [{ proveedor_id: 4, items: [] }, 'ORDEN_SIN_ITEMS'],
+      [{ proveedor_id: 4, items: [{ producto_id: 10, cantidad: 0 }] }, 'CANTIDAD_INVALIDA'],
+      [{ proveedor_id: 4, items: [{ producto_id: 10, cantidad: 1 }, { producto_id: 10, cantidad: 2 }] }, 'PRODUCTO_DUPLICADO'],
+      [{ proveedor_id: 4, items: [{ producto_id: 10, cantidad: 1, costo_unitario: -5 }] }, 'CAMPO_INVALIDO']
+    ])('valida la entrada sin abrir transaccion (%j -> %s)', async (datos, codigo) => {
+      await expect(crear(datos, contexto)).rejects.toMatchObject({ code: codigo, httpStatus: 400 });
+      expect(db.sequelize.transaction).not.toHaveBeenCalled();
+    });
+
+    it('rechaza proveedor inactivo y productos de otro proveedor sin crear la orden', async () => {
+      prepararCreacion({ id: 4, activo: 0 });
+      await expect(crear({ proveedor_id: 4, items: [{ producto_id: 10, cantidad: 1 }] }, contexto)).rejects.toMatchObject({ code: 'PROVEEDOR_INACTIVO' });
+
+      prepararCreacion({ id: 5, activo: 1 });
+      await expect(crear({ proveedor_id: 5, items: [{ producto_id: 10, cantidad: 1 }] }, contexto)).rejects.toMatchObject({ code: 'PRODUCTO_SIN_PROVEEDOR' });
+      expect(Orden_compra.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('enviar', () => {

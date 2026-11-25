@@ -50,7 +50,14 @@ const enviar = async (req, res) => {
   return res.json({ ok: true, data: orden, meta: {} });
 };
 
+/** POST /api/v1/bodega/ordenes-compra { proveedor_id, items: [{ producto_id, cantidad, costo_unitario? }] } */
+const crear = async (req, res) => {
+  const orden = await ordenesCompraService.crear(req.body, { usuario: usuarioDesdeRequest(req), ip: req.ip });
+  return res.status(201).json({ ok: true, data: orden, meta: {} });
+};
+
 module.exports = {
+  crear: crear,
   obtener: obtener,
   actualizar: actualizar,
   enviar: enviar

@@ -204,3 +204,18 @@ export interface ResultadoAprobacionConteo {
   ajustes: { item_id: number, producto_id: number, cantidad: number, movimiento_id: number }[];
   recalculados: { item_id: number, producto_id: number, cantidad_teorica: number, stock_actual: number }[];
 }
+
+// RF-BOD-03: OC manual (POST /ordenes-compra). Producto según GET /productos (activos)
+export interface ProductoOc {
+  id: number;
+  nombre: string;
+  stock: number;
+  proveedor_id: number;
+  costo_unitario: number;
+}
+
+export interface LineaNuevaOc {
+  producto_id: number;
+  cantidad: number;
+  costo_unitario: number;
+}
