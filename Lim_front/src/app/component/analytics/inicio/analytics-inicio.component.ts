@@ -5,6 +5,7 @@ import { AnalyticsService } from '../../../services/analytics/analytics.service'
 import { LoginService } from '../../../services/login/login.service';
 import { FilaGastosGenerales, FilaRentabilidad, PuntoTendencia, ResumenFinanciero, SerieGrafico } from '../../../model/analytics';
 import { generarMeses, mesActualSantiago } from '../compartido/filtro-periodo/filtro-periodo.component';
+import { Variacion, variacionMensual } from '../compartido/csv';
 
 // RF-BI-01a: inicio de Analytics = resumen del mes + una tarjeta por tablero. Los datos financieros
 // solo los pide el Administrador (el backend responde 403 a Operaciones). Cada dato falla por separado.
@@ -22,6 +23,8 @@ export class AnalyticsInicioComponent implements OnInit, OnDestroy {
   resumen: ResumenFinanciero | null = null;
   etiquetas: string[] = [];
   series: SerieGrafico[] = [];
+  variaciones: { ingresos: Variacion | null, egresos: Variacion | null, utilidad: Variacion | null } =
+    { ingresos: null, egresos: null, utilidad: null };
   topCliente: FilaRentabilidad | null = null;
   clientesEnPerdida: number | null = null;
   stockCritico: number | null = null;
@@ -54,10 +57,15 @@ export class AnalyticsInicioComponent implements OnInit, OnDestroy {
       .subscribe((puntos: PuntoTendencia[] | null) => {
         if (!puntos) { return; }
         this.etiquetas = puntos.map((p: PuntoTendencia): string => p.periodo);
+        this.variaciones = {
+          ingresos: variacionMensual(puntos, (p: PuntoTendencia): number => p.ingresos),
+          egresos: variacionMensual(puntos, (p: PuntoTendencia): number => p.egresos),
+          utilidad: variacionMensual(puntos, (p: PuntoTendencia): number => p.utilidad)
+        };
         this.series = [
-          { etiqueta: 'Ingresos', datos: puntos.map((p: PuntoTendencia): number => p.ingresos) },
-          { etiqueta: 'Egresos', datos: puntos.map((p: PuntoTendencia): number => p.egresos) },
-          { etiqueta: 'Utilidad', datos: puntos.map((p: PuntoTendencia): number => p.utilidad) }
+          { etiqueta: 'Ingresos', datos: puntos.map((p: PuntoTendencia): number => p.ingresos), color: 'warning' },
+          { etiqueta: 'Egresos', datos: puntos.map((p: PuntoTendencia): number => p.egresos), color: 'danger' },
+          { etiqueta: 'Utilidad', datos: puntos.map((p: PuntoTendencia): number => p.utilidad), color: 'success' }
         ];
       });
     this.pedir(this.analyticsService.rentabilidad(this.desde, this.hasta)).subscribe((r) => {

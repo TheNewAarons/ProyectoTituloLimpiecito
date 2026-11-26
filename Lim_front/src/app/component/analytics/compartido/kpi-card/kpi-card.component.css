@@ -1,0 +1,21 @@
+/* Todas las tarjetas de una fila con la misma altura, sin importar el largo del detalle: el host llena la columna
+   (la fila de Bootstrap es flex y estira las columnas) y la card lo llena descontando sus márgenes. */
+:host {
+  display: flex;
+  height: 100%;
+}
+
+.card {
+  flex: 1 1 auto;
+}
+
+/* Footer siempre al fondo para que la línea divisoria quede alineada entre tarjetas. */
+.card-footer {
+  margin-top: auto;
+}
+
+/* Reserva 2 líneas de detalle (line-height 22px del tema) para que filas distintas también midan igual;
+   un detalle más largo (pantallas angostas) solo estira su propia fila. */
+.card-footer .stats {
+  min-height: 44px;
+}

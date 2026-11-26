@@ -82,7 +82,7 @@ describe('Operaciones', () => {
     });
   });
 
-  ['/bodega/top-productos', '/bodega', '/productividad/x'].forEach((ruta) => {
+  ['/bodega/x', '/bodega', '/productividad/x'].forEach((ruta) => { // /bodega/top-productos ya existe (RF-BI-03): 200 en analytics-bodega.v1
     it('GET ' + ruta + ' pasa el gate → 404 NOT_FOUND', async () => {
       esperarError(await get(ruta, 'token-ops'), 404, 'NOT_FOUND');
     });

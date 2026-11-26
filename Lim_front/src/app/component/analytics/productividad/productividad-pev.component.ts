@@ -7,22 +7,7 @@ import {
 import { AnalyticsService } from '../../../services/analytics/analytics.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { generarMeses, idDesdeQuery, mesActualSantiago, rangoDesdeQuery } from '../compartido/filtro-periodo/filtro-periodo.component';
-
-type Columna = [string, string]; // [título, clave]
-
-/** CSV para Excel en español: separador ';', coma decimal y BOM para que respete tildes. */
-export function aCsv(columnas: Columna[], filas: object[]): string {
-  const celda = (v: any): string => {
-    if (v === null || v === undefined) return '';
-    let s = typeof v === 'number' ? String(v).replace('.', ',') : String(v);
-    // Texto que Excel interpretaría como fórmula (nombres de sector o cliente los escriben usuarios): se antepone '.
-    if (typeof v !== 'number' && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
-    return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  };
-  const lineas = [columnas.map((c: Columna) => celda(c[0])).join(';')]
-    .concat(filas.map((f: object) => columnas.map((c: Columna) => celda((f as any)[c[1]])).join(';')));
-  return '﻿' + lineas.join('\r\n');
-}
+import { Columna, descargarCsv } from '../compartido/csv';
 
 // RF-BI-04: productividad PEV — cumplimiento por trabajador, verificación por supervisor y observaciones por sector (D-BI-04-1..4).
 @Component({
@@ -160,11 +145,6 @@ export class ProductividadPevComponent implements OnInit, OnDestroy {
 
   exportar(vista: 'trabajadores' | 'supervisores' | 'sectores'): void {
     const filas: object[] = { trabajadores: this.trabajadores, supervisores: this.supervisores, sectores: this.sectores }[vista];
-    const blob = new Blob([aCsv(ProductividadPevComponent.COLUMNAS[vista], filas)], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'productividad-pev-' + vista + '-' + this.desde + '_' + this.hasta + '.csv';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000); // revocar en el mismo tick puede cortar la descarga
+    descargarCsv('productividad-pev-' + vista + '-' + this.desde + '_' + this.hasta, ProductividadPevComponent.COLUMNAS[vista], filas);
   }
 }

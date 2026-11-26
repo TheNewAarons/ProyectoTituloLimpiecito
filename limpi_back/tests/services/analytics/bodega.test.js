@@ -125,3 +125,15 @@ describe('RF-BOD-04: merma de recepciones', () => {
     expect(s.armarMerma([], R).totales).toEqual({ recibido: 0, rechazado: 0, costo_merma: 0, porcentaje_merma: 0 });
   });
 });
+
+describe('primer día del flujo nuevo', () => {
+  it('criterio RF-BI-03: la solicitud del primer día del flujo (1 dic 00:30 Santiago) cuenta en ese mes', () => {
+    const linea = {
+      producto_id: 1, producto: 'Cloro', cantidad_pedida: 4, cantidad_asignada: 4, solicitud_id: 1, estado: 'ENTREGADA',
+      created_at: new Date('2025-12-01T03:30:00Z'), entregada_at: new Date('2025-12-01T03:30:00Z'), trabajador_id: null, usuario_id: null, centro_costo_id: null
+    };
+    const r = { desde: '2025-12', hasta: '2025-12' };
+    expect(s.armarTop([linea], r, 10)[0].cantidad_pedida).toBe(4);
+    expect(s.armarConsumo([linea], r, 'mes', null)).toEqual([expect.objectContaining({ periodo: '2025-12', cantidad: 4 })]);
+  });
+});

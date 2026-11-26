@@ -12,7 +12,10 @@
       </ng-container>
     </ng-container>
   </div>
-  <div class="card-footer" *ngIf="detalle">
-    <div class="stats">{{ detalle }}</div>
+  <!-- Footer siempre presente (vacío si no hay detalle) para que todas las tarjetas tengan la misma estructura. -->
+  <div class="card-footer">
+    <div class="stats">
+      <ng-container *ngIf="variacion && !cargando">{{ variacion.pct > 0 ? '+' : '' }}{{ variacion.pct | number:'1.0-1':'es-CL' }} % vs {{ variacion.vs }}<ng-container *ngIf="detalle"> · </ng-container></ng-container>{{ detalle }}<ng-container *ngIf="!detalle && !(variacion && !cargando)">&nbsp;</ng-container>
+    </div>
   </div>
 </div>

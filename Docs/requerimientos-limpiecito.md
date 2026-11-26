@@ -48,7 +48,7 @@ Esfuerzo en T-shirt sizing: **S = 1 pt · M = 2 pts · L = 3 pts · XL = 5 pts**
 | RF-PEV-02 | Escalabilidad de tareas PEV (1 tarea → N trabajadores) | PEV/Cronograma | 🟠 Media-Alta | XL | Refactor | 5 | Reunión técnica | En progreso (02a implementado: esquema + API admin; 02b implementado: migración de datos + dual-write, PR pendiente, requiere verificación en copia de producción; 02c implementado en rama: app laboral, verificación del supervisor y guard de borrado legacy; revisión C5 aplicada; pendiente: pruebas contra MySQL real (C4) y PR) |
 | RF-BI-01 | Dashboard financiero (utilidad, tendencias, proyección) | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-01/02, FAC-01 | Implementado (PR pendiente) |
 | RF-BI-02 | Rentabilidad por cliente / centro de costo | BI/Analytics | 🔴 Alta | L | Feature nueva | 6 | CAJA-02, FAC-01, BOD-04 | Implementado (PR pendiente) |
-| RF-BI-03 | Análisis de consumo de bodega | BI/Analytics | 🟠 Media-Alta | M | Feature nueva | 6 | BOD-01..04 | Sin empezar |
+| RF-BI-03 | Análisis de consumo de bodega | BI/Analytics | 🟠 Media-Alta | M | Feature nueva | 6 | BOD-01..04 | Implementado (PR pendiente) |
 | RF-BI-04 | Productividad de trabajadores/supervisores PEV | BI/Analytics | 🟡 Media | M | Feature nueva | 7 | PEV-01/02 | 🔒 Condicionado |
 | RF-BI-05 | Predicción de demanda (app reservas) | BI/Analytics | 🟢 Baja | L | Feature nueva | 7 | — | Sin empezar |
 | RNF-SEC-01 | Mover claves JWT a variables de entorno | Transversal | 🔴 Alta | S | Refactor | 7 | — | Sin empezar |
@@ -651,7 +651,7 @@ Umbral configurable: tabla `configuracion (clave, valor)` o la que exista.
 | Stock crítico (actual vs mínimo) | productos_bodega |
 
 **Endpoints:** `GET /api/v1/analytics/bodega/top-productos` · `/frecuencia-compra` · `/consumo?agrupar=supervisor|centro_costo` · `/stock-critico`.
-**Criterios:** [ ] Datos desde el primer día de uso del flujo nuevo. [ ] Stock crítico coincide con las alertas del dashboard de bodega.
+**Criterios:** [x] Datos desde el primer día de uso del flujo nuevo: `tests/services/analytics/periodos.test.js` «el filtro parte en el mes de la primera solicitud no anulada, calculado en Santiago» y `tests/services/analytics/bodega.test.js` «criterio RF-BI-03: la solicitud del primer día del flujo … cuenta en ese mes». [x] Stock crítico coincide con las alertas del dashboard de bodega: ambos usan `SQL_BAJO_MINIMO` de `services/bodega/dashboard.js` y productos activos; `tests/api/analytics-bodega.v1.test.js` «stock-critico: misma regla que el dashboard de bodega».
 
 ### RF-BI-04 · Productividad de trabajadores/supervisores PEV — 🔒 condicionado a PEV
 **Prioridad:** 🟡 Media · **Esfuerzo:** M (2 pts) · **Sprint:** 7

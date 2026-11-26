@@ -24,6 +24,7 @@ export interface RespuestaAnalytics<T, M = MetaAnalytics> {
 export interface SerieGrafico {
   etiqueta: string;
   datos: number[];
+  color?: 'danger' | 'warning' | 'success'; // sin color: el de chart.js por defecto
 }
 
 export interface RangoPeriodo {

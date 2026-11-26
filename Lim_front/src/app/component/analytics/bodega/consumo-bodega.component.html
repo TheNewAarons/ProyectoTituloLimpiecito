@@ -61,7 +61,12 @@
             </div>
             <app-grafico tipo="bar" [enteros]="true" [titulo]="'Consumo mensual: ' + nombreProductoElegido()" [etiquetas]="etiquetas" [series]="series"></app-grafico>
 
-            <h4 class="mt-4">Productos más solicitados</h4>
+            <div class="d-flex flex-wrap align-items-center mt-4">
+              <h4 class="mr-3 mb-0">Productos más solicitados</h4>
+              <button mat-raised-button type="button" class="btn btn-info btn-sm" (click)="exportar('top')" [disabled]="!top.length">
+                <span class="btn-label"><i class="material-icons">download</i></span> Excel (CSV)
+              </button>
+            </div>
             <div class="table-responsive">
               <table class="table">
                 <thead>
@@ -120,7 +125,12 @@
             </div>
             </div>
             <div *ngIf="pestana === 'compras'" role="tabpanel">
-            <h4>Frecuencia de compra</h4>
+            <div class="d-flex flex-wrap align-items-center">
+              <h4 class="mr-3 mb-0">Frecuencia de compra</h4>
+              <button mat-raised-button type="button" class="btn btn-info btn-sm" (click)="exportar('frecuencia')" [disabled]="!frecuencia.length">
+                <span class="btn-label"><i class="material-icons">download</i></span> Excel (CSV)
+              </button>
+            </div>
             <p class="text-muted">Cada cuántos días se compra cada producto según las órdenes de compra enviadas.</p>
             <div class="table-responsive">
               <table class="table">
@@ -149,7 +159,12 @@
             </div>
             </div>
             <div *ngIf="pestana === 'merma'" role="tabpanel">
-            <h4>Merma en recepciones</h4>
+            <div class="d-flex flex-wrap align-items-center">
+              <h4 class="mr-3 mb-0">Merma en recepciones</h4>
+              <button mat-raised-button type="button" class="btn btn-info btn-sm" (click)="exportar('merma')" [disabled]="!merma.length">
+                <span class="btn-label"><i class="material-icons">download</i></span> Excel (CSV)
+              </button>
+            </div>
             <p class="text-muted">Unidades rechazadas al recibir órdenes de compra (dañadas, vencidas o que no llegaron). No entran al stock.</p>
             <div class="row">
               <div class="col-12 col-sm-6 col-lg-4">
@@ -193,6 +208,9 @@
                 <span class="btn-label"><i class="material-icons">tune</i></span>
                 Editar mínimos
               </a>
+              <button mat-raised-button type="button" class="btn btn-info btn-sm" (click)="exportar('critico')" [disabled]="!critico.length">
+                <span class="btn-label"><i class="material-icons">download</i></span> Excel (CSV)
+              </button>
             </div>
             <div class="table-responsive">
               <table class="table">
