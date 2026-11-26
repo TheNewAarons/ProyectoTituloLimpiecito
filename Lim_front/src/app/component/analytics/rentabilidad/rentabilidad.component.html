@@ -42,6 +42,12 @@
               </div>
             </div>
             <app-grafico tipo="bar" [pesos]="true" titulo="Top 10 clientes por margen" [etiquetas]="etiquetas" [series]="series"></app-grafico>
+            <div class="d-flex flex-wrap align-items-center mt-4">
+              <h4 class="mr-3 mb-0">Detalle por cliente</h4>
+              <button mat-raised-button type="button" class="btn btn-info btn-sm" (click)="exportar()" [disabled]="!filas.length">
+                <span class="btn-label"><i class="material-icons">download</i></span> Excel (CSV)
+              </button>
+            </div>
             <div class="table-responsive">
               <table class="table">
                 <thead>

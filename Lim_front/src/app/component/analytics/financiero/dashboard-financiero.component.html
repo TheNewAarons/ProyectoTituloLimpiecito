@@ -27,7 +27,7 @@
             <div class="row">
               <div class="col-12 col-sm-6 col-lg-4">
                 <app-kpi-card titulo="Utilidad real del mes" icono="trending_up" color="success" [cargando]="cargando"
-                  [valor]="resumen ? resumen.utilidad_real.utilidad : null"
+                  [valor]="resumen ? resumen.utilidad_real.utilidad : null" [variacion]="variacionUtilidad"
                   [detalle]="resumen ? (resumen.utilidad_real.cerrada ? 'Mes cerrado' : 'Mes abierto (provisional)') : ''"></app-kpi-card>
               </div>
               <div class="col-12 col-sm-6 col-lg-4">
@@ -38,7 +38,7 @@
               <div class="col-12 col-sm-6 col-lg-4">
                 <app-kpi-card titulo="Proyección de utilidad (Estimación)" icono="timeline" color="rose" [cargando]="cargando"
                   [valor]="proyeccionUtilidad"
-                  [detalle]="resumen ? (resumen.proyeccion.insuficiente ? 'Datos insuficientes' : 'Estimación: promedio móvil de 3 meses') : ''"></app-kpi-card>
+                  [detalle]="resumen ? (resumen.proyeccion.insuficiente ? 'Datos insuficientes' : 'Estimación: promedio móvil de 3 meses · Regresión lineal 6 meses: ' + (proyeccionRegresion !== null ? '$ ' + (proyeccionRegresion | number:'1.0-0':'es-CL') : 'requiere 6 meses de historia')) : ''"></app-kpi-card>
               </div>
               <div class="col-12 col-sm-6 col-lg-4">
                 <app-kpi-card titulo="Liquidaciones pendientes" icono="receipt" color="warning" [cargando]="cargando"
@@ -57,6 +57,11 @@
               </div>
             </div>
             <app-grafico tipo="line" [pesos]="true" titulo="Ingresos, egresos y utilidad ({{ desde }} a {{ hasta }})" [etiquetas]="etiquetas" [series]="series"></app-grafico>
+            <div class="d-flex justify-content-end">
+              <button mat-raised-button type="button" class="btn btn-info btn-sm" (click)="exportar()" [disabled]="!puntos.length">
+                <span class="btn-label"><i class="material-icons">download</i></span> Excel (CSV)
+              </button>
+            </div>
           </div>
         </div>
       </div>

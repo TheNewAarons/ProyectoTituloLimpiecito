@@ -4,6 +4,9 @@ import { SerieGrafico } from '../../../../model/analytics';
 
 export type TipoGrafico = 'line' | 'bar';
 
+// chart.js necesita el color como texto: mismos valores que $brand-danger/$brand-warning/$brand-success (GUIA-ESTILO-UI §2).
+const COLORES: { [nombre: string]: string } = { danger: '#f44336', warning: '#ff9800', success: '#4caf50' };
+
 // RF-BI-01a: envoltorio de ng2-charts. Colores por defecto de chart.js (D-150, sin hex nuevos).
 @Component({
   selector: 'app-grafico',
@@ -42,6 +45,11 @@ export class GraficoComponent implements OnChanges {
   }
 
   ngOnChanges(): void {
-    this.datasets = (this.series || []).map((s: SerieGrafico): ChartDataSets => ({ label: s.etiqueta, data: s.datos, fill: false }));
+    this.datasets = (this.series || []).map((s: SerieGrafico): ChartDataSets => {
+      const color = s.color ? COLORES[s.color] : undefined;
+      return color
+        ? { label: s.etiqueta, data: s.datos, fill: false, borderColor: color, backgroundColor: color, pointBackgroundColor: color }
+        : { label: s.etiqueta, data: s.datos, fill: false };
+    });
   }
 }

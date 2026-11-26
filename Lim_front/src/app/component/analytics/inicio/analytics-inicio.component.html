@@ -1,20 +1,29 @@
 <div class="main-content">
   <div class="container-fluid">
     <ng-container *ngIf="esAdmin">
+      <!-- Alertas: cada una lleva a su tablero con el período ya puesto. -->
+      <div class="alert alert-warning" *ngIf="resumen?.alerta_utilidad.activa">
+        Alerta de utilidad baja ({{ resumen.alerta_utilidad.motivo === 'UTILIDAD_REAL_BAJA' ? 'utilidad real del mes' : 'utilidad proyectada' }}).
+        <a routerLink="../financiero" [queryParams]="{ desde: desde, hasta: hasta }">Ver dashboard financiero</a>
+      </div>
+      <div class="alert alert-danger" *ngIf="clientesEnPerdida">
+        {{ clientesEnPerdida }} {{ clientesEnPerdida === 1 ? 'cliente en pérdida' : 'clientes en pérdida' }} en los últimos 3 meses.
+        <a routerLink="../rentabilidad" [queryParams]="{ desde: desde, hasta: hasta }">Ver rentabilidad</a>
+      </div>
       <div class="row">
         <div class="col-12 col-sm-6 col-lg-3">
           <app-kpi-card titulo="Ingresos del mes" icono="call_received" color="success" [cargando]="cargando"
-            [valor]="resumen ? resumen.utilidad_real.ingresos : null"
+            [valor]="resumen ? resumen.utilidad_real.ingresos : null" [variacion]="variaciones.ingresos"
             [detalle]="resumen ? (resumen.utilidad_real.cerrada ? 'Mes cerrado' : 'Mes abierto (provisional)') : ''"></app-kpi-card>
         </div>
         <div class="col-12 col-sm-6 col-lg-3">
           <app-kpi-card titulo="Egresos del mes" icono="call_made" color="warning" [cargando]="cargando"
-            [valor]="resumen ? resumen.utilidad_real.egresos : null"
+            [valor]="resumen ? resumen.utilidad_real.egresos : null" [variacion]="variaciones.egresos"
             [detalle]="resumen ? 'Por pagar: $ ' + (resumen.por_pagar.monto | number:'1.0-0':'es-CL') : ''"></app-kpi-card>
         </div>
         <div class="col-12 col-sm-6 col-lg-3">
           <app-kpi-card titulo="Utilidad del mes" icono="trending_up" color="info" [cargando]="cargando"
-            [valor]="resumen ? resumen.utilidad_real.utilidad : null"
+            [valor]="resumen ? resumen.utilidad_real.utilidad : null" [variacion]="variaciones.utilidad"
             [detalle]="resumen ? 'Ingresos menos egresos' : ''"></app-kpi-card>
         </div>
         <div class="col-12 col-sm-6 col-lg-3">
@@ -36,6 +45,11 @@
         </div>
       </div>
     </ng-container>
+
+    <div class="alert alert-warning" *ngIf="stockCritico">
+      {{ stockCritico }} {{ stockCritico === 1 ? 'producto bajo el mínimo' : 'productos bajo el mínimo' }} de stock.
+      <a routerLink="../bodega" [queryParams]="{ pestana: 'critico' }">Ver stock crítico</a>
+    </div>
 
     <div class="row">
       <div class="col-12 col-md-6" *ngIf="esAdmin">
@@ -67,7 +81,7 @@
             </p>
           </div>
           <div class="card-footer justify-content-end">
-            <a mat-raised-button routerLink="../rentabilidad" class="btn btn-info btn-sm">Ver</a>
+            <a mat-raised-button routerLink="../rentabilidad" [queryParams]="{ desde: desde, hasta: hasta }" class="btn btn-info btn-sm">Ver</a>
           </div>
         </div>
       </div>
@@ -85,7 +99,7 @@
             </p>
           </div>
           <div class="card-footer justify-content-end">
-            <a mat-raised-button routerLink="../bodega" class="btn btn-info btn-sm">Ver</a>
+            <a mat-raised-button routerLink="../bodega" [queryParams]="{ desde: desde, hasta: hasta }" class="btn btn-info btn-sm">Ver</a>
           </div>
         </div>
       </div>
@@ -100,7 +114,7 @@
             <p class="text-muted" *ngIf="cumplimiento !== null">Cumplimiento últimos 3 meses: {{ cumplimiento | number:'1.0-1':'es-CL' }} %</p>
           </div>
           <div class="card-footer justify-content-end">
-            <a mat-raised-button routerLink="../productividad" class="btn btn-info btn-sm">Ver</a>
+            <a mat-raised-button routerLink="../productividad" [queryParams]="{ desde: desde, hasta: hasta }" class="btn btn-info btn-sm">Ver</a>
           </div>
         </div>
       </div>

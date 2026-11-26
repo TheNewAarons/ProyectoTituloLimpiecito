@@ -76,6 +76,19 @@ export class VistaCajaComponent implements OnInit {
   public tablaEgresos = [];
   public detalleEgreso: detalleEgreso;
 
+  //LISTAS COLAPSADAS: SOLO LAS PRIMERAS FILAS_VISIBLES HASTA QUE SE DESPLIEGUEN
+  public readonly FILAS_VISIBLES = 5;
+  public desplegada: { [lista: string]: boolean } = {};
+
+  //BUSCADOR POR LISTA: TEXTO ESCRITO Y COLUMNAS (RUTAS DE CAMPO) DONDE SE BUSCA
+  public busqueda: { [lista: string]: string } = {};
+  private readonly camposBusqueda: { [lista: string]: string[] } = {
+    centros: ['numero_cc', 'cliente.representante'],
+    liquidaciones: ['trabajador', 'numero_cc', 'cliente'],
+    insumos: ['producto'],
+    egresos: ['numero_cc', 'centro']
+  };
+
   constructor(
     private centroCostoService: CentroCostoService, private _route: ActivatedRoute,
     private cajaService: CajaService, private egresoService: EgresoService,
@@ -322,15 +335,60 @@ export class VistaCajaComponent implements OnInit {
     this.alertaService.cerrarAlerta()
   } //TERMINA CALCULAR DATOS
 
-  //METODO PARA IMPRIMIR O EXPORTAR PDF
-  imprimir() {
+  //FILAS A MOSTRAR: FILTRADAS POR EL BUSCADOR; CON BUSQUEDA O DESPLEGADA SE VEN TODAS, SI NO LAS PRIMERAS FILAS_VISIBLES
+  filas<T>(lista: T[], clave: string): T[] {
+    const filtradas = this.filtrar(lista || [], clave);
+    if (this.desplegada[clave] || this.normalizar(this.busqueda[clave])) {
+      return filtradas;
+    }
+    return filtradas.slice(0, this.FILAS_VISIBLES);
+  }
+
+  private filtrar<T>(lista: T[], clave: string): T[] {
+    const texto = this.normalizar(this.busqueda[clave]);
+    if (!texto) {
+      return lista;
+    }
+    return lista.filter((fila) =>
+      this.camposBusqueda[clave].some((ruta) => this.normalizar(this.valorCampo(fila, ruta)).indexOf(texto) !== -1)
+    );
+  }
+
+  //LEE UN CAMPO ANIDADO ('cliente.representante') SIN FALLAR SI FALTA ALGUN NIVEL
+  private valorCampo(fila: unknown, ruta: string): string {
+    const valor = ruta.split('.').reduce((obj, campo) => (obj ? (obj as { [k: string]: unknown })[campo] : null), fila as unknown);
+    return valor == null ? '' : String(valor);
+  }
+
+  //MINUSCULAS Y SIN TILDES PARA QUE "Jose" ENCUENTRE "José"
+  private normalizar(texto: string): string {
+    return (texto || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
+  alternarLista(clave: string): void {
+    this.desplegada[clave] = !this.desplegada[clave];
+  }
+
+  //METODO PARA IMPRIMIR O EXPORTAR PDF (EL PDF SIEMPRE LLEVA LAS LISTAS COMPLETAS)
+  imprimir(): void {
     const options = {
       filename: 'DetalleCaja.pdf',
       margin: [10, 10, 10, 10],
       html2canvas: {},
       jsPDF: { orientation: 'portrait', format: 'letter' }
     };
-    const content: Element = document.getElementById('imprimir');
-    html2pdf().from(content).set(options).save();
+    const estadoPrevio = this.desplegada;
+    const busquedaPrevia = this.busqueda;
+    const restaurar = (): void => {
+      this.desplegada = estadoPrevio;
+      this.busqueda = busquedaPrevia;
+    };
+    this.desplegada = { centros: true, liquidaciones: true, insumos: true, egresos: true };
+    this.busqueda = {};
+    //esperar a que Angular renderice las filas completas antes de capturar
+    setTimeout(() => {
+      const content: Element = document.getElementById('imprimir');
+      html2pdf().from(content).set(options).save().then(restaurar, restaurar);
+    });
   }
 }

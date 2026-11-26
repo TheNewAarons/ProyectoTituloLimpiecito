@@ -1,3 +1,19 @@
 table > thead > tr > th {
   font-weight: 1000;
 }
+
+/* Ícono a la izquierda del monto y sin alto propio: el saldo queda alineado con las demás filas. */
+.icono-provisional {
+  font-size: 16px;
+  line-height: 1;
+  vertical-align: text-bottom;
+  margin-right: 4px;
+}
+
+/* Candado de estado junto al mes: un solo color, la forma (abierto/cerrado) indica el estado. */
+.icono-estado {
+  font-size: 16px;
+  line-height: 1;
+  vertical-align: text-bottom;
+  margin-left: 6px;
+}

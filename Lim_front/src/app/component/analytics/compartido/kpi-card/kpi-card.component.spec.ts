@@ -73,8 +73,10 @@ describe('KpiCardComponent', () => {
     expect(el.querySelector('.card-footer .stats').textContent).toContain('Mes actual');
   });
 
-  it('sin detalle no renderiza footer', () => {
+  it('sin detalle mantiene el footer vacío (todas las tarjetas con la misma estructura y altura)', () => {
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.card-footer')).toBeNull();
+    const footer = fixture.nativeElement.querySelector('.card-footer .stats');
+    expect(footer).not.toBeNull();
+    expect(footer.textContent.trim()).toBe('');
   });
 });

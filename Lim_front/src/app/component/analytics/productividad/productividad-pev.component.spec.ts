@@ -1,4 +1,5 @@
-import { ProductividadPevComponent, aCsv } from './productividad-pev.component';
+import { ProductividadPevComponent } from './productividad-pev.component';
+import { aCsv } from '../compartido/csv';
 
 describe('ProductividadPevComponent', () => {
   it('por defecto cubre los últimos 3 meses', () => {
