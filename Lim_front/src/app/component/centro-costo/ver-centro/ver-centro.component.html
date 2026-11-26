@@ -92,6 +92,8 @@
               </span>
               Cerrar
             </button>
+            <!-- RNF-SEC-02: quién cerró el centro de costo y con qué valores -->
+            <app-historial class="float-right" entidad="centro_costos" [entidadId]="centro?.id" [titulo]="'Centro de costo N° ' + (centro?.numero_cc || '')"></app-historial>
             <h4 *ngIf="centro?.estado == 0 && usuario.role.nombre != 'APOYO_LVL_1'"><strong>LISTA DE TRABAJADORES</strong></h4>
             <!-- TABLA DE TRABAJADORES -->
             <div class="table-responsive" *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
@@ -148,6 +150,7 @@
                       >
                         <i class="material-icons">close</i>
                       </button>
+                      <app-historial *ngIf="trabajador.liquidacione" [compacto]="true" entidad="liquidaciones" [entidadId]="trabajador.liquidacione.id" [titulo]="'Liquidación de ' + trabajador.trabajadore.nombre + ' ' + trabajador.trabajadore.apellido"></app-historial>
                     </td>
                   </tr>
                 </tbody>
@@ -204,6 +207,7 @@
                       >
                         <i class="material-icons">done</i>
                       </button>
+                      <app-historial [compacto]="true" entidad="lista_insumos" [entidadId]="listaInsumo.id" [titulo]="'Lista de insumos del ' + (listaInsumo.fecha | date: 'dd/MM/yyyy')"></app-historial>
                       <button
                         
                         mat-raised-button
@@ -296,6 +300,7 @@
                       >
                         <i class="material-icons">close</i>
                       </button>
+                      <app-historial [compacto]="true" entidad="cc_egresos" [entidadId]="egreso.id" titulo="Egreso del centro de costo"></app-historial>
                     </td>
                   </tr>
                 </tbody>
@@ -348,6 +353,7 @@
                       >
                         <i class="material-icons">close</i>
                       </button>
+                      <app-historial [compacto]="true" entidad="cc_ingresos" [entidadId]="ingreso.id" titulo="Ingreso del centro de costo"></app-historial>
                     </td>
                   </tr>
                 </tbody>

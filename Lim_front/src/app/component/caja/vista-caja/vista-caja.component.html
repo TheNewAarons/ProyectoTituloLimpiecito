@@ -129,6 +129,8 @@
                   >
                     <i class="material-icons">lock_open</i> Reabrir mes
                   </button>
+                  <!-- RNF-SEC-02: quién cerró / reabrió el mes, cuándo y con qué motivo -->
+                  <app-historial entidad="cajas" [entidadId]="caja?.id" [titulo]="'Caja ' + (periodo || '')"></app-historial>
                 </div>
               </div>
             </div>
