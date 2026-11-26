@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prueba módulo web</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; background: #f5f6f8; color: #222; }
+  h1 { margin: 0 0 4px; } h2 { margin-top: 32px; border-bottom: 2px solid #ccc; padding-bottom: 4px; }
+  .meta { color: #666; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .card { background: #fff; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .card img { width: 100%; max-height: 160px; object-fit: cover; border-radius: 4px; }
+  .card h3 { margin: 6px 0; } .precio { font-weight: bold; color: #0a7; }
+  .err { color: #c00; } .tag { font-size: 12px; background: #eef; padding: 2px 6px; border-radius: 4px; }
+  input { width: 360px; max-width: 100%; }
+</style>
+</head>
+<body>
+<h1>Prueba módulo web (temporal)</h1>
+<label class="meta">Base API: <input id="base" value="http://localhost:3000/web-limpiecito"></label>
+<button onclick="cargar()">Recargar</button>
+
+<h2>Catálogo <span class="meta">GET /api/v1/public/catalogo</span></h2>
+<div id="catalogo" class="grid"></div>
+
+<h2>Publicaciones <span class="meta">GET /api/v1/public/publicaciones</span></h2>
+<div id="publicaciones" class="grid"></div>
+
+<h2>Documentos públicos <span class="meta">GET /api/v1/public/documentos</span></h2>
+<div id="documentos" class="grid"></div>
+
+<h2>Anuncios legacy <span class="meta">GET /anuncios_web/obtener_anuncio/obtener/</span></h2>
+<div id="anuncios" class="grid"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const clp = (n) => n == null ? 'Sin precio' : '$' + Number(n).toLocaleString('es-CL');
+// imagen_url ya trae el prefijo (/web-limpiecito/...): se resuelve contra el origen del backend.
+const img = (u) => u ? `<img src="${esc(new URL(u, $('base').value).href)}" alt="imagen no encontrada" title="imagen no encontrada">` : '';
+
+async function pintar(id, ruta, extraer, plantilla) {
+  const el = $(id);
+  if (!el.innerHTML) el.innerHTML = 'Cargando…'; // solo la primera vez: evita parpadeo en cada refresco
+  try {
+    // no-store: el backend manda max-age=60 y el navegador mostraría datos viejos al recargar.
+    const r = await fetch($('base').value + ruta, { cache: 'no-store' });
+    const json = await r.json();
+    if (!r.ok) throw new Error(r.status + ' ' + JSON.stringify(json));
+    const items = extraer(json);
+    el.innerHTML = items.length ? items.map(plantilla).join('') : '<p class="meta">Sin registros.</p>';
+  } catch (e) {
+    el.innerHTML = `<p class="err">Error: ${esc(e.message)}</p>`;
+  }
+}
+
+function cargar() {
+  pintar('catalogo', '/api/v1/public/catalogo', (j) => j.data, (c) => `
+    <div class="card">${img(c.imagen_url)}
+      <span class="tag">${esc(c.categoria || 'Sin categoría')}</span> <span class="meta">orden ${esc(c.orden)}</span>
+      <h3>${esc(c.nombre)}</h3><p>${esc(c.descripcion)}</p>
+      <div class="precio">${clp(c.precio)}</div>
+      ${'reservable_en_app' in c ? `<p class="meta">App: ${c.reservable_en_app ? `<a href="${esc(c.reserva_url)}">reservar</a>` : 'no reservable'}</p>` : ''}
+    </div>`);
+
+  // cuerpo es HTML del editor del Admin: se renderiza tal cual (página de prueba local).
+  pintar('publicaciones', '/api/v1/public/publicaciones', (j) => j.data, (p) => `
+    <div class="card">${img(p.imagen_url)}
+      <h3>${esc(p.titulo)}</h3><div>${p.cuerpo || ''}</div>
+      <p class="meta">Publicada ${new Date(p.fecha_publicacion).toLocaleString('es-CL', { timeZone: 'America/Santiago' })}
+      ${p.fecha_expiracion ? '· expira ' + new Date(p.fecha_expiracion).toLocaleDateString('es-CL', { timeZone: 'America/Santiago' }) : ''}</p>
+    </div>`);
+
+  pintar('documentos', '/api/v1/public/documentos', (j) => j.data, (d) => `
+    <div class="card">
+      <span class="tag">${esc(d.categoria || 'Sin categoría')}</span> <span class="meta">id ${esc(d.id)}</span>
+      <h3>${esc(d.titulo)}</h3>
+      <p class="meta">Publicado ${d.fecha_publicacion ? new Date(d.fecha_publicacion).toLocaleString('es-CL', { timeZone: 'America/Santiago' }) : '—'}</p>
+      <a href="${esc($('base').value + '/api/v1/public/documentos/' + encodeURIComponent(d.id) + '/descargar')}" target="_blank" rel="noopener">Descargar PDF</a>
+    </div>`);
+
+  pintar('anuncios', '/anuncios_web/obtener_anuncio/obtener/', (j) => j.anuncios || [], (a) => `
+    <div class="card">${a.imagen ? img('/web-limpiecito/' + a.imagen) : ''}
+      <h3>${esc(a.titulo)}</h3><strong>${esc(a.sub_titulo)}</strong><p>${esc(a.descripcion)}</p>
+    </div>`);
+}
+cargar();
+// shortcut: polling cada 5 s para ver cambios del Admin sin recargar; basta para una página de prueba.
+setInterval(cargar, 5000);
+</script>
+</body>
+</html>
