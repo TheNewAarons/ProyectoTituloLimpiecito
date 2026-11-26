@@ -77,6 +77,7 @@
                           <i class="material-icons">close</i>
                         </button>
                       </ng-container>
+                      <app-historial [compacto]="true" entidad="cc_ingresos" [entidadId]="ingreso.id" titulo="Ingreso"></app-historial>
                     </td>
                   </tr>
                   <tr *ngIf="!ingresosFiltrados.length">

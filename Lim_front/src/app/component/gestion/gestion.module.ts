@@ -23,6 +23,7 @@ import { TareasPevComponent } from './tareas-pev/tareas-pev.component';
 import { GestionRoutes } from './gestion.routing';
 
 import { MaterialModule } from '../../app.module';
+import { HistorialModule } from '../historial/historial.module'; // RNF-SEC-02: botón Historial
 
 import { NgxCleaveDirectiveModule } from 'ngx-cleave-directive';
 
@@ -39,6 +40,7 @@ import { DialogTareaEditarNombreComponent } from './shared/dialog-tarea-editar-n
 @NgModule({
   imports: [
     CommonModule,
+    HistorialModule,
     RouterModule.forChild(GestionRoutes),
     NgbModule,
     FormsModule,

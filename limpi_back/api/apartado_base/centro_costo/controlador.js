@@ -1,4 +1,7 @@
 const logicaDB = require('./logica');
+// RNF-SEC-02 (AUT-020): el cierre queda auditado (quién, cuándo, valores antes/después).
+const { cerrarCentroCostoAuditado } = require('../../../services/centro-costo/cierre');
+const { actorDeRequest } = require('../../../services/auditoria/actor');
 
 const crearCentroCosto = async (req, res) => {
     const centro_costo = JSON.parse(req.body.centro_costo);
@@ -71,7 +74,7 @@ const cerrarCentroCosto = async (req, res) => {
     try {
         let centro = await logicaDB.obtenerCentroCostoIdDB(req.params.id)
         if (centro) {
-            filas = await logicaDB.editarCentroCostoDB(req.params.id, centroData)
+            const filas = await cerrarCentroCostoAuditado(req.params.id, centroData, actorDeRequest(req))
             return res.json({ filas });
         } else {
             return res.send('error: ' + error);
