@@ -9,6 +9,13 @@ const AppError = require('../../../libs/app-error');
 const Auditoria = require('../../../modelos/sistema_base/Auditoria');
 const Usuario = require('../../../modelos/sistema_base/Usuario');
 const Role = require('../../../modelos/sistema_base/Role');
+const Caja = require('../../../modelos/sistema_base/Caja');
+const CentroCosto = require('../../../modelos/sistema_base/Centro_costo');
+const CcEgreso = require('../../../modelos/sistema_base/CcEgreso');
+const CcIngreso = require('../../../modelos/sistema_base/CcIngreso');
+const ListaInsumo = require('../../../modelos/sistema_base/Lista_insumo');
+const CentroTrabajador = require('../../../modelos/sistema_base/Centro_costo_trabajadore');
+const Egreso = require('../../../modelos/sistema_base/Egreso');
 const { serializar } = require('./controlador');
 
 const LIMITE = 100;
@@ -63,4 +70,56 @@ async function historial(req, res) {
   return res.json({ ok: true, data: data, meta: { entidad: entidad, entidad_id: entidadId, limite: LIMITE, hay_mas: hayMas } });
 }
 
-module.exports = { historial };
+const LIMITE_CAJA = 300;
+
+function ids(filas, campo) {
+  return filas.map((f) => f[campo || 'id']).filter((v) => v !== null && v !== undefined).map(String);
+}
+
+/**
+ * GET /api/v1/auditoria/historial-caja?caja_id= — TODO lo auditado de una caja mensual: la caja, sus centros de
+ * costo y lo que cuelga de ellos (egresos/ingresos CC, listas de insumos, liquidaciones) y sus egresos generales.
+ */
+async function historialCaja(req, res) {
+  const cajaId = Number((req.query || {}).caja_id);
+  if (!Number.isInteger(cajaId) || cajaId <= 0) throw new AppError('CAMPO_INVALIDO', 'caja_id invalido', 400, { campo: 'caja_id' });
+  const caja = await Caja.findById(cajaId);
+  if (!caja) throw new AppError('NOT_FOUND', 'caja no encontrada', 404);
+
+  const centros = await CentroCosto.findAll({ where: { cajaId: cajaId }, attributes: ['id'] });
+  const centroIds = ids(centros);
+  const porCentro = { centroCostoId: { [Op.in]: centroIds.length ? centroIds : [-1] } };
+  const [ccEgresos, ccIngresos, listas, asignaciones, egresos] = await Promise.all([
+    CcEgreso.findAll({ where: porCentro, attributes: ['id'] }),
+    CcIngreso.findAll({ where: porCentro, attributes: ['id'] }),
+    ListaInsumo.findAll({ where: porCentro, attributes: ['id'] }),
+    CentroTrabajador.findAll({ where: porCentro, attributes: ['liquidacioneId'] }),
+    Egreso.findAll({ where: { cajaId: cajaId }, attributes: ['id'] })
+  ]);
+
+  const condiciones = [
+    { entidad: 'cajas', entidad_id: { [Op.in]: [String(cajaId), String(caja.periodo)] } },
+    // recálculos en cascada se auditan con el rango 'desde..hasta'
+    { entidad: 'cajas', entidad_id: { [Op.like]: '%..%' } }
+  ];
+  [['centro_costos', centroIds], ['cc_egresos', ids(ccEgresos)], ['cc_ingresos', ids(ccIngresos)],
+    ['lista_insumos', ids(listas)], ['liquidaciones', ids(asignaciones, 'liquidacioneId')], ['egresos', ids(egresos)]]
+    .forEach(([entidad, lista]) => { if (lista.length) condiciones.push({ entidad: entidad, entidad_id: { [Op.in]: lista } }); });
+
+  const periodo = String(caja.periodo || '');
+  const filas = (await Auditoria.findAll({
+    where: { [Op.or]: condiciones },
+    order: [['created_at', 'DESC'], ['id', 'DESC']],
+    limit: LIMITE_CAJA + 50
+  })).filter((f) => {
+    const rango = String(f.entidad_id).split('..');
+    return rango.length !== 2 || (periodo >= rango[0] && periodo <= rango[1]);
+  });
+  const hayMas = filas.length > LIMITE_CAJA;
+  const visibles = filas.slice(0, LIMITE_CAJA);
+  const nombres = await nombresDeUsuarios(visibles);
+  const data = visibles.map((f) => Object.assign(serializar(f), { quien: quien(f, nombres) }));
+  return res.json({ ok: true, data: data, meta: { caja_id: cajaId, periodo: periodo, limite: LIMITE_CAJA, hay_mas: hayMas } });
+}
+
+module.exports = { historial, historialCaja };

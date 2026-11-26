@@ -26,7 +26,7 @@ jest.mock('../../api/apartado_base/liquidacion/controlador', () => ({
   obtenerLiquidacionId: jest.fn(), obtenerTodasLiquidaciones: jest.fn(), buscarLiquidaciones: jest.fn()
 }));
 
-const { identificarOpcional } = require('../../middleware/auth');
+const { identificarOpcional, autenticar } = require('../../middleware/auth');
 
 const rutasCaja = require('../../api/apartado_base/caja/routes');
 const rutasStock = require('../../api/apartado_base/stock_rapido/routes');
@@ -39,12 +39,19 @@ function handlers(router, metodo, path) {
 }
 
 describe('identificarOpcional montado en rutas legacy que auditan', () => {
-  it('caja: crear/editar/editar-cierre lo llevan; cerrar y GET no', () => {
-    expect(handlers(rutasCaja, 'post', '/crear')).toContain(identificarOpcional);
-    expect(handlers(rutasCaja, 'put', '/editar/:id')).toContain(identificarOpcional);
-    expect(handlers(rutasCaja, 'put', '/editar-cierre/:id')).toContain(identificarOpcional);
-    expect(handlers(rutasCaja, 'put', '/cerrar/:idCaja')).not.toContain(identificarOpcional);
-    expect(handlers(rutasCaja, 'get', '/obtener')).not.toContain(identificarOpcional);
+  it('caja: todo exige token de Admin (autenticar deja el usuario para auditar) salvo obtener-activa', () => {
+    const soloAdmin = [
+      ['post', '/crear'],
+      ['put', '/editar/:id'],
+      ['put', '/editar-cierre/:id'],
+      ['put', '/cerrar/:idCaja'],
+      ['get', '/obtener'],
+      ['get', '/obtener-cajas'],
+      ['get', '/obtener-unico/:id']
+    ];
+    soloAdmin.forEach(([metodo, path]) => expect(handlers(rutasCaja, metodo, path)).toContain(autenticar));
+    // otros roles (Centro de Costo, Egresos, Dashboard) consultan la caja activa
+    expect(handlers(rutasCaja, 'get', '/obtener-activa')).not.toContain(autenticar);
   });
 
   it('stock_rapido: crear y eliminar lo llevan; obtener no', () => {

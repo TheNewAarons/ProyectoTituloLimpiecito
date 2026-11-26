@@ -20,7 +20,13 @@ jest.mock('../../modelos/sistema_intranet/acceso_laboral', () => ({ findOne: jes
 jest.mock('../../modelos/sistema_base/Auditoria', () => ({ findAll: jest.fn(), findAndCountAll: jest.fn(), findById: jest.fn() }));
 jest.mock('../../modelos/sistema_bodega/Movimiento_bodega', () => ({}));
 jest.mock('../../modelos/sistema_base/Producto', () => ({}));
-jest.mock('../../modelos/sistema_base/Centro_costo', () => ({ findById: jest.fn(), update: jest.fn() }));
+jest.mock('../../modelos/sistema_base/Centro_costo', () => ({ findById: jest.fn(), update: jest.fn(), findAll: jest.fn() }));
+jest.mock('../../modelos/sistema_base/Caja', () => ({ findById: jest.fn() }));
+jest.mock('../../modelos/sistema_base/CcEgreso', () => ({ findAll: jest.fn() }));
+jest.mock('../../modelos/sistema_base/CcIngreso', () => ({ findAll: jest.fn() }));
+jest.mock('../../modelos/sistema_base/Lista_insumo', () => ({ findAll: jest.fn() }));
+jest.mock('../../modelos/sistema_base/Centro_costo_trabajadore', () => ({ findAll: jest.fn() }));
+jest.mock('../../modelos/sistema_base/Egreso', () => ({ findAll: jest.fn() }));
 jest.mock('../../api/apartado_base/centro_costo/logica', () => ({ obtenerCentroCostoIdDB: jest.fn(), editarCentroCostoDB: jest.fn() }));
 jest.mock('../../services/auditoria', () => {
   const real = jest.requireActual('../../services/auditoria');
@@ -28,6 +34,7 @@ jest.mock('../../services/auditoria', () => {
 });
 
 const express = require('express');
+const Op = require('sequelize').Op;
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const Auditoria = require('../../modelos/sistema_base/Auditoria');
@@ -37,6 +44,9 @@ const { auditar } = require('../../services/auditoria');
 const { autenticar, requerirRol } = require('../../middleware/auth');
 const { manejadorErrores } = require('../../middleware/errores');
 const { ROL_ADMIN_NOMBRES } = require('../../services/constantes');
+
+const Caja = require('../../modelos/sistema_base/Caja');
+const modelo = (n) => require('../../modelos/sistema_base/' + n);
 
 const CLAVE = 'clave-de-prueba-rnf-sec-02';
 const ADMIN = jwt.sign({ id: 1, correo: 'u1@prueba.cl', roleId: 1 }, CLAVE);
@@ -135,5 +145,44 @@ describe('PUT /centro_costo/cerrar/:id (AUT-020)', () => {
     expect((await cerrar(APOYO)).status).toBe(403);
     expect(Centro.update).not.toHaveBeenCalled();
     expect(auditar).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/v1/auditoria/historial-caja', () => {
+  const historialCaja = (q, t) => conToken(request(app()).get('/api/v1/auditoria/historial-caja').query(q), t);
+  const fila = (o) => Object.assign({ id: 1, usuario_id: 1, contexto_usuario: 'usuarios', entidad: 'cajas', entidad_id: '13', accion: 'CIERRE',
+    valores_antes: null, valores_despues: null, motivo: null, ip: '::1', created_at: new Date('2026-11-25T15:00:00Z') }, o);
+
+  beforeEach(() => {
+    Caja.findById.mockResolvedValue({ id: 13, periodo: '2026-11' });
+    Centro.findAll.mockResolvedValue([{ id: 50 }]);
+    modelo('CcEgreso').findAll.mockResolvedValue([{ id: 7 }]);
+    modelo('CcIngreso').findAll.mockResolvedValue([]);
+    modelo('Lista_insumo').findAll.mockResolvedValue([]);
+    modelo('Centro_costo_trabajadore').findAll.mockResolvedValue([{ liquidacioneId: 30 }, { liquidacioneId: null }]);
+    modelo('Egreso').findAll.mockResolvedValue([{ id: 90 }]);
+  });
+
+  it('junta la caja y sus movimientos; descarta cascadas de otros meses', async () => {
+    Auditoria.findAll.mockResolvedValue([
+      fila(),
+      fila({ id: 2, entidad: 'cc_egresos', entidad_id: '7', accion: 'CREAR' }),
+      fila({ id: 3, entidad_id: '2026-11..2026-12', accion: 'RECALCULO_CASCADA' }),
+      fila({ id: 4, entidad_id: '2026-12..2026-12', accion: 'RECALCULO_CASCADA' })
+    ]);
+    const r = await historialCaja({ caja_id: '13' }, ADMIN);
+    expect(r.status).toBe(200);
+    expect(r.body.data.map((d) => d.id)).toEqual([1, 2, 3]);
+    expect(r.body.data[1]).toMatchObject({ entidad: 'cc_egresos', quien: { nombre: 'Ana Soto' } });
+    const entidades = Auditoria.findAll.mock.calls[0][0].where[Op.or].map((c) => c.entidad);
+    expect(entidades).toEqual(['cajas', 'cajas', 'centro_costos', 'cc_egresos', 'liquidaciones', 'egresos']);
+  });
+
+  it('valida caja_id (400), caja inexistente (404) y exige Administrador', async () => {
+    expect((await historialCaja({ caja_id: 'x' }, ADMIN)).status).toBe(400);
+    Caja.findById.mockResolvedValue(null);
+    expect((await historialCaja({ caja_id: '99' }, ADMIN)).status).toBe(404);
+    expect((await historialCaja({ caja_id: '13' })).status).toBe(401);
+    expect((await historialCaja({ caja_id: '13' }, OPERACIONES)).status).toBe(403);
   });
 });

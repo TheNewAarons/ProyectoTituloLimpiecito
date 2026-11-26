@@ -6,6 +6,8 @@ import { environment } from '../../../environments/environment';
 // RNF-SEC-02: un registro de la auditoría con el nombre de quien actuó (GET /api/v1/auditoria/historial).
 export interface RegistroHistorial {
   id: number;
+  entidad: string;
+  entidad_id: string;
   accion: string;
   motivo: string | null;
   valores_antes: any;
@@ -28,5 +30,11 @@ export class HistorialService {
   historial(entidad: string, entidadId: number | string): Observable<RespuestaHistorial> {
     const params = new HttpParams().set('entidad', entidad).set('entidad_id', String(entidadId));
     return this.http.get<RespuestaHistorial>(environment.url + '/api/v1/auditoria/historial', { params: params });
+  }
+
+  // Todo lo de una caja mensual: la caja y sus movimientos (centros, egresos, ingresos, liquidaciones, insumos).
+  historialCaja(cajaId: number): Observable<RespuestaHistorial> {
+    const params = new HttpParams().set('caja_id', String(cajaId));
+    return this.http.get<RespuestaHistorial>(environment.url + '/api/v1/auditoria/historial-caja', { params: params });
   }
 }
