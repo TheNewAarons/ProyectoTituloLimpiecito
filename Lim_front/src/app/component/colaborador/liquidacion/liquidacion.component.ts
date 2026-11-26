@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { formatDate } from '@angular/common';
-import { MAT_DATE_LOCALE } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_LOCALE, NativeDateAdapter } from '@angular/material/core';
+import { Platform } from '@angular/cdk/platform';
 import swal from 'sweetalert2';
 
 //SERVICIOS
@@ -15,8 +16,12 @@ import { EstadoPagoLiquidacion } from '../../../model/liquidacion-pago';
   selector: 'app-liquidacion',
   templateUrl: './liquidacion.component.html',
   styleUrls: ['./liquidacion.component.css'],
-  // Calendario de los filtros en español (dd-mm-aaaa) solo en esta pantalla.
-  providers: [{ provide: MAT_DATE_LOCALE, useValue: 'es-CL' }]
+  // Calendario de los filtros en español (dd-mm-aaaa) solo en esta pantalla: el adaptador se crea aquí para que
+  // tome este locale (el de MatNativeDateModule se crea a nivel de módulo con el locale por defecto).
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'es-CL' },
+    { provide: DateAdapter, useClass: NativeDateAdapter, deps: [MAT_DATE_LOCALE, Platform] }
+  ]
 })
 export class LiquidacionComponent implements OnInit {
 
@@ -185,7 +190,6 @@ export class LiquidacionComponent implements OnInit {
     return this.seleccionadas.indexOf(idLiquidacion) !== -1;
   }
 
-  //AGREGAR O QUITAR UNA LIQUIDACION DE LA SELECCION
   //SELECCIONAR TODAS: las que se pueden pagar entre las que muestran los filtros (todas las páginas)
   seleccionablesVisibles(): number[] {
     return (this.centroTrabajadoresFiltrados || []).filter(ct => this.esSeleccionable(ct)).map(ct => ct.liquidacioneId);
@@ -204,6 +208,7 @@ export class LiquidacionComponent implements OnInit {
     this.seleccionadas = marcar ? this.seleccionablesVisibles() : [];
   }
 
+  //AGREGAR O QUITAR UNA LIQUIDACION DE LA SELECCION
   toggleSeleccion(idLiquidacion: number): void {
     const posicion = this.seleccionadas.indexOf(idLiquidacion);
     if (posicion === -1) {

@@ -8,7 +8,8 @@ const Centro = require('../../modelos/sistema_base/Centro_costo');
 const { auditar } = require('../auditoria');
 
 // Lo que cambia al cerrar y sirve para responder "quién cerró y con qué valores".
-const CAMPOS = ['estado', 'fecha_cierre', 'precio_servicio', 'total_costos', 'utilidad'];
+// cajaId y numero_cc: el payload legacy también los escribe; si cambian (el centro pasa a otro mes de caja), queda registrado.
+const CAMPOS = ['estado', 'fecha_cierre', 'precio_servicio', 'total_costos', 'utilidad', 'cajaId', 'numero_cc'];
 const recorte = (fila) => {
   const plano = fila && fila.get ? fila.get({ plain: true }) : (fila || {});
   const r = {};
