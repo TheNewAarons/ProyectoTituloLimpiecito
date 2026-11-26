@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { formatDate } from '@angular/common';
+import { MAT_DATE_LOCALE } from '@angular/material/core';
 import swal from 'sweetalert2';
 
 //SERVICIOS
@@ -13,7 +14,9 @@ import { EstadoPagoLiquidacion } from '../../../model/liquidacion-pago';
 @Component({
   selector: 'app-liquidacion',
   templateUrl: './liquidacion.component.html',
-  styleUrls: ['./liquidacion.component.css']
+  styleUrls: ['./liquidacion.component.css'],
+  // Calendario de los filtros en español (dd-mm-aaaa) solo en esta pantalla.
+  providers: [{ provide: MAT_DATE_LOCALE, useValue: 'es-CL' }]
 })
 export class LiquidacionComponent implements OnInit {
 
@@ -28,6 +31,12 @@ export class LiquidacionComponent implements OnInit {
   public seleccionadas: number[] = [];
   public filtroEstadoPago: 'TODAS' | EstadoPagoLiquidacion = 'TODAS';
   public centroTrabajadoresFiltrados = [];
+
+  // Revisión de requerimientos (AUT-022): filtros por fecha de la liquidación, cliente y N° de centro de costo.
+  public filtroDesde: Date = null; // del calendario (mat-datepicker)
+  public filtroHasta: Date = null;
+  public filtroCliente = 'TODOS';
+  public filtroCc = '';
 
   constructor(
     private liquidacionService: LiquidacionService,
@@ -62,12 +71,59 @@ export class LiquidacionComponent implements OnInit {
     );
   }
 
-  //FILTRA LA LISTA POR ESTADO DE PAGO (RF-CAJA-02)
+  //FILTRA LA LISTA POR ESTADO DE PAGO (RF-CAJA-02), FECHA, CLIENTE Y N° DE CENTRO DE COSTO (AUT-022)
+  //La llaman la carga, el buscador y la recarga tras pagar: así los filtros se mantienen.
   aplicarFiltroEstado(): void {
     const lista = this.centroTrabajadores || [];
-    this.centroTrabajadoresFiltrados = this.filtroEstadoPago === 'TODAS'
-      ? lista
-      : lista.filter(centroTrabajador => this.estadoPago(centroTrabajador) === this.filtroEstadoPago);
+    const cc = String(this.filtroCc || '').trim();
+    const desde = this.aYmd(this.filtroDesde);
+    const hasta = this.aYmd(this.filtroHasta);
+    this.centroTrabajadoresFiltrados = lista.filter(centroTrabajador => {
+      if (this.filtroEstadoPago !== 'TODAS' && this.estadoPago(centroTrabajador) !== this.filtroEstadoPago) { return false; }
+      const fecha = this.fechaLiquidacion(centroTrabajador);
+      if (desde && (!fecha || fecha < desde)) { return false; }
+      if (hasta && (!fecha || fecha > hasta)) { return false; }
+      if (this.filtroCliente !== 'TODOS' && this.clienteDe(centroTrabajador) !== this.filtroCliente) { return false; }
+      if (cc && String(centroTrabajador.centro_costo ? centroTrabajador.centro_costo.numero_cc : '') !== cc) { return false; }
+      return true;
+    });
+  }
+
+  //FECHA DE LA LIQUIDACION EN HORA DE CHILE (yyyy-MM-dd), PARA COMPARAR CON LOS CAMPOS DESDE/HASTA
+  fechaLiquidacion(centroTrabajador): string {
+    const f = centroTrabajador && centroTrabajador.liquidacione ? centroTrabajador.liquidacione.fecha_creacion : null;
+    return f ? new Date(f).toLocaleDateString('en-CA', { timeZone: 'America/Santiago' }) : '';
+  }
+
+  clienteDe(centroTrabajador): string {
+    const c = centroTrabajador && centroTrabajador.centro_costo && centroTrabajador.centro_costo.cliente;
+    return c && c.representante ? c.representante : '';
+  }
+
+  //CLIENTES QUE APARECEN EN LA LISTA, PARA EL SELECTOR
+  clientesDisponibles(): string[] {
+    const nombres = (this.centroTrabajadores || []).map(ct => this.clienteDe(ct)).filter(n => !!n);
+    return nombres.filter((n, i) => nombres.indexOf(n) === i).sort();
+  }
+
+  //FECHA DEL CALENDARIO (DIA LOCAL ELEGIDO) -> yyyy-MM-dd; null -> ''
+  aYmd(d: Date): string {
+    if (!d) { return ''; }
+    const dos = (n: number) => (n < 10 ? '0' : '') + n;
+    return d.getFullYear() + '-' + dos(d.getMonth() + 1) + '-' + dos(d.getDate());
+  }
+
+  hayFiltros(): boolean {
+    return this.filtroEstadoPago !== 'TODAS' || !!this.filtroDesde || !!this.filtroHasta || this.filtroCliente !== 'TODOS' || !!String(this.filtroCc || '').trim();
+  }
+
+  limpiarFiltros(): void {
+    this.filtroEstadoPago = 'TODAS';
+    this.filtroDesde = null;
+    this.filtroHasta = null;
+    this.filtroCliente = 'TODOS';
+    this.filtroCc = '';
+    this.cambiarFiltroEstado();
   }
 
   //AL CAMBIAR EL FILTRO SE VUELVE A LA PAGINA 1 Y SE LIMPIA LA SELECCION PARA NO PAGAR FILAS OCULTAS
@@ -130,6 +186,24 @@ export class LiquidacionComponent implements OnInit {
   }
 
   //AGREGAR O QUITAR UNA LIQUIDACION DE LA SELECCION
+  //SELECCIONAR TODAS: las que se pueden pagar entre las que muestran los filtros (todas las páginas)
+  seleccionablesVisibles(): number[] {
+    return (this.centroTrabajadoresFiltrados || []).filter(ct => this.esSeleccionable(ct)).map(ct => ct.liquidacioneId);
+  }
+
+  todasSeleccionadas(): boolean {
+    const ids = this.seleccionablesVisibles();
+    return ids.length > 0 && ids.every(id => this.estaSeleccionada(id));
+  }
+
+  algunaSeleccionada(): boolean {
+    return this.seleccionadas.length > 0 && !this.todasSeleccionadas();
+  }
+
+  alternarTodas(marcar: boolean): void {
+    this.seleccionadas = marcar ? this.seleccionablesVisibles() : [];
+  }
+
   toggleSeleccion(idLiquidacion: number): void {
     const posicion = this.seleccionadas.indexOf(idLiquidacion);
     if (posicion === -1) {
