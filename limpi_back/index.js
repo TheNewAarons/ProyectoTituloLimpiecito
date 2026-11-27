@@ -24,6 +24,11 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
+// RNF-SEC-02 (cobertura completa): toda escritura ORM sin auditar() queda en `auditoria` con su usuario.
+const auditoriaHooks = require('./services/auditoria/hooks');
+auditoriaHooks.registrarHooksAuditoria(require('./database/database').sequelize);
+app.use(auditoriaHooks.middlewareContexto);
+
 // RNF-SEC-01 (AUT-015): los documentos internos de uploads/ ya no se sirven sin sesión (las imágenes de la app sí).
 app.use('/web-limpiecito/uploads', require('./middleware/documentos-protegidos'));
 app.use('/web-limpiecito/uploads', express.static(path.resolve('uploads')));

@@ -724,6 +724,7 @@ Primero verificar en Fase 0 cuántos datos históricos tiene `reservas`; si son 
 - [x] Punto 3 (lo agregado en esta rama; el resto ya estaba auditado por RF-CAJA-01/02, RF-FAC-01 y RF-BOD-01..04): inicios de sesión exitosos y fallidos en los 6 logins; legacy de caja, egresos, liquidaciones, `cc_ingresos`/`cc_egresos`, listas de insumo y `stock_rapido` auditados dentro de la transacción de la operación (matriz en `TASK_PLAN.md`; "arqueo" no existe, D-072).
 - [ ] Criterio 1 ("quién cambió qué y cuándo"): cubierto por tests automatizados con mocks (`npm test`: 553 verdes); pendiente verificarlo en pruebas con datos reales.
 - [ ] Criterio 2 (rollback ante fallo de auditoría): cubierto por tests con mocks de `sequelize.transaction`; **pendiente** verificación local contra MySQL real (D-085).
+- [x] Cobertura completa en rutas legacy (2026-11-27, rama `refactor/RNF-SEC-02-auditoria-hooks-legacy-aaron`): hooks globales de Sequelize auditan toda creación/edición/borrado ORM sin `auditar()` manual, con usuario, fecha, valor anterior y nuevo (D-187). Sin cubrir: SQL crudo y `upsert`.
 - Fuera de alcance, no corregido: H-SEC-07 (solo auditado) y H-SEC-08 (`console.log(token)`, RNF-SEC-01). Sin migración nueva.
 
 ### RNF-BI-01 · Rendimiento de dashboards < 2 s
