@@ -50,13 +50,15 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let a of visibles()" [class.text-muted]="a.estado !== 'ACTIVA'" [class.table-active]="seleccionada?.id === a.id">
+              <tr *ngFor="let a of visibles() | paginar: pagAsignaciones" [class.text-muted]="a.estado !== 'ACTIVA'" [class.table-active]="seleccionada?.id === a.id">
                 <td>{{ nombre(a) }} <span class="text-muted small" *ngIf="a.trabajador?.n_empleado">N° {{ a.trabajador.n_empleado }}</span></td>
                 <td>{{ a.area?.nombre }}</td>
                 <td>{{ a.turno?.nombre }}</td>
                 <td>{{ a.fecha_desde | date: 'dd/MM/yyyy' }} – {{ a.fecha_hasta ? (a.fecha_hasta | date: 'dd/MM/yyyy') : 'vigente' }}</td>
                 <td>
                   <span class="badge" [ngClass]="a.estado === 'ACTIVA' ? 'badge-success' : (a.estado === 'CERRADA' ? 'badge-secondary' : 'badge-dark')">{{ a.estado }}</span>
+                  <!-- Motivo de la anulación o del cierre (si se indicó) -->
+                  <div *ngIf="a.estado !== 'ACTIVA' && a.motivo"><small><strong>Motivo:</strong> {{ a.motivo }}</small></div>
                 </td>
                 <td class="td-actions text-right">
                   <button mat-raised-button type="button" class="btn btn-info btn-round" matTooltip="Ver cumplimiento" (click)="verCumplimiento(a)">
@@ -65,10 +67,15 @@
                   <button mat-raised-button type="button" class="btn btn-danger btn-round ml-1" matTooltip="Quitar de la actividad" *ngIf="a.estado === 'ACTIVA'" (click)="quitar(a)">
                     <i class="material-icons">person_remove</i>
                   </button>
+                  <button mat-raised-button type="button" class="btn btn-warning btn-round ml-1" matTooltip="Anular (la asignación fue un error)" *ngIf="a.estado !== 'ANULADA'" (click)="anular(a)">
+                    <i class="material-icons">cancel</i>
+                  </button>
+                  <app-historial [compacto]="true" entidad="actividad_asignaciones" [entidadId]="a.id" [titulo]="'Asignación de ' + nombre(a)"></app-historial>
                 </td>
               </tr>
             </tbody>
           </table>
+          <app-paginacion [estado]="pagAsignaciones" [total]="(visibles() || []).length"></app-paginacion>
         </div>
       </div>
     </div>
@@ -84,13 +91,14 @@
           <table class="table table-sm">
             <thead><tr><th>Fecha</th><th>Registro</th><th>Avance</th></tr></thead>
             <tbody>
-              <tr *ngFor="let l of cumplimiento">
+              <tr *ngFor="let l of cumplimiento | paginar: pagCumplimiento">
                 <td>{{ l.fecha | date: 'dd/MM/yyyy' }}</td>
                 <td>{{ l.tipo === 'trabajador' ? 'Trabajador' : 'Supervisor' }}</td>
                 <td>{{ marcados(l) }}</td>
               </tr>
             </tbody>
           </table>
+          <app-paginacion [estado]="pagCumplimiento" [total]="(cumplimiento || []).length"></app-paginacion>
         </div>
       </div>
     </div>

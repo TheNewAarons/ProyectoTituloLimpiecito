@@ -12,6 +12,7 @@ import {
   AgruparConsumo, FilaConsumoGrupo, FilaConsumoMes, FilaFrecuenciaCompra, FilaStockCritico, FilaMerma, MetaMerma, FilaTopProducto, MetaConsumo
 } from '../../model/analytics';
 import { FiltrosProductividad, MetaProductividad } from '../../model/analytics';
+import { ObservacionPev } from '../../model/analytics';
 
 type FilaRankingRentabilidad = FilaRentabilidad | FilaGastosGenerales;
 
@@ -119,5 +120,13 @@ export class AnalyticsService {
     if (f.clienteId) params = params.set('cliente_id', String(f.clienteId));
     if (f.supervisor) params = params.set('supervisor', String(f.supervisor));
     return this.http.get<RespuestaAnalytics<T, MetaProductividad>>(this.url_analytics + '/productividad/' + vista, { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  // Retroalimentación de la revisión: texto de las observaciones PEV de un sector (mismos filtros que el dashboard).
+  observacionesPev(sectorId: number, f: FiltrosProductividad): Observable<RespuestaAnalytics<ObservacionPev[], any>> {
+    let params = new HttpParams().set('sector_id', String(sectorId)).set('desde', f.desde).set('hasta', f.hasta);
+    if (f.clienteId) params = params.set('cliente_id', String(f.clienteId));
+    if (f.supervisor) params = params.set('supervisor', String(f.supervisor));
+    return this.http.get<RespuestaAnalytics<ObservacionPev[], any>>(this.url_analytics + '/productividad/observaciones', { headers: this.obtenerCabeceras(), params: params });
   }
 }

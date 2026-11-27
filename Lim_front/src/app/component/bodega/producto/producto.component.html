@@ -84,11 +84,11 @@
                             *ngIf="usuario.role.nombre != 'APOYO_LVL_1'"
                             mat-raised-button
                             type="button"
-                            title="Desactivar Producto"
+                            title="Desactivar Producto (no se elimina)"
                             class="btn btn-danger btn-round"
                             (click)="eliminarProducto(producto.id)"
                           >
-                            <i class="material-icons">close</i>
+                            <i class="material-icons">toggle_off</i>
                           </button>
                         </td>
                       </tr>

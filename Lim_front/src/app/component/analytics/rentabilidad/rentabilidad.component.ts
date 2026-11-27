@@ -8,6 +8,7 @@ import { AnalyticsService } from '../../../services/analytics/analytics.service'
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { generarMeses, idDesdeQuery, mesActualSantiago, rangoDesdeQuery } from '../compartido/filtro-periodo/filtro-periodo.component';
 import { descargarCsv } from '../compartido/csv';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 // RF-BI-02: Rentabilidad por cliente / centro de costo. Rango por defecto: últimos 3 meses. El detalle se abre en la misma página.
 @Component({
@@ -15,6 +16,9 @@ import { descargarCsv } from '../compartido/csv';
   templateUrl: './rentabilidad.component.html'
 })
 export class RentabilidadComponent implements OnInit, OnDestroy {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagFilas = nuevaPaginacion();
+  pagPeriodos = nuevaPaginacion();
   private subCarga: Subscription | null = null;
   private subDetalle: Subscription | null = null;
   hasta = mesActualSantiago();

@@ -33,7 +33,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let listaPevTrabajador of listasPevTrabajador">
+                  <tr *ngFor="let listaPevTrabajador of listasPevTrabajador | paginar: pagListas">
                     <td>{{ listaPevTrabajador.estado | estadoListaPevSup }}</td>
                     <td>{{ listaPevTrabajador.fecha_creacion | date: 'dd/MM/yyyy' }}</td>
                     <td>{{ listaPevTrabajador.fecha_chequeo | date:'dd/MM/yyyy' }}</td>
@@ -61,6 +61,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagListas" [total]="(listasPevTrabajador || []).length"></app-paginacion>
             </div>
           </div>
         </div>

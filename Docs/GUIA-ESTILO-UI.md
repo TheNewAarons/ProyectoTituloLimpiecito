@@ -60,7 +60,8 @@ Todos llevan `mat-raised-button` (ripple) + clases Bootstrap. Tamaño: `btn-sm` 
 | Editar | `btn btn-warning btn-round` (en fila) | `edit` |
 | Ver / Vista previa | `btn btn-info btn-round` | `remove_red_eye` |
 | Guardar / Confirmar / Activar | `btn btn-success btn-sm` o `btn-round` | `done`, `save` |
-| Cerrar / Eliminar / Desactivar | `btn btn-danger btn-round` | `close`, `delete` |
+| Cerrar / Eliminar | `btn btn-danger btn-round` | `close`, `delete` |
+| Desactivar (baja lógica, no borra) | `btn btn-danger btn-round` + ayuda "Desactivar … (no se elimina)" | `person_off` para personas y usuarios (trabajadores, usuarios del ERP y de la app); `toggle_off` para lo demás (revisión 2026-11: la X se confundía con eliminar) |
 | Volver | `btn btn-rose btn-sm` o `btn-link` | `arrow_back` |
 | PDF / imprimir | `btn btn-danger btn-round` | `picture_as_pdf`, `print` |
 | Subir archivo | `btn btn-rose btn-round btn-file` | — |

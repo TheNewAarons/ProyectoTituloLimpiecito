@@ -5,6 +5,7 @@ import { Publicacion } from 'src/app/model/publicacion';
 import swal from 'sweetalert2';
 import { environment } from 'src/environments/environment';
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 interface AnuncioAntiguo {
   id: number;
@@ -21,6 +22,8 @@ interface AnuncioAntiguo {
   styleUrls: ['./anuncios.component.css']
 })
 export class AnunciosComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagPublicaciones = nuevaPaginacion();
 
   public url_imagen = environment.url_short;
   // imagen_url de v1 viene relativa al host (PREFIJO + ruta); el backend puede estar en otro origen (dev).

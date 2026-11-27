@@ -11,6 +11,11 @@
               <span class="btn-label"><i class="material-icons">arrow_back</i></span>
               Volver
             </button>
+            <!-- Revisión de requerimientos: desde el detalle también se vuelve al panel de bodega -->
+            <button mat-raised-button type="button" matTooltip="Volver al Inicio Bodega" class="btn btn-rose btn-sm" routerLink="/bodega/inicio">
+              <span class="btn-label"><i class="material-icons">dashboard</i></span>
+              Inicio Bodega
+            </button>
           </div>
           <div class="card-body">
             <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>

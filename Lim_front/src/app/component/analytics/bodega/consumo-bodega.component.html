@@ -79,7 +79,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let f of top">
+                  <tr *ngFor="let f of top | paginar: pagTop">
                     <td>{{ f.posicion }}</td>
                     <td>{{ f.producto }}</td>
                     <td class="text-right">{{ f.cantidad_pedida | number:'1.0-0':'es-CL' }}</td>
@@ -91,6 +91,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagTop" [total]="(top || []).length"></app-paginacion>
             </div>
 
             <div class="d-flex flex-wrap align-items-center mt-4">
@@ -111,7 +112,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let g of grupos">
+                  <tr *ngFor="let g of grupos | paginar: pagGrupos">
                     <td>{{ g.etiqueta }}</td>
                     <td class="text-right">{{ g.cantidad | number:'1.0-0':'es-CL' }}</td>
                     <td class="text-right">{{ g.solicitudes }}</td>
@@ -122,6 +123,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagGrupos" [total]="(grupos || []).length"></app-paginacion>
             </div>
             </div>
             <div *ngIf="pestana === 'compras'" role="tabpanel">
@@ -144,7 +146,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let f of frecuencia">
+                  <tr *ngFor="let f of frecuencia | paginar: pagFrecuencia">
                     <td>{{ f.producto }}</td>
                     <td class="text-right">{{ f.ordenes }}</td>
                     <td class="text-right">{{ f.cantidad | number:'1.0-0':'es-CL' }}</td>
@@ -156,6 +158,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagFrecuencia" [total]="(frecuencia || []).length"></app-paginacion>
             </div>
             </div>
             <div *ngIf="pestana === 'merma'" role="tabpanel">
@@ -186,7 +189,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let f of merma" [class.table-warning]="f.rechazado > 0">
+                  <tr *ngFor="let f of merma | paginar: pagMerma" [class.table-warning]="f.rechazado > 0">
                     <td>{{ f.producto }}</td>
                     <td class="text-right">{{ f.recibido | number:'1.0-0':'es-CL' }}</td>
                     <td class="text-right">{{ f.rechazado | number:'1.0-0':'es-CL' }}</td>
@@ -199,6 +202,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagMerma" [total]="(merma || []).length"></app-paginacion>
             </div>
             </div>
             <div *ngIf="pestana === 'critico'" role="tabpanel">
@@ -223,7 +227,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let p of critico" class="table-danger">
+                  <tr *ngFor="let p of critico | paginar: pagCritico" class="table-danger">
                     <td>{{ p.producto }}</td>
                     <td class="text-right">{{ p.stock }}</td>
                     <td class="text-right">{{ p.stock_minimo }}</td>
@@ -234,6 +238,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagCritico" [total]="(critico || []).length"></app-paginacion>
             </div>
             </div>
           </div>

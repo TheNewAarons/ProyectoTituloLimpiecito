@@ -69,7 +69,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let f of trabajadores">
+                  <tr *ngFor="let f of trabajadores | paginar: pagTrabajadores">
                     <td>{{ f.nombre }}</td>
                     <td class="text-right">{{ f.dias }}</td>
                     <td class="text-right">{{ f.tareas | number:'1.0-0':'es-CL' }}</td>
@@ -81,6 +81,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagTrabajadores" [total]="(trabajadores || []).length"></app-paginacion>
             </div>
 
             <div class="d-flex flex-wrap align-items-center mt-4">
@@ -101,7 +102,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let s of supervisores" [class.table-active]="supervisor === s.n_empleado">
+                  <tr *ngFor="let s of supervisores | paginar: pagSupervisores" [class.table-active]="supervisor === s.n_empleado">
                     <td>{{ s.posicion }}</td>
                     <td>{{ s.nombre }}</td>
                     <td class="text-right">{{ s.listas }} ({{ s.listas_firmadas }})</td>
@@ -113,6 +114,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagSupervisores" [total]="(supervisores || []).length"></app-paginacion>
             </div>
 
             <div class="d-flex flex-wrap align-items-center mt-4">
@@ -133,13 +135,15 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let s of sectores">
+                  <tr *ngFor="let s of sectores | paginar: pagSectores">
                     <td>{{ s.sector }}</td>
                     <td>{{ s.cliente || '—' }}</td>
                     <td class="text-right">{{ s.tareas | number:'1.0-0':'es-CL' }}</td>
                     <td class="text-right">{{ s.cumplimiento_pct === null ? '—' : (s.cumplimiento_pct | number:'1.0-1':'es-CL') + ' %' }}</td>
                     <td class="text-right">
                       <span [class.badge]="s.observaciones" [class.badge-warning]="s.observaciones">{{ s.observaciones }}</span>
+                      <app-ver-observaciones-pev *ngIf="s.observaciones" [sectorId]="s.sector_id" [sector]="s.sector" [cliente]="s.cliente"
+                        [filtros]="{ desde: desde, hasta: hasta, clienteId: clienteId, supervisor: supervisor }"></app-ver-observaciones-pev>
                     </td>
                   </tr>
                   <tr *ngIf="!cargando && sectores.length === 0">
@@ -147,6 +151,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagSectores" [total]="(sectores || []).length"></app-paginacion>
             </div>
           </div>
         </div>

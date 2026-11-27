@@ -7,6 +7,11 @@
             <div class="card-icon"><i class="material-icons">local_shipping</i></div>
             <h4 class="card-title">Órdenes De Compra</h4>
             <br />
+            <!-- Revisión de requerimientos: volver al panel desde donde se llega -->
+            <button mat-raised-button type="button" matTooltip="Volver al Inicio Bodega" class="btn btn-rose btn-sm" routerLink="/bodega/inicio">
+              <span class="btn-label"><i class="material-icons">dashboard</i></span>
+              Inicio Bodega
+            </button>
             <button mat-raised-button type="button" matTooltip="Generar Órdenes De Compra" class="btn btn-warning btn-sm" (click)="generar()" [disabled]="enviando">
               <span class="btn-label"><i class="material-icons">add</i></span>
               Generar Órdenes

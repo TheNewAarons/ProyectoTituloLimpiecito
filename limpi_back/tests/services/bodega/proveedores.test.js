@@ -198,3 +198,46 @@ describe('services/bodega/proveedores', () => {
     });
   });
 });
+
+// AUT-023 (retroalimentación de la revisión): RUT con dígito verificador, teléfono numérico y contacto como nombre.
+describe('services/bodega/proveedores · formatos de RUT, teléfono y contacto', () => {
+  const usuario = { id: 1, contexto: 'proveedores' };
+  const formato = require('../../../services/bodega/proveedores-formato');
+
+  beforeEach(() => { jest.clearAllMocks(); fakeTransaction(); Proveedor.create.mockImplementation(async (d) => Object.assign({ id: 9 }, d)); });
+
+  it('rutValido: dígito verificador (con o sin puntos y guion, K)', () => {
+    ['11.111.111-1', '12.345.678-5', '12345678-5', '76.086.428-5'].forEach((r) => expect(formato.rutValido(r)).toBe(true));
+    ['12.345.678-9', '6.666.666-6', 'abc', '1-9'].forEach((r) => expect(formato.rutValido(r)).toBe(false));
+  });
+
+  it('telefonoValido y contactoValido', () => {
+    expect(formato.telefonoValido('+56 9 1234 5678')).toBe(true);
+    expect(formato.telefonoValido('221234567')).toBe(true);
+    expect(formato.telefonoValido('12345')).toBe(false);
+    expect(formato.telefonoValido('9 1234 abcd')).toBe(false);
+    expect(formato.contactoValido("María José O'Higgins")).toBe(true);
+    expect(formato.contactoValido('Juan 123')).toBe(false);
+  });
+
+  it('crear rechaza RUT, teléfono o contacto inválidos (400) sin tocar la BD', async () => {
+    await expect(crear({ nombre: 'ACME', rut: '12.345.678-9' }, { usuario })).rejects.toMatchObject({ code: 'RUT_INVALIDO', httpStatus: 400 });
+    await expect(crear({ nombre: 'ACME', telefono: 'llamar al jefe' }, { usuario })).rejects.toMatchObject({ code: 'TELEFONO_INVALIDO', httpStatus: 400 });
+    await expect(crear({ nombre: 'ACME', contacto: '+56912345678' }, { usuario })).rejects.toMatchObject({ code: 'CONTACTO_INVALIDO', httpStatus: 400 });
+    expect(Proveedor.create).not.toHaveBeenCalled();
+  });
+
+  it('crear acepta datos válidos y los vacíos siguen siendo opcionales', async () => {
+    await crear({ nombre: 'ACME', rut: '76.086.428-5', telefono: '+56 9 1234 5678', contacto: 'Ana Pérez' }, { usuario });
+    await crear({ nombre: 'ACME', rut: '', telefono: '', contacto: '' }, { usuario });
+    expect(Proveedor.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('editar valida solo los campos que vienen', async () => {
+    const proveedor = instanciaProveedor({ id: 1, nombre: 'ACME', rut: '76.1-9' });
+    Proveedor.findById.mockResolvedValue(proveedor);
+    await editar(1, { nombre: 'ACME Ltda' }, { usuario }); // el RUT antiguo inválido no bloquea cambiar otro campo
+    expect(proveedor.update).toHaveBeenCalled();
+    await expect(editar(1, { rut: '12.345.678-9' }, { usuario })).rejects.toMatchObject({ code: 'RUT_INVALIDO' });
+  });
+});

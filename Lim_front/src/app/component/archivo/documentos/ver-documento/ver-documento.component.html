@@ -40,7 +40,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let asoc of asoc_trabajadores">
+                  <tr *ngFor="let asoc of asoc_trabajadores | paginar: pagAsocTrabajadores">
                     <td class="text-center">-</td>
                     <td>{{ asoc.trabajadore.nombre }} {{ asoc.trabajadore.apellido }}</td>
                     <td>{{ asoc.fecha | date: 'dd/MM/yyyy' }}</td>
@@ -58,6 +58,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagAsocTrabajadores" [total]="(asoc_trabajadores || []).length"></app-paginacion>
             </div>
           </div>
         </div>

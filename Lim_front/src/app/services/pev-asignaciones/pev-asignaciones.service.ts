@@ -25,6 +25,11 @@ export class PevAsignacionesService {
     return this.http.get<RespuestaPev<AsignacionPev[]>>(this.url + '/asignaciones', this.opciones(p));
   }
 
+  // "Anular" = la asignación fue un error (motivo 5–500 caracteres; el backend la rechaza si ya tiene historial).
+  anular(asignacionId: number, motivo: string): Observable<RespuestaPev<AsignacionPev>> {
+    return this.http.patch<RespuestaPev<AsignacionPev>>(this.url + '/asignaciones/' + asignacionId + '/anular', { motivo: motivo }, this.opciones());
+  }
+
   // "Quitar" = cerrar con fecha de término (no se borra; el historial se conserva).
   cerrar(asignacionId: number, fechaHasta: string): Observable<RespuestaPev<AsignacionPev>> {
     return this.http.patch<RespuestaPev<AsignacionPev>>(this.url + '/asignaciones/' + asignacionId + '/cerrar', { fecha_hasta: fechaHasta }, this.opciones());
