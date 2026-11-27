@@ -66,14 +66,22 @@
           </div>
           <div class="card-body">
             <div class="row">
-              <div class="col-12 col-md-4">
+              <div class="col-12 col-md-5">
+                <mat-form-field class="example-full-width">
+                  <input matInput placeholder="Buscar por nombre, RUT, email o contacto" name="buscar" maxlength="100" [(ngModel)]="buscar" (keyup.enter)="filtrar()">
+                  <button mat-button matSuffix mat-icon-button type="button" matTooltip="Buscar" (click)="filtrar()">
+                    <i class="material-icons">search</i>
+                  </button>
+                </mat-form-field>
+              </div>
+              <div class="col-12 col-md-3">
                 <mat-form-field class="example-full-width">
                   <mat-select placeholder="Estado" name="activo" [(ngModel)]="activo" (selectionChange)="filtrar()">
                     <mat-option *ngFor="let f of filtros" [value]="f.valor">{{ f.nombre }}</mat-option>
                   </mat-select>
                 </mat-form-field>
               </div>
-              <div class="col-12 col-md-8 text-right">
+              <div class="col-12 col-md-4 text-right">
                 <button mat-raised-button type="button" matTooltip="Nuevo Proveedor" class="btn btn-warning btn-sm" (click)="nuevo()" [disabled]="formulario">
                   <span class="btn-label"><i class="material-icons">add</i></span>
                   Nuevo Proveedor
@@ -111,12 +119,13 @@
                       <button mat-raised-button type="button" matTooltip="Editar" class="btn btn-warning btn-round" (click)="editar(p)">
                         <i class="material-icons">edit</i>
                       </button>
-                      <button *ngIf="p.activo" mat-raised-button type="button" matTooltip="Desactivar (no se elimina)" class="btn btn-danger btn-round" (click)="desactivar(p)">
+                      <button *ngIf="p.activo" mat-raised-button type="button" matTooltip="Desactivar (no se elimina)" class="btn btn-danger btn-round" (click)="cambiarEstado(p)">
                         <i class="material-icons">toggle_off</i>
                       </button>
-                      <button *ngIf="!p.activo" mat-raised-button type="button" matTooltip="Reactivar" class="btn btn-success btn-round" (click)="reactivar(p)">
+                      <button *ngIf="!p.activo" mat-raised-button type="button" matTooltip="Activar" class="btn btn-success btn-round" (click)="cambiarEstado(p)">
                         <i class="material-icons">done</i>
                       </button>
+                      <app-historial entidad="proveedores" [entidadId]="p.id" [titulo]="'Proveedor ' + p.nombre" [compacto]="true"></app-historial>
                     </td>
                   </tr>
                 </tbody>

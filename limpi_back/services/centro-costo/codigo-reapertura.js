@@ -28,7 +28,8 @@ const REENVIO_MS = 60 * 1000;
 const MAX_INTENTOS = 5;
 const codigos = new Map();
 
-// objetivo: un centro { id, numero_cc } o { clave, descripcion } (p. ej. clave 'liq:7' para una liquidación).
+// objetivo: un centro { id, numero_cc } o { clave, descripcion, accion? } (p. ej. clave 'liq:7' para una liquidación).
+// accion: verbo en infinitivo del correo ('reabrir' por defecto; p. ej. 'desactivar' un proveedor).
 const clave = (usuarioId, objetivoClave) => usuarioId + ':' + objetivoClave;
 const describir = (o) => o.descripcion || 'el centro de costo N° ' + o.numero_cc;
 const hash = (codigo) => crypto.createHash('sha256').update(String(codigo)).digest('hex');
@@ -50,6 +51,7 @@ async function emitirCodigo(usuario, objetivo, motivo, ahora) {
   if (!smtpConfigurado()) throw new AppError('CORREO_NO_CONFIGURADO', 'el envío de correos no está configurado', 503);
   const k = clave(usuario.id, objetivo.clave || objetivo.id);
   const objeto = describir(objetivo);
+  const accion = objetivo.accion || 'reabrir';
   const previo = codigos.get(k);
   if (previo && t - previo.emitido < REENVIO_MS) {
     throw new AppError('CODIGO_RECIENTE', 'espera un minuto antes de pedir otro código', 429);
@@ -58,12 +60,14 @@ async function emitirCodigo(usuario, objetivo, motivo, ahora) {
   await crearTransporte().sendMail({
     from: process.env.SMTP_USER,
     to: usuario.correo,
-    subject: 'Código para reabrir ' + objeto,
-    text: 'Tu código para reabrir ' + objeto + ' es ' + codigo +
+    subject: 'Código para ' + accion + ' ' + objeto,
+    text: 'Tu código para ' + accion + ' ' + objeto + ' es ' + codigo +
       '. Vence en 10 minutos. Motivo: ' + motivo + '. Si no fuiste tú, cambia tu contraseña y avisa al administrador.',
     html: render({
       codigo: codigo,
       objeto: objeto,
+      accion: accion,
+      Accion: accion.charAt(0).toUpperCase() + accion.slice(1),
       motivo: motivo,
       nombre: usuario.nombre,
       minutos: VIGENCIA_MS / 60000,

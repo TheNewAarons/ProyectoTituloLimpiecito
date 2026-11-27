@@ -3,6 +3,7 @@
  * dentro de la transacción del llamador (RNF-SEC-02, ver services/auditoria).
  */
 
+const Sequelize = require('sequelize');
 const db = require('../../database/database');
 const Proveedor = require('../../modelos/sistema_bodega/Proveedor');
 const AppError = require('../../libs/app-error');
@@ -81,7 +82,7 @@ async function obtenerOFallar(id, transaction) {
 
 /**
  * GET /proveedores — lista paginada.
- * @param {{pagina?: number, limite?: number, activo?: number}} opciones
+ * @param {{pagina?: number, limite?: number, activo?: number, buscar?: string}} opciones
  * @returns {Promise<{filas: object[], total: number}>}
  */
 async function listar(opciones) {
@@ -90,6 +91,12 @@ async function listar(opciones) {
   const limite = Number.isInteger(o.limite) && o.limite > 0 && o.limite <= 100 ? o.limite : 20;
   const where = {};
   if (o.activo === 0 || o.activo === 1) where.activo = o.activo;
+  const texto = typeof o.buscar === 'string' ? o.buscar.trim().slice(0, 100) : '';
+  if (texto) {
+    // Comodines de LIKE escapados: el texto del usuario se busca literal en nombre, RUT, email y contacto.
+    const patron = { [Sequelize.Op.like]: '%' + texto.replace(/[\\%_]/g, '\\$&') + '%' };
+    where[Sequelize.Op.or] = ['nombre', 'rut', 'email', 'contacto'].map((c) => ({ [c]: patron }));
+  }
 
   const resultado = await Proveedor.findAndCountAll({
     where: where,
@@ -209,14 +216,31 @@ async function reactivar(id, contexto) {
 }
 
 /**
+ * Antes de pedir el código por correo: el proveedor existe y no está ya en ese estado (409).
+ * @param {number} id
+ * @param {number} activo estado destino 0 | 1
+ * @returns {Promise<object>} instancia Proveedor
+ */
+async function verificarCambioActivo(id, activo) {
+  const proveedor = await obtenerOFallar(id, undefined);
+  if (Number(proveedor.activo) === activo) {
+    throw new AppError('PROVEEDOR_SIN_CAMBIO', 'el proveedor ya está ' + (activo ? 'activo' : 'inactivo'), 409, { id: id });
+  }
+  return proveedor;
+}
+
+/**
  * @param {number} id
  * @param {number} activo 0 | 1
  * @param {string} accion acción de auditoría
- * @param {{usuario: {id: number, contexto: string}, ip?: string}} contexto
+ * @param {{usuario: {id: number, contexto: string}, ip?: string, motivo?: string}} contexto
  */
 async function cambiarActivo(id, activo, accion, contexto) {
   return db.sequelize.transaction(async function (t) {
     const proveedor = await obtenerOFallar(id, t);
+    if (Number(proveedor.activo) === activo) {
+      throw new AppError('PROVEEDOR_SIN_CAMBIO', 'el proveedor ya está ' + (activo ? 'activo' : 'inactivo'), 409, { id: id });
+    }
     const antes = proveedor.get({ plain: true });
     await proveedor.update({ activo: activo }, { transaction: t });
     await auditar({
@@ -227,6 +251,7 @@ async function cambiarActivo(id, activo, accion, contexto) {
       accion: accion,
       antes: antes,
       despues: proveedor,
+      motivo: contexto.motivo,
       ip: contexto.ip
     });
     return proveedor;
@@ -234,6 +259,7 @@ async function cambiarActivo(id, activo, accion, contexto) {
 }
 
 module.exports = {
+  verificarCambioActivo: verificarCambioActivo,
   listar: listar,
   obtener: obtener,
   crear: crear,

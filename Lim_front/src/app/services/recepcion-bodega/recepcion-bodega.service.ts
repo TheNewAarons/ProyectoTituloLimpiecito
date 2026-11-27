@@ -128,9 +128,10 @@ export class RecepcionBodegaService {
   }
 
   //PROVEEDORES (RF-BOD-03). activo: 1 activos, 0 inactivos, null todos. El backend acepta limite <= 100
-  listarProveedores(activo: number, pagina: number, limite: number): Observable<RespuestaBodega<Proveedor[]>> {
+  listarProveedores(activo: number, pagina: number, limite: number, buscar: string = ''): Observable<RespuestaBodega<Proveedor[]>> {
     let params = new HttpParams().set('pagina', String(pagina)).set('limite', String(limite));
     if (activo === 0 || activo === 1) { params = params.set('activo', String(activo)); }
+    if (buscar.trim()) { params = params.set('buscar', buscar.trim()); }
     return this.http.get<RespuestaBodega<Proveedor[]>>(this.url_bodega + '/proveedores', { headers: this.obtenerCabeceras(), params: params });
   }
 
@@ -142,12 +143,12 @@ export class RecepcionBodegaService {
     return this.http.patch<RespuestaBodega<Proveedor>>(this.url_bodega + '/proveedores/' + id, datos, { headers: this.obtenerCabeceras() });
   }
 
-  //BAJA LOGICA (activo = 0); NO SE BORRA
-  desactivarProveedor(id: number): Observable<RespuestaBodega<Proveedor>> {
-    return this.http.delete<RespuestaBodega<Proveedor>>(this.url_bodega + '/proveedores/' + id, { headers: this.obtenerCabeceras() });
+  //ACTIVAR/DESACTIVAR (BAJA LOGICA, NO SE BORRA) EN DOS PASOS: MOTIVO -> CODIGO AL CORREO -> CONFIRMAR CON EL CODIGO
+  pedirCodigoEstadoProveedor(id: number, activo: number, motivo: string): Observable<RespuestaBodega<{ correo: string }>> {
+    return this.http.post<RespuestaBodega<{ correo: string }>>(this.url_bodega + '/proveedores/' + id + '/estado/codigo', { activo, motivo }, { headers: this.obtenerCabeceras() });
   }
 
-  reactivarProveedor(id: number): Observable<RespuestaBodega<Proveedor>> {
-    return this.http.patch<RespuestaBodega<Proveedor>>(this.url_bodega + '/proveedores/' + id + '/reactivar', {}, { headers: this.obtenerCabeceras() });
+  cambiarEstadoProveedor(id: number, activo: number, codigo: string): Observable<RespuestaBodega<Proveedor>> {
+    return this.http.post<RespuestaBodega<Proveedor>>(this.url_bodega + '/proveedores/' + id + '/estado', { activo, codigo }, { headers: this.obtenerCabeceras() });
   }
 }

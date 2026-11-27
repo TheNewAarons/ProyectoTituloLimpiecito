@@ -6,6 +6,8 @@
 const AppError = require('../../../libs/app-error');
 const proveedoresService = require('../../../services/bodega/proveedores');
 const proveedorProductoService = require('../../../services/bodega/proveedorProducto');
+const codigoCorreo = require('../../../services/centro-costo/codigo-reapertura');
+const Usuario = require('../../../modelos/sistema_base/Usuario');
 
 /**
  * @param {object} req
@@ -27,12 +29,13 @@ function parsearId(idTexto) {
   return id;
 }
 
-/** GET /api/v1/bodega/proveedores?pagina=&limite=&activo= */
+/** GET /api/v1/bodega/proveedores?pagina=&limite=&activo=&buscar= */
 const listar = async (req, res) => {
   const resultado = await proveedoresService.listar({
     pagina: req.query.pagina !== undefined ? Number(req.query.pagina) : undefined,
     limite: req.query.limite !== undefined ? Number(req.query.limite) : undefined,
-    activo: req.query.activo !== undefined ? Number(req.query.activo) : undefined
+    activo: req.query.activo !== undefined ? Number(req.query.activo) : undefined,
+    buscar: req.query.buscar
   });
   return res.json({
     ok: true,
@@ -62,21 +65,45 @@ const editar = async (req, res) => {
   return res.json({ ok: true, data: proveedor, meta: {} });
 };
 
-/** DELETE /api/v1/bodega/proveedores/:id — baja lógica (activo = 0) */
-const desactivar = async (req, res) => {
-  const proveedor = await proveedoresService.desactivar(parsearId(req.params.id), {
-    usuario: usuarioDesdeRequest(req),
-    ip: req.ip
-  });
-  return res.json({ ok: true, data: proveedor, meta: {} });
+/**
+ * Activar/desactivar un proveedor en dos pasos, como reabrir un centro de costo:
+ * POST /:id/estado/codigo { activo, motivo } envía un código al correo del usuario;
+ * POST /:id/estado { activo, codigo } aplica el cambio (baja lógica, nunca se borra). El motivo auditado es el del correo.
+ */
+function leerActivo(req) {
+  const activo = req.body && req.body.activo;
+  if (activo !== 0 && activo !== 1) throw new AppError('CAMPO_INVALIDO', 'activo debe ser 0 o 1', 400, { campo: 'activo' });
+  return activo;
+}
+
+// El estado destino va en la clave: un código pedido para desactivar no sirve para activar.
+const claveCodigo = (id, activo) => 'prov:' + id + ':' + activo;
+
+const pedirCodigoEstado = async (req, res) => {
+  const id = parsearId(req.params.id);
+  const activo = leerActivo(req);
+  const motivo = req.body && typeof req.body.motivo === 'string' ? req.body.motivo.trim() : '';
+  if (motivo.length < 5 || motivo.length > 500) {
+    throw new AppError('MOTIVO_REQUERIDO', 'motivo obligatorio (entre 5 y 500 caracteres)', 400);
+  }
+  const proveedor = await proveedoresService.verificarCambioActivo(id, activo);
+  const usuario = await Usuario.findById(req.usuario.id, { attributes: ['id', 'nombre', 'correo'] });
+  const envio = await codigoCorreo.emitirCodigo(
+    { id: req.usuario.id, nombre: usuario && usuario.nombre, correo: usuario && usuario.correo },
+    { clave: claveCodigo(id, activo), descripcion: 'el proveedor ' + proveedor.nombre, accion: activo ? 'activar' : 'desactivar' },
+    motivo
+  );
+  return res.json({ ok: true, data: envio, meta: {} });
 };
 
-/** PATCH /api/v1/bodega/proveedores/:id/reactivar — revierte la baja lógica (activo = 1) */
-const reactivar = async (req, res) => {
-  const proveedor = await proveedoresService.reactivar(parsearId(req.params.id), {
-    usuario: usuarioDesdeRequest(req),
-    ip: req.ip
-  });
+const cambiarEstado = async (req, res) => {
+  const id = parsearId(req.params.id);
+  const activo = leerActivo(req);
+  const motivo = codigoCorreo.consumirCodigo(req.usuario.id, claveCodigo(id, activo), req.body && req.body.codigo);
+  const contexto = { usuario: usuarioDesdeRequest(req), ip: req.ip, motivo: motivo + ' [confirmado con código por correo]' };
+  const proveedor = activo
+    ? await proveedoresService.reactivar(id, contexto)
+    : await proveedoresService.desactivar(id, contexto);
   return res.json({ ok: true, data: proveedor, meta: {} });
 };
 
@@ -104,7 +131,7 @@ module.exports = {
   obtener: obtener,
   crear: crear,
   editar: editar,
-  desactivar: desactivar,
-  reactivar: reactivar,
+  pedirCodigoEstado: pedirCodigoEstado,
+  cambiarEstado: cambiarEstado,
   productos: productos
 };

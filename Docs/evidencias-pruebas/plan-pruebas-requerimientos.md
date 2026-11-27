@@ -150,8 +150,10 @@ aparece para nuevas órdenes y sus órdenes anteriores se conservan.
 2. **.2** `GET $API/bodega/proveedores?activo=1` lo lista; `GET $API/bodega/proveedores/<id>` muestra el detalle.
 3. **.3** `PATCH $API/bodega/proveedores/<id>` `{"email":"ficha2@local.test"}`; generar y enviar una orden de ese proveedor
    (RF-005.5): `enviada_a_email` es el correo nuevo.
-4. **.4** `DELETE $API/bodega/proveedores/<id>` (baja lógica) → ya no aparece con `activo=1`; las órdenes anteriores siguen en
-   `GET $API/bodega/ordenes-compra/<id_orden>`.
+4. **.4** Baja lógica con motivo y código (D-188): `POST $API/bodega/proveedores/<id>/estado/codigo` `{"activo":0,"motivo":"ya no vende"}`
+   → llega el código al correo; `POST $API/bodega/proveedores/<id>/estado` `{"activo":0,"codigo":"<6 dígitos>"}` → ya no aparece con
+   `activo=1`; las órdenes anteriores siguen en `GET $API/bodega/ordenes-compra/<id_orden>`. `DELETE $API/bodega/proveedores/<id>` → 410
+   `RUTA_REEMPLAZADA`. En el ERP: Proveedores → botón desactivar/activar y botón Historial (Administrador).
 5. Automatizado: `npx jest tests/services/bodega/proveedores.test.js tests/services/bodega/proveedorProducto.test.js`.
 
 ### RF-005.5 · Bodega – Generar y enviar orden de compra (RF-BOD-03)

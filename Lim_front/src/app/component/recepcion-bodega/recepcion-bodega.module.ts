@@ -20,6 +20,7 @@ import { ProveedoresListaComponent } from './proveedores-lista/proveedores-lista
 import { InformeCompraComponent } from './informe-compra/informe-compra.component';
 import { OrdenCompraNuevaComponent } from './orden-compra-nueva/orden-compra-nueva.component';
 import { PaginacionModule } from '../paginacion/paginacion';
+import { HistorialModule } from '../historial/historial.module';
 
 // RF-BOD-04: recepción de órdenes, movimientos y formato de entrega (módulo nuevo con carga diferida)
 @NgModule({
@@ -31,7 +32,8 @@ import { PaginacionModule } from '../paginacion/paginacion';
     NgbModule,
     NgSelectModule,
     MaterialModule,
-    LoadingModule
+    LoadingModule,
+    HistorialModule
   ],
   declarations: [
     OrdenesCompraListaComponent, OrdenRecepcionComponent, MovimientosBodegaComponent, FormatoEntregaComponent, KardexProductoComponent,
