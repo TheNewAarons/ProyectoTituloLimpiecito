@@ -6,12 +6,15 @@ import { DocumentoService } from 'src/app/services/documento/archivo/documento.s
 import { DocumentoPublicoService } from 'src/app/services/documento-publico/documento-publico.service';
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
 import { DocumentoArchivo, RespuestaArchivo } from 'src/app/model/documento-publico';
+import { nuevaPaginacion } from '../../../paginacion/paginacion';
 
 @Component({
   selector: 'app-documentos-publicos',
   templateUrl: './documentos-publicos.component.html'
 })
 export class DocumentosPublicosComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagDocumentos = nuevaPaginacion();
   public documentos: DocumentoArchivo[] = [];
   public publicando: { [id: number]: boolean } = {};
 

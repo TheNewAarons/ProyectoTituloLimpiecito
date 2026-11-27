@@ -32,7 +32,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let p of publicaciones">
+                  <tr *ngFor="let p of publicaciones | paginar: pagPublicaciones">
                     <td>
                       <img *ngIf="p.imagen_url" class="img-anuncio" [src]="origen_backend + p.imagen_url" [alt]="p.titulo" />
                     </td>
@@ -54,6 +54,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagPublicaciones" [total]="(publicaciones || []).length"></app-paginacion>
             </div>
 
             <div *ngIf="antiguos.length">

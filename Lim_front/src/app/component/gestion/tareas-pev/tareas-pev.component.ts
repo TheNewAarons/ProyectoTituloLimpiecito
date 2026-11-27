@@ -9,6 +9,7 @@ import { TareaService } from 'src/app/services/tarea-pev/tarea.service';
 import { TurnoService } from 'src/app/services/turno-pev/turno.service';
 import { TurnoTareaService } from 'src/app/services/turno_tarea-pev/turno-tarea.service';
 import { DialogTareaEditarNombreComponent } from '../shared/dialog-tarea-editar-nombre/dialog-tarea-editar-nombre.component';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 @Component({
   selector: 'app-tareas-pev',
@@ -16,6 +17,8 @@ import { DialogTareaEditarNombreComponent } from '../shared/dialog-tarea-editar-
   styleUrls: ['./tareas-pev.component.css']
 })
 export class TareasPevComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagTareas = nuevaPaginacion();
   activo:Boolean = true;
   tareas;
   id_cliente;

@@ -8,6 +8,7 @@ import { AnalyticsService } from '../../../services/analytics/analytics.service'
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { generarMeses, mesActualSantiago, rangoDesdeQuery } from '../compartido/filtro-periodo/filtro-periodo.component';
 import { Columna, descargarCsv } from '../compartido/csv';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 type PestanaBodega = 'consumo' | 'compras' | 'merma' | 'critico';
 
@@ -17,6 +18,12 @@ type PestanaBodega = 'consumo' | 'compras' | 'merma' | 'critico';
   templateUrl: './consumo-bodega.component.html'
 })
 export class ConsumoBodegaComponent implements OnInit, OnDestroy {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagTop = nuevaPaginacion();
+  pagGrupos = nuevaPaginacion();
+  pagFrecuencia = nuevaPaginacion();
+  pagMerma = nuevaPaginacion();
+  pagCritico = nuevaPaginacion();
   static readonly COLUMNAS: { [vista: string]: Columna[] } = {
     top: [['#', 'posicion'], ['Producto', 'producto'], ['Solicitado', 'cantidad_pedida'], ['Entregado', 'cantidad_entregada'],
       ['Solicitudes', 'solicitudes']],

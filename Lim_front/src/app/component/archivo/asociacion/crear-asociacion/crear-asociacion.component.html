@@ -42,7 +42,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let asoc of asociaciones">
+                      <tr *ngFor="let asoc of asociaciones | paginar: pagAsociaciones">
                         <td class="text-center">-</td>
                         <td>{{ asoc.nombre }}</td>
                         <td>{{ asoc.fecha }}</td>
@@ -60,6 +60,7 @@
                       </tr>
                     </tbody>
                   </table>
+                  <app-paginacion [estado]="pagAsociaciones" [total]="(asociaciones || []).length"></app-paginacion>
                 </div>
                 <div *ngIf="asociaciones.length > 0" class="modal-footer justify-content-center">
                   <button mat-raised-button type="submit" class="btn btn-info btn-round">

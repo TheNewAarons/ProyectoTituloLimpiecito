@@ -2,6 +2,7 @@ import { Component, Input, OnChanges } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PevAsignacionesService } from '../../../services/pev-asignaciones/pev-asignaciones.service';
 import { AsignacionCronograma } from '../../../model/pev-asignaciones';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 // RF-PEV-02 (AUT-016, obs. 12): panel "Asignaciones de actividades" en Ver Cronograma. Solo lectura.
 @Component({
@@ -9,6 +10,8 @@ import { AsignacionCronograma } from '../../../model/pev-asignaciones';
   templateUrl: './asignaciones-cronograma.component.html'
 })
 export class AsignacionesCronogramaComponent implements OnChanges {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagAsignaciones = nuevaPaginacion();
   @Input() cronogramaId: number;
   asignaciones: AsignacionCronograma[] = [];
   cargando = false;

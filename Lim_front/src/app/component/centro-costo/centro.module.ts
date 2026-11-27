@@ -21,10 +21,12 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { NgOptionHighlightModule } from '@ng-select/ng-option-highlight';
 import { LoadingModule } from 'src/app/loading/loading.module';
 import { NuevaListaPdfComponent } from './nueva-lista-pdf/nueva-lista-pdf.component';
+import { PaginacionModule } from '../paginacion/paginacion';
 
 @NgModule({
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
     HistorialModule,
     RouterModule.forChild(CentroRoutes),
     FormsModule, ReactiveFormsModule,

@@ -19,11 +19,13 @@ import { ConteoDetalleComponent } from './conteo-detalle/conteo-detalle.componen
 import { ProveedoresListaComponent } from './proveedores-lista/proveedores-lista.component';
 import { InformeCompraComponent } from './informe-compra/informe-compra.component';
 import { OrdenCompraNuevaComponent } from './orden-compra-nueva/orden-compra-nueva.component';
+import { PaginacionModule } from '../paginacion/paginacion';
 
 // RF-BOD-04: recepción de órdenes, movimientos y formato de entrega (módulo nuevo con carga diferida)
 @NgModule({
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
     RouterModule.forChild(RecepcionBodegaRoutes),
     FormsModule,
     NgbModule,

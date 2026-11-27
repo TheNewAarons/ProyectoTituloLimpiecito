@@ -15,6 +15,7 @@ import { EditarCronogramaComponent } from './editar-cronograma/editar-cronograma
 import { DialogAgregarComponent } from './dialog-agregar/dialog-agregar.component';
 import { EstadoCronogramaPipe } from 'src/app/pipe/estado-cronograma.pipe';
 import { AsignacionesCronogramaComponent } from './asignaciones-cronograma/asignaciones-cronograma.component'; // RF-PEV-02 (obs. 12)
+import { PaginacionModule } from '../paginacion/paginacion';
 
 @NgModule({
   declarations: [
@@ -32,6 +33,7 @@ import { AsignacionesCronogramaComponent } from './asignaciones-cronograma/asign
   entryComponents:[DialogCronogramaComponent, DialogAgregarComponent],
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
     FormsModule,
     ReactiveFormsModule,
     NgbModule,

@@ -111,7 +111,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let trabajador of trabajadores">
+                  <tr *ngFor="let trabajador of trabajadores | paginar: pagTrabajadores">
                     <td class="text-center">-</td>
                     <td>{{ trabajador.trabajadore.nombre }}</td>
                     <td>{{ trabajador.trabajadore.apellido }}</td>
@@ -155,6 +155,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagTrabajadores" [total]="(trabajadores || []).length"></app-paginacion>
             </div>
             <!-- END TABLE RESPONSIVE-->
             <button
@@ -189,7 +190,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let listaInsumo of listaInsumos">
+                  <tr *ngFor="let listaInsumo of listaInsumos | paginar: pagListasInsumo">
                     <td class="text-center">-</td>
                     <td>{{ listaInsumo.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td>{{ listaInsumo.total | currency: 'USD':'symbol':'1.0' }}</td>
@@ -253,6 +254,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagListasInsumo" [total]="(listaInsumos || []).length"></app-paginacion>
             </div>
             <!-- END TABLE RESPONSIVE-->
             <button
@@ -284,7 +286,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let egreso of egresos">
+                  <tr *ngFor="let egreso of egresos | paginar: pagEgresos">
                     <td class="text-center">-</td>
                     <td>{{ egreso.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td>{{ egreso.monto | currency: 'USD':'symbol':'1.0' }}</td>
@@ -305,6 +307,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagEgresos" [total]="(egresos || []).length"></app-paginacion>
             </div>
             <!-- END TABLE RESPONSIVE-->
             <!-- Tabla Ingreso -->
@@ -337,7 +340,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let ingreso of ingresos">
+                  <tr *ngFor="let ingreso of ingresos | paginar: pagIngresos">
                     <td class="text-center">-</td>
                     <td>{{ ingreso.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td>{{ ingreso.monto | currency: 'USD':'symbol':'1.0' }}</td>
@@ -358,6 +361,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagIngresos" [total]="(ingresos || []).length"></app-paginacion>
             </div>
             <!-- END TABLE RESPONSIVE-->
           </div>

@@ -16,6 +16,7 @@ import { VerListaSupervisorComponent } from './lista_supervisor/ver-lista-superv
 import { EstadoListaPevSupPipe } from 'src/app/pipe/estado-lista-pev-sup.pipe';
 import { DialogImprimirListaCheckComponent } from './dialog-imprimir-lista-check/dialog-imprimir-lista-check.component';
 import { DialogImprimirListaSupervisorComponent } from './dialog-imprimir-lista-supervisor/dialog-imprimir-lista-supervisor.component';
+import { PaginacionModule } from '../paginacion/paginacion';
 
 
 @NgModule({
@@ -26,6 +27,7 @@ import { DialogImprimirListaSupervisorComponent } from './dialog-imprimir-lista-
   entryComponents:[DialogImprimirListaCheckComponent,DialogImprimirListaSupervisorComponent],
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
     FormsModule,
     ReactiveFormsModule,
     NgbModule,

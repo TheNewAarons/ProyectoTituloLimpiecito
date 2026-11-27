@@ -36,10 +36,12 @@ import { VerClienteComponent } from './ver-cliente/ver-cliente.component';
 import { DialogSectorEditarNombreComponent } from './shared/dialog-sector-editar-nombre/dialog-sector-editar-nombre.component';
 import { DialogAreaEditarNombreComponent } from './shared/dialog-area-editar-nombre/dialog-area-editar-nombre.component';
 import { DialogTareaEditarNombreComponent } from './shared/dialog-tarea-editar-nombre/dialog-tarea-editar-nombre.component';
+import { PaginacionModule } from '../paginacion/paginacion';
 
 @NgModule({
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
     HistorialModule,
     RouterModule.forChild(GestionRoutes),
     NgbModule,

@@ -8,6 +8,7 @@ import { AnalyticsService } from '../../../services/analytics/analytics.service'
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { generarMeses, idDesdeQuery, mesActualSantiago, rangoDesdeQuery } from '../compartido/filtro-periodo/filtro-periodo.component';
 import { Columna, descargarCsv } from '../compartido/csv';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 // RF-BI-04: productividad PEV — cumplimiento por trabajador, verificación por supervisor y observaciones por sector (D-BI-04-1..4).
 @Component({
@@ -15,6 +16,10 @@ import { Columna, descargarCsv } from '../compartido/csv';
   templateUrl: './productividad-pev.component.html'
 })
 export class ProductividadPevComponent implements OnInit, OnDestroy {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagTrabajadores = nuevaPaginacion();
+  pagSupervisores = nuevaPaginacion();
+  pagSectores = nuevaPaginacion();
   static readonly COLUMNAS: { [vista: string]: Columna[] } = {
     trabajadores: [['Trabajador', 'nombre'], ['N° empleado', 'n_empleado'], ['Días', 'dias'], ['Tareas', 'tareas'],
       ['Pasos asignados', 'pasos_asignados'], ['Pasos marcados', 'pasos_marcados'], ['Cumplimiento %', 'cumplimiento_pct']],

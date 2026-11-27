@@ -16,12 +16,14 @@ import { NgxCleaveDirectiveModule } from 'ngx-cleave-directive';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { CrearAnuncioComponent } from './crear-anuncio/crear-anuncio.component';
+import { PaginacionModule } from '../paginacion/paginacion';
 //import { NgOptionHighlightModule } from '@ng-select/ng-option-highlight';
 
 
 @NgModule({
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
     RouterModule.forChild(PaginaWebRoutes),
     NgbModule,
     FormsModule,

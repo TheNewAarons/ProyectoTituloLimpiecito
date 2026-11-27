@@ -7,6 +7,7 @@ import { AsociacionService } from 'src/app/services/documento/asociacion/asociac
 import { saveAs } from 'file-saver';
 import { LoginService } from 'src/app/services/login/login.service';
 import { Subscription } from 'rxjs';
+import { nuevaPaginacion } from '../../../paginacion/paginacion';
 
 @Component({
   selector: 'app-ver-documento',
@@ -14,6 +15,8 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./ver-documento.component.css']
 })
 export class VerDocumentoComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagAsocTrabajadores = nuevaPaginacion();
   public idDocumento;
   public documento;
   public url_documento;

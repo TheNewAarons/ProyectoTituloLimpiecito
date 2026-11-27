@@ -8,6 +8,7 @@ import { AlertasService } from '../../../services/alertas/alertas.service';
 import { LoginService } from '../../../services/login/login.service';
 import { ConteoDetalle, ConteoItem, ResultadoAprobacionConteo, ETIQUETA_CONTEO, BADGE_CONTEO } from '../../../model/recepcion-bodega';
 import { mostrarErrorBodega } from '../../solicitudes-bodega/solicitudes-bodega.errores';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 // RF-BOD-07: captura del conteo físico; aprobar (solo Administrador) genera los AJUSTE en el kardex
 @Component({
@@ -16,6 +17,8 @@ import { mostrarErrorBodega } from '../../solicitudes-bodega/solicitudes-bodega.
   styleUrls: ['../../solicitudes-bodega/solicitudes-bodega.css']
 })
 export class ConteoDetalleComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagItems = nuevaPaginacion();
   conteo: ConteoDetalle = null;
   contadas: { [itemId: number]: number } = {};
   motivos: { [itemId: number]: string } = {};

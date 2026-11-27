@@ -62,7 +62,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let f of filas" [class.table-danger]="f.en_perdida">
+                  <tr *ngFor="let f of filas | paginar: pagFilas" [class.table-danger]="f.en_perdida">
                     <td>{{ f.posicion }}</td>
                     <td>
                       {{ f.cliente }}
@@ -104,6 +104,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagFilas" [total]="(filas || []).length"></app-paginacion>
             </div>
           </div>
         </div>
@@ -139,7 +140,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let p of detalle.por_periodo">
+                  <tr *ngFor="let p of detalle.por_periodo | paginar: pagPeriodos">
                     <td>{{ p.periodo }}</td>
                     <td class="text-right">{{ p.sueldos | currency:'CLP':'symbol':'1.0-0' }}</td>
                     <td class="text-right">{{ p.epp_insumos | currency:'CLP':'symbol':'1.0-0' }}</td>
@@ -147,6 +148,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagPeriodos" [total]="(detalle.por_periodo || []).length"></app-paginacion>
             </div>
           </div>
         </div>

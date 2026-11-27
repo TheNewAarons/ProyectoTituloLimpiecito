@@ -23,6 +23,7 @@ declare const $: any;
 import swal from 'sweetalert2';
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
 import { forkJoin } from 'rxjs';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 @Component({
   selector: 'app-ver-centro',
@@ -30,6 +31,11 @@ import { forkJoin } from 'rxjs';
   styleUrls: ['./ver-centro.component.css']
 })
 export class VerCentroComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagTrabajadores = nuevaPaginacion();
+  pagListasInsumo = nuevaPaginacion();
+  pagEgresos = nuevaPaginacion();
+  pagIngresos = nuevaPaginacion();
   public centro: any;
   public trabajadores;
   public listaInsumos;

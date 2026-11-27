@@ -26,10 +26,12 @@ import { VistaCategoriasInactivasComponent } from './categorias/vista-categorias
 import { NgSelectModule } from '@ng-select/ng-select';
 import { NgOptionHighlightModule } from '@ng-select/ng-option-highlight';
 import { SafePipe } from '../../pipe/safe.pipe';
+import { PaginacionModule } from '../paginacion/paginacion';
 
 @NgModule({
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
     RouterModule.forChild(ArchivoRoutes),
     NgbModule,
     FormsModule,

@@ -16,14 +16,15 @@
                   <tr>
                     <th class="text-left">Titulo</th>
                     <th>Fecha publicacion</th>
-                    <th class="text-right">Publico</th>
+                    <th class="text-right pr-3">Publico</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let documento of documentos">
+                  <tr *ngFor="let documento of documentos | paginar: pagDocumentos">
                     <td>{{ documento.nombre }}</td>
                     <td>{{ documento.fecha_publicacion | date: 'dd/MM/yyyy' }}</td>
-                    <td class="text-right">
+                    <!-- pr-3: el efecto (ripple) del interruptor se salía 2 px y generaba una barra horizontal -->
+                    <td class="text-right pr-3">
                       <mat-slide-toggle
                         [checked]="documento.publico"
                         [disabled]="publicando[documento.id]"
@@ -36,6 +37,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagDocumentos" [total]="(documentos || []).length"></app-paginacion>
             </div>
           </div>
         </div>

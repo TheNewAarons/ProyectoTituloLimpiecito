@@ -7,6 +7,7 @@ import { AsociacionService } from 'src/app/services/documento/asociacion/asociac
 import { TrabajadorDocumento } from '../../../../model/trabajador_documento';
 import { TrabajadorService } from 'src/app/services/trabajador/trabajador.service';
 import { formatDate } from '@angular/common';
+import { nuevaPaginacion } from '../../../paginacion/paginacion';
 
 @Component({
   selector: 'app-crear-asociacion',
@@ -14,6 +15,8 @@ import { formatDate } from '@angular/common';
   styleUrls: ['./crear-asociacion.component.css']
 })
 export class CrearAsociacionComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagAsociaciones = nuevaPaginacion();
   public idDocumento;
   public trabajadores = [];
   public asoc_trabajador: TrabajadorDocumento;

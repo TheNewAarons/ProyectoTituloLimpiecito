@@ -28,7 +28,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let a of asignaciones" [class.text-muted]="a.estado !== 'ACTIVA'">
+              <tr *ngFor="let a of asignaciones | paginar: pagAsignaciones" [class.text-muted]="a.estado !== 'ACTIVA'">
                 <td>{{ a.actividad }}</td>
                 <td>{{ a.sector }} / {{ a.area }}</td>
                 <td>{{ a.trabajador }} <span class="text-muted small">N° {{ a.n_empleado }}</span></td>
@@ -39,6 +39,7 @@
               </tr>
             </tbody>
           </table>
+          <app-paginacion [estado]="pagAsignaciones" [total]="(asignaciones || []).length"></app-paginacion>
         </div>
       </div>
     </div>
