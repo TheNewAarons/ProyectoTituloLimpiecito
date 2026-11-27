@@ -94,10 +94,10 @@
                         <td>{{ usuario.nombre }}</td>
                         <td>{{ usuario.apellido }}</td>
                         <td>{{ usuario.correo }}</td>
-                        <td>{{ usuario.role.nombre }}</td>
+                        <td>{{ usuario.role?.nombre }}</td>
                         <td class="td-actions text-right">
                           <button
-                            *ngIf="usuarioLog.role.id < usuario.role.id"
+                            *ngIf="usuarioLog.role.id < usuario.role?.id"
                             mat-raised-button
                             type="button"
                             class="btn btn-warning btn-round"
@@ -108,7 +108,7 @@
                             <i class="material-icons">vpn_key</i>
                           </button>
                           <button
-                            *ngIf="usuarioLog.role.id < usuario.role.id"
+                            *ngIf="usuarioLog.role.id < usuario.role?.id"
                             mat-raised-button
                             type="button"
                             title="Editar Usuario"
@@ -121,17 +121,17 @@
                           </button>
                           <button
                             *ngIf="
-                              usuarioLog.role.id < usuario.role.id &&
+                              usuarioLog.role.id < usuario.role?.id &&
                               usuarioLog.role.nombre != 'APOYO_LVL_1' &&
                                 usuarioLog.role.nombre != 'ADMINISTRADOR_LVL_3'
                             "
                             mat-raised-button
                             type="button"
-                            title="Desactivar Usuario"
+                            title="Desactivar Usuario (no se elimina)"
                             class="btn btn-danger btn-round"
                             (click)="eliminarUsuario(usuario.id)"
                           >
-                            <i class="material-icons">close</i>
+                            <i class="material-icons">person_off</i>
                           </button>
                         </td>
                       </tr>
@@ -196,7 +196,7 @@
                             </button>-->
                           <button
                             *ngIf="
-                              usuarioLog.role.id < usuarioInactivo.role.id &&
+                              usuarioLog.role.id < usuarioInactivo.role?.id &&
                               usuarioLog.role.nombre != 'APOYO_LVL_1' &&
                                 usuarioLog.role.nombre != 'ADMINISTRADOR_LVL_3'
                             "
@@ -398,7 +398,8 @@
       </div>
       <div class="modal-body">
         <form #f2="ngForm" (submit)="editarUsuario(f2.valid)">
-          <mat-form-field class="example-full-width">
+          <!-- floatLabel always: el valor se carga con el modal oculto y la etiqueta quedaba encima del texto -->
+          <mat-form-field class="example-full-width" floatLabel="always">
             <input
               matInput
               placeholder="Nombre"
@@ -415,7 +416,7 @@
               Nombre es requerido.
             </small>
           </mat-form-field>
-          <mat-form-field class="example-full-width">
+          <mat-form-field class="example-full-width" floatLabel="always">
             <input
               matInput
               placeholder="Apellido"
@@ -425,7 +426,7 @@
               type="text"
             />
           </mat-form-field>
-          <mat-form-field class="example-full-width">
+          <mat-form-field class="example-full-width" floatLabel="always">
             <input
               matInput
               placeholder="correo"
@@ -436,13 +437,13 @@
               required
             />
             <small
-              [hidden]="correo1.valid || (correo1.pristine && !f1.submitted)"
+              [hidden]="correo1.valid || (correo1.pristine && !f2.submitted)"
               class="text-danger"
             >
               Correo es requerido.
             </small>
           </mat-form-field>
-          <mat-form-field class="example-full-width">
+          <mat-form-field class="example-full-width" floatLabel="always">
             <input
               matInput
               placeholder="Rut"
@@ -456,13 +457,13 @@
               required
             />
             <small
-              [hidden]="rut1.valid || (rut1.pristine && !f1.submitted)"
+              [hidden]="rut1.valid || (rut1.pristine && !f2.submitted)"
               class="text-danger"
             >
               Rut es Inválido.
             </small>
           </mat-form-field>
-          <mat-form-field>
+          <mat-form-field floatLabel="always">
             <mat-select
               placeholder="Rol.."
               name="roleId1"

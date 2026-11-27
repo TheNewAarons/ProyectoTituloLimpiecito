@@ -1,7 +1,10 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { FiltroPeriodoComponent, generarMeses, mesActualSantiago } from './filtro-periodo.component';
+import { FiltroPeriodoComponent, generarMeses, mesActualSantiago, primerMesDe, rangoDesdeQuery } from './filtro-periodo.component';
 import { RangoPeriodo } from '../../../../model/analytics';
+import { convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
+import { AnalyticsService } from '../../../../services/analytics/analytics.service';
 
 describe('generarMeses', () => {
   it('genera meses hacia atrás, más reciente primero, con cero a la izquierda', () => {
@@ -32,7 +35,11 @@ describe('FiltroPeriodoComponent', () => {
   let emitidos: RangoPeriodo[];
 
   beforeEach(async(() => {
-    TestBed.configureTestingModule({ declarations: [FiltroPeriodoComponent], schemas: [NO_ERRORS_SCHEMA] }).compileComponents();
+    TestBed.configureTestingModule({
+      declarations: [FiltroPeriodoComponent],
+      providers: [{ provide: AnalyticsService, useValue: { primerosPeriodos: () => of(null) } }],
+      schemas: [NO_ERRORS_SCHEMA]
+    }).compileComponents();
   }));
 
   beforeEach(() => {
@@ -42,13 +49,34 @@ describe('FiltroPeriodoComponent', () => {
     component.cambio.subscribe((r: RangoPeriodo) => emitidos.push(r));
   });
 
-  it('ngOnChanges genera mesesAtras opciones y por defecto desde = hasta = mes actual', () => {
+  it('ngOnChanges genera mesesAtras opciones y por defecto hasta = mes actual y desde = 3 meses atrás', () => {
     component.mesesAtras = 12;
     component.ngOnChanges();
     expect(component.meses.length).toBe(12);
     expect(component.meses[0]).toBe(mesActualSantiago());
     expect(component.hasta).toBe(mesActualSantiago());
-    expect(component.desde).toBe(component.hasta);
+    expect(component.desde).toBe(generarMeses(mesActualSantiago(), 3)[2]);
+  });
+
+  it('limitarA quita los meses sin datos y corre el desde al primer mes con datos', async () => {
+    const actual = mesActualSantiago();
+    const primer = generarMeses(actual, 5)[4];
+    component.desde = generarMeses(actual, 12)[11];
+    component.hasta = actual;
+    component.limitarA(primer);
+    expect(component.meses.length).toBe(5);
+    expect(component.meses[4]).toBe(primer);
+    expect(component.desde).toBe(primer);
+    await Promise.resolve();
+    expect(emitidos).toEqual([{ desde: primer, hasta: actual }]);
+  });
+
+  it('primerMesDe usa la fuente o, sin fuente, el más antiguo', () => {
+    const p = { financiero: '2025-11', rentabilidad: '2025-11', bodega: '2025-12', productividad: null };
+    expect(primerMesDe(p, 'bodega')).toBe('2025-12');
+    expect(primerMesDe(p, 'productividad')).toBeNull();
+    expect(primerMesDe(p, null)).toBe('2025-11');
+    expect(primerMesDe(null, 'bodega')).toBeNull();
   });
 
   it('respeta desde/hasta recibidos por input', () => {
@@ -66,11 +94,17 @@ describe('FiltroPeriodoComponent', () => {
     expect(emitidos).toEqual([{ desde: '2025-01', hasta: '2025-06' }]);
   });
 
-  it('emite cuando desde == hasta', () => {
-    component.desde = '2025-06';
+  it('emite con exactamente 3 meses y no con menos', () => {
+    component.desde = '2025-04';
     component.hasta = '2025-06';
     component.emitir();
     expect(emitidos.length).toBe(1);
+    component.desde = '2025-05';
+    component.emitir();
+    component.desde = '2025-06';
+    component.emitir();
+    expect(emitidos.length).toBe(1);
+    expect(component.invalido).toBe(true);
   });
 
   it('no emite y marca inválido si desde > hasta, mostrando el aviso', () => {
@@ -84,8 +118,29 @@ describe('FiltroPeriodoComponent', () => {
   });
 
   it('compara bien a través del cambio de año', () => {
-    component.desde = '2024-12';
+    component.desde = '2024-11';
     component.hasta = '2025-01';
     expect(component.invalido).toBe(false);
+    component.desde = '2024-12';
+    expect(component.invalido).toBe(true);
+  });
+
+  it('deshabilita los meses que dejarían menos de 3 meses, según el otro extremo', () => {
+    component.desde = '2025-01';
+    component.hasta = '2025-06';
+    expect(component.desdeDeshabilitado('2025-04')).toBe(false);
+    expect(component.desdeDeshabilitado('2025-05')).toBe(true);
+    expect(component.hastaDeshabilitado('2025-03')).toBe(false);
+    expect(component.hastaDeshabilitado('2025-02')).toBe(true);
+    component.mesesMinimos = 1;
+    expect(component.desdeDeshabilitado('2025-06')).toBe(false);
+    expect(component.desdeDeshabilitado('2025-07')).toBe(true);
+  });
+
+  it('rangoDesdeQuery acepta solo rangos válidos de la URL', () => {
+    expect(rangoDesdeQuery(convertToParamMap({ desde: '2025-01', hasta: '2025-06' }))).toEqual({ desde: '2025-01', hasta: '2025-06' });
+    expect(rangoDesdeQuery(convertToParamMap({ desde: '2025-05', hasta: '2025-06' }))).toBeNull();
+    expect(rangoDesdeQuery(convertToParamMap({ desde: 'x', hasta: '2025-06' }))).toBeNull();
+    expect(rangoDesdeQuery(convertToParamMap({}))).toBeNull();
   });
 });

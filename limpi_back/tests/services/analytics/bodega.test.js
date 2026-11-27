@@ -97,3 +97,43 @@ describe('armarFrecuencia', () => {
     ]);
   });
 });
+
+describe('RF-BOD-04: merma de recepciones', () => {
+  const rec = (o) => Object.assign({
+    producto_id: 1, producto: 'Cloro', cantidad: 9, cantidad_rechazada: 1, motivo_rechazo: 'Roto', costo_unitario: null, costo_oc: 1000,
+    fecha_recepcion: new Date('2026-10-10T15:00:00Z')
+  }, o);
+
+  it('agrupa por producto: % merma, costo (real o de la OC), último motivo; incluye productos sin merma', () => {
+    const a = s.armarMerma([
+      rec({}),
+      rec({ cantidad: 0, cantidad_rechazada: 2, motivo_rechazo: 'Vencido', costo_unitario: 1200, fecha_recepcion: new Date('2026-11-05T15:00:00Z') }),
+      rec({ producto_id: 2, producto: 'Guantes', cantidad: 10, cantidad_rechazada: 0, motivo_rechazo: null }),
+      rec({ fecha_recepcion: new Date('2026-07-01T15:00:00Z') }) // fuera de rango
+    ], R);
+    expect(a.productos).toEqual([
+      { producto_id: 1, producto: 'Cloro', recibido: 9, rechazado: 3, porcentaje_merma: 25, costo_merma: 1000 + 2400, recepciones_con_rechazo: 2, ultimo_motivo: 'Vencido' },
+      { producto_id: 2, producto: 'Guantes', recibido: 10, rechazado: 0, porcentaje_merma: 0, costo_merma: 0, recepciones_con_rechazo: 0, ultimo_motivo: null }
+    ]);
+    expect(a.por_mes).toEqual([
+      { periodo: '2026-09', recibido: 0, rechazado: 0 }, { periodo: '2026-10', recibido: 19, rechazado: 1 }, { periodo: '2026-11', recibido: 0, rechazado: 2 }
+    ]);
+    expect(a.totales).toEqual({ recibido: 19, rechazado: 3, costo_merma: 3400, porcentaje_merma: 13.6 });
+  });
+
+  it('sin recepciones: listas vacías y 0 %', () => {
+    expect(s.armarMerma([], R).totales).toEqual({ recibido: 0, rechazado: 0, costo_merma: 0, porcentaje_merma: 0 });
+  });
+});
+
+describe('primer día del flujo nuevo', () => {
+  it('criterio RF-BI-03: la solicitud del primer día del flujo (1 dic 00:30 Santiago) cuenta en ese mes', () => {
+    const linea = {
+      producto_id: 1, producto: 'Cloro', cantidad_pedida: 4, cantidad_asignada: 4, solicitud_id: 1, estado: 'ENTREGADA',
+      created_at: new Date('2025-12-01T03:30:00Z'), entregada_at: new Date('2025-12-01T03:30:00Z'), trabajador_id: null, usuario_id: null, centro_costo_id: null
+    };
+    const r = { desde: '2025-12', hasta: '2025-12' };
+    expect(s.armarTop([linea], r, 10)[0].cantidad_pedida).toBe(4);
+    expect(s.armarConsumo([linea], r, 'mes', null)).toEqual([expect.objectContaining({ periodo: '2025-12', cantidad: 4 })]);
+  });
+});

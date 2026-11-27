@@ -8,6 +8,7 @@ import { TrabajadorComponent } from './trabajador/trabajador.component';
 import { LiquidacionComponent } from './liquidacion/liquidacion.component';
 import { PdfLiquidacionComponent } from './pdf-liquidacion/pdf-liquidacion.component';
 import { MaterialModule } from '../../app.module';
+import { HistorialModule } from '../historial/historial.module'; // RNF-SEC-02: botón Historial
 
 import { CrearTrabajadorComponent } from './crear-trabajador/crear-trabajador.component';
 import { EditarTrabajadorComponent } from './editar-trabajador/editar-trabajador.component';
@@ -21,6 +22,7 @@ import { CrearAccesoTrabajadorComponent } from './crear-acceso-trabajador/crear-
 @NgModule({
   imports: [
     CommonModule,
+    HistorialModule,
     RouterModule.forChild(ColaboradorRoutes),
     NgbModule,
     FormsModule,

@@ -3,112 +3,91 @@
     <div class="row">
       <div class="col-md-12">
         <div class="card">
-
           <div class="card-header card-header-rose card-header-icon">
             <div class="card-icon">
               <i class="material-icons">assignment</i>
             </div>
-            <h4 class="card-title">
-              Ver Anuncio Acual 
-            </h4>
+            <h4 class="card-title">Anuncios de la Página Web</h4>
             <br />
-            <div *ngIf="cant_anuncios < '1'">
-              <button mat-raised-button title="Crear Producto" class="btn btn-warning btn-sm" routerLink="/pagina_web/crear-anuncio">
-                <span class="btn-label">
-                  <i class="material-icons">add</i>
-                </span>
-                Crear
-              </button>
+            <button mat-raised-button matTooltip="Crear Anuncio" class="btn btn-warning btn-sm" routerLink="/pagina_web/crear-anuncio">
+              <span class="btn-label"><i class="material-icons">add</i></span>
+              Crear
+            </button>
+          </div>
+          <div class="card-body">
+            <p class="text-muted">
+              La web muestra solo los anuncios <strong>vigentes</strong>: publicados, con fecha de publicación ya cumplida y sin
+              fecha de expiración o con ella aún por llegar. Al llegar la fecha de expiración el anuncio deja de mostrarse solo.
+            </p>
+            <div class="table-responsive">
+              <table class="table">
+                <thead class="text-primary">
+                  <tr>
+                    <th>Imagen</th>
+                    <th>Título</th>
+                    <th>Publicación</th>
+                    <th>Expiración</th>
+                    <th>Estado</th>
+                    <th class="text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of publicaciones | paginar: pagPublicaciones">
+                    <td>
+                      <img *ngIf="p.imagen_url" class="img-anuncio" [src]="origen_backend + p.imagen_url" [alt]="p.titulo" />
+                    </td>
+                    <td>{{ p.titulo }}</td>
+                    <td>{{ p.fecha_publicacion | date: 'dd-MM-yyyy HH:mm' }}</td>
+                    <td>{{ p.fecha_expiracion ? (p.fecha_expiracion | date: 'dd-MM-yyyy HH:mm') : 'Sin expiración' }}</td>
+                    <td><span class="badge" [ngClass]="claseEstado(p)">{{ estado(p) }}</span></td>
+                    <td class="td-actions text-right">
+                      <button mat-raised-button type="button" matTooltip="Editar" class="btn btn-warning btn-round" [routerLink]="['/pagina_web/editar-anuncio', p.id]">
+                        <i class="material-icons">edit</i>
+                      </button>
+                      <button *ngIf="p.publicado" mat-raised-button type="button" matTooltip="Despublicar" class="btn btn-danger btn-round" (click)="despublicar(p)">
+                        <i class="material-icons">close</i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!publicaciones.length">
+                    <td colspan="6" class="text-center text-muted">No hay anuncios creados.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <app-paginacion [estado]="pagPublicaciones" [total]="(publicaciones || []).length"></app-paginacion>
             </div>
 
-          </div>
-          <br><br>
-          
-          <div class="col-md-4 text-center" >
-            <div class="card card-product ">
-              <div *ngFor= "let anuncio of anuncios">  
-                <div class="card-header card-header-image" data-header-animation="true">
-                  <a href="#pablo">
-                    <img class="img " [src]="url_imagen + anuncio.imagen" />
-                  </a>
-                </div>
-
-                <div class="card-body">
-                  <div class="card-actions text-center">
-                    
-          
-                    
-                    <button type="button" class="btn btn-success btn-simple" rel="tooltip" data-placement="bottom" title="Editar" data-toggle="modal" data-target="#editModal" (click)="asignarEditar(anuncio)">
-                      <i class="material-icons">edit</i>
-                    </button>
-                    <button type="button" class="btn btn-danger btn-simple" rel="tooltip" data-placement="bottom" title="Eliminar" (click)="eliminarAnuncio(anuncio.id)">
-                      <i class="material-icons">close</i>
-                    </button>
-                  </div>
-          
-                  <h4 class="card-title">
-                    <a >{{ anuncio?.titulo }}</a>
-                  </h4>
-                  <h6>{{ anuncio?.sub_titulo }}</h6>
-                  <div class="card-description">
-                    {{ anuncio?.descripcion }}      
-                  </div>
-                </div>
+            <div *ngIf="antiguos.length">
+              <h4 class="card-title">Anuncios antiguos (sin fechas)</h4>
+              <p class="text-muted">Se crearon antes de las fechas de vigencia y se muestran en la web hasta que los elimine.</p>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead class="text-primary">
+                    <tr>
+                      <th>Imagen</th>
+                      <th>Título</th>
+                      <th>Descripción</th>
+                      <th class="text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let a of antiguos">
+                      <td><img *ngIf="a.imagen" class="img-anuncio" [src]="url_imagen + a.imagen" [alt]="a.titulo" /></td>
+                      <td>{{ a.titulo }}<br /><small>{{ a.sub_titulo }}</small></td>
+                      <td>{{ a.descripcion }}</td>
+                      <td class="td-actions text-right">
+                        <button mat-raised-button type="button" matTooltip="Eliminar" class="btn btn-danger btn-round" (click)="eliminarAntiguo(a.id)">
+                          <i class="material-icons">delete</i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-
             </div>
           </div>
-
         </div>
       </div>
     </div>
   </div>
 </div>
-<!-- EDIT MODAL -->
-<div class="modal fade" id="editModal" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-notice">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="myModalLabel">Editar Anuncio</h5>
-        <button mat-button type="button" class="close" data-dismiss="modal" aria-hidden="true">
-          <i class="material-icons">close</i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form #f2="ngForm" (submit)="editarAnuncio(f2.valid)">
-          <mat-form-field class="example-full-width">
-            <input matInput placeholder="Titulo" name="titulo" #titulo="ngModel" [(ngModel)]="anuncioEdit.titulo" required type="text" />
-            <small [hidden]="titulo.valid || (titulo.pristine && !f2.submitted)" class="text-danger">
-              Titulo es requerido.
-            </small>
-          </mat-form-field>
-          <mat-form-field class="example-full-width">
-            <input matInput placeholder="Sub Titulo" name="sub_titulo" #sub_titulo="ngModel" [(ngModel)]="anuncioEdit.sub_titulo" required type="text" />
-            <small [hidden]="sub_titulo.valid || (sub_titulo.pristine && !f2.submitted)" class="text-danger">
-              Sub Titulo es requerido.
-            </small>
-          </mat-form-field>
-          <mat-form-field class="example-full-width">
-            <input matInput placeholder="Descripcion" name="descripcion" #descripcion="ngModel" [(ngModel)]="anuncioEdit.descripcion" required type="text" />
-            <small [hidden]="descripcion.valid || (descripcion.pristine && !f2.submitted)" class="text-danger">
-              Descripcion Requerida
-            </small>
-
-          </mat-form-field>
-          <div>
-            <label for="imagenEditarAnuncio">Cambiar imagen (opcional: jpg, png o webp)</label><br />
-            <input type="file" id="imagenEditarAnuncio" accept="image/jpeg,image/png,image/webp" (change)="imagenEditarSeleccionada($event)" />
-          </div>
-          <small class="text-muted" *ngIf="!hayCambios()">Modifique algún campo o elija una imagen nueva para habilitar Editar.</small>
-
-          <div class="modal-footer justify-content-center">
-            <button mat-raised-button type="submit" class="btn btn-info btn-round" [disabled]="!f2.valid || !hayCambios()">
-              Editar
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- end EDIT MODAL-->

@@ -6,6 +6,20 @@
           <div class="card-header card-header-rose card-header-icon">
             <div class="card-icon"><i class="material-icons">local_shipping</i></div>
             <h4 class="card-title">Órdenes De Compra</h4>
+            <br />
+            <!-- Revisión de requerimientos: volver al panel desde donde se llega -->
+            <button mat-raised-button type="button" matTooltip="Volver al Inicio Bodega" class="btn btn-rose btn-sm" routerLink="/bodega/inicio">
+              <span class="btn-label"><i class="material-icons">dashboard</i></span>
+              Inicio Bodega
+            </button>
+            <button mat-raised-button type="button" matTooltip="Generar Órdenes De Compra" class="btn btn-warning btn-sm" (click)="generar()" [disabled]="enviando">
+              <span class="btn-label"><i class="material-icons">add</i></span>
+              Generar Órdenes
+            </button>
+            <button mat-raised-button type="button" matTooltip="Crear Orden De Compra Manual" class="btn btn-warning btn-sm" (click)="nueva()" [disabled]="enviando">
+              <span class="btn-label"><i class="material-icons">add</i></span>
+              Crear Orden
+            </button>
           </div>
           <div class="card-body">
             <div class="row">
@@ -41,8 +55,14 @@
                     <td class="text-right">{{ o.unidades_pendientes | number:'1.0-0' }} / {{ o.unidades_pedidas | number:'1.0-0' }}</td>
                     <td><span [class]="badge[o.estado]">{{ etiqueta[o.estado] }}</span></td>
                     <td class="td-actions text-right">
-                      <button mat-raised-button type="button" matTooltip="Ver / Recibir" class="btn btn-info btn-round" (click)="ver(o.id)">
+                      <button *ngIf="o.estado !== 'BORRADOR'" mat-raised-button type="button" matTooltip="Ver / Recibir" class="btn btn-info btn-round" (click)="ver(o.id)">
                         <i class="material-icons">remove_red_eye</i>
+                      </button>
+                      <button *ngIf="o.estado === 'BORRADOR'" mat-raised-button type="button" matTooltip="Editar Orden" class="btn btn-warning btn-round" (click)="ver(o.id)">
+                        <i class="material-icons">edit</i>
+                      </button>
+                      <button *ngIf="o.estado === 'BORRADOR'" mat-raised-button type="button" matTooltip="Enviar Al Proveedor" class="btn btn-success btn-round" (click)="enviar(o)" [disabled]="enviando">
+                        <i class="material-icons">done</i>
                       </button>
                     </td>
                   </tr>

@@ -61,6 +61,7 @@ import { RolGuardService } from './services/guard/rol-guard.service';
 
 import { NgxCleaveDirectiveModule } from 'ngx-cleave-directive';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { SesionHttpModule } from './services/sesion/token-sesion.interceptor';
 
 //RECUPERAR PASSWORD
 import { RecuperarPasswordComponent } from './component/recuperar-password/recuperar-password.component';
@@ -125,6 +126,7 @@ export class MaterialModule {}
     NavbarModule,
     FooterModule,
     HttpClientModule,
+    SesionHttpModule, // RNF-SEC-02: la sesión viaja también en las llamadas de las pantallas antiguas (auditoría con usuario)
     NgxCleaveDirectiveModule,
     NgbModule.forRoot()
   ],

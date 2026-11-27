@@ -1,40 +1,128 @@
 <div class="main-content">
   <div class="container-fluid">
+    <!-- Alertas flotantes arriba a la derecha: cada una lleva a su tablero con el período ya puesto. -->
+    <div class="avisos-flotantes">
+      <div class="alert alert-warning alert-with-icon" *ngIf="esAdmin && resumen?.alerta_utilidad.activa && !cerradas.utilidad">
+        <button type="button" class="close" aria-label="Cerrar" (click)="cerradas.utilidad = true"><i class="material-icons">close</i></button>
+        <i class="material-icons" data-notify="icon">trending_down</i>
+        <span>Alerta de utilidad baja ({{ resumen.alerta_utilidad.motivo === 'UTILIDAD_REAL_BAJA' ? 'utilidad real del mes' : 'utilidad proyectada' }}).
+        <a routerLink="../financiero" [queryParams]="{ desde: desde, hasta: hasta }">Ver dashboard financiero</a></span>
+      </div>
+      <div class="alert alert-danger alert-with-icon" *ngIf="esAdmin && clientesEnPerdida && !cerradas.perdida">
+        <button type="button" class="close" aria-label="Cerrar" (click)="cerradas.perdida = true"><i class="material-icons">close</i></button>
+        <i class="material-icons" data-notify="icon">money_off</i>
+        <span>{{ clientesEnPerdida }} {{ clientesEnPerdida === 1 ? 'cliente en pérdida' : 'clientes en pérdida' }} en los últimos 3 meses.
+        <a routerLink="../rentabilidad" [queryParams]="{ desde: desde, hasta: hasta }">Ver rentabilidad</a></span>
+      </div>
+      <div class="alert alert-warning alert-with-icon" *ngIf="stockCritico && !cerradas.stock">
+        <button type="button" class="close" aria-label="Cerrar" (click)="cerradas.stock = true"><i class="material-icons">close</i></button>
+        <i class="material-icons" data-notify="icon">inventory_2</i>
+        <span>{{ stockCritico }} {{ stockCritico === 1 ? 'producto bajo el mínimo' : 'productos bajo el mínimo' }} de stock.
+        <a routerLink="../bodega" [queryParams]="{ pestana: 'critico' }">Ver stock crítico</a></span>
+      </div>
+    </div>
+
+    <ng-container *ngIf="esAdmin">
+      <div class="row">
+        <div class="col-12 col-sm-6 col-lg-3">
+          <app-kpi-card titulo="Ingresos del mes" icono="call_received" color="success" [cargando]="cargando"
+            [valor]="resumen ? resumen.utilidad_real.ingresos : null" [variacion]="variaciones.ingresos"
+            [detalle]="resumen ? (resumen.utilidad_real.cerrada ? 'Mes cerrado' : 'Mes abierto (provisional)') : ''"></app-kpi-card>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <app-kpi-card titulo="Egresos del mes" icono="call_made" color="warning" [cargando]="cargando"
+            [valor]="resumen ? resumen.utilidad_real.egresos : null" [variacion]="variaciones.egresos"
+            [detalle]="resumen ? 'Por pagar: $ ' + (resumen.por_pagar.monto | number:'1.0-0':'es-CL') : ''"></app-kpi-card>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <app-kpi-card titulo="Utilidad del mes" icono="trending_up" color="info" [cargando]="cargando"
+            [valor]="resumen ? resumen.utilidad_real.utilidad : null" [variacion]="variaciones.utilidad"
+            [detalle]="resumen ? 'Ingresos menos egresos' : ''"></app-kpi-card>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+          <app-kpi-card titulo="Stock crítico" icono="warning" color="rose" formato="numero"
+            [valor]="stockCritico" detalle="Productos bajo el mínimo"></app-kpi-card>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header card-header-rose card-header-icon">
+              <div class="card-icon"><i class="material-icons">insights</i></div>
+              <h4 class="card-title">Ingresos, egresos y utilidad · últimos 6 meses</h4>
+            </div>
+            <div class="card-body">
+              <app-grafico tipo="line" [etiquetas]="etiquetas" [series]="series" [pesos]="true"></app-grafico>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
     <div class="row">
-      <div class="col-md-12">
+      <div class="col-12 col-md-6" *ngIf="esAdmin">
         <div class="card">
-          <div class="card-header card-header-rose card-header-icon">
-            <div class="card-icon"><i class="material-icons">insights</i></div>
-            <h4 class="card-title">Analytics</h4>
+          <div class="card-header card-header-info card-header-icon">
+            <div class="card-icon"><i class="material-icons">attach_money</i></div>
+            <h4 class="card-title">Dashboard financiero</h4>
           </div>
           <div class="card-body">
-            <div class="row">
-              <div class="col-12 col-lg-6">
-                <app-filtro-periodo [desde]="filtros.desde" [hasta]="filtros.hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
-              </div>
-              <div class="col-12 col-sm-6 col-lg-3">
-                <app-selector-centro-costo [valor]="filtros.centroCostoId" (cambio)="cambiarCentro($event)"></app-selector-centro-costo>
-              </div>
-              <div class="col-12 col-sm-6 col-lg-3">
-                <app-selector-cliente [valor]="filtros.clienteId" (cambio)="cambiarCliente($event)"></app-selector-cliente>
-              </div>
-            </div>
-            <a mat-raised-button routerLink="../financiero" class="btn btn-info btn-sm">
-              <span class="btn-label"><i class="material-icons">attach_money</i></span>
-              Dashboard financiero
-            </a>
-            <a mat-raised-button routerLink="../rentabilidad" class="btn btn-info btn-sm">
-              <span class="btn-label"><i class="material-icons">leaderboard</i></span>
-              Rentabilidad por cliente
-            </a>
-            <a mat-raised-button routerLink="../bodega" class="btn btn-info btn-sm">
-              <span class="btn-label"><i class="material-icons">inventory_2</i></span>
-              Consumo de bodega
-            </a>
-            <a mat-raised-button routerLink="../productividad" class="btn btn-info btn-sm">
-              <span class="btn-label"><i class="material-icons">fact_check</i></span>
-              Productividad PEV
-            </a>
+            <p>Utilidad real, saldo acumulado, proyección y cuentas por cobrar y pagar.</p>
+            <p class="text-muted" *ngIf="resumen">Saldo acumulado: $ {{ resumen.saldo_acumulado.saldo | number:'1.0-0':'es-CL' }}</p>
+          </div>
+          <div class="card-footer justify-content-end">
+            <a mat-raised-button routerLink="../financiero" class="btn btn-info btn-sm">Ver</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6" *ngIf="esAdmin">
+        <div class="card">
+          <div class="card-header card-header-info card-header-icon">
+            <div class="card-icon"><i class="material-icons">leaderboard</i></div>
+            <h4 class="card-title">Rentabilidad por cliente</h4>
+          </div>
+          <div class="card-body">
+            <p>Margen por cliente y centro de costo, últimos 3 meses.</p>
+            <p class="text-muted" *ngIf="topCliente">
+              Más rentable: {{ topCliente.cliente }} ($ {{ topCliente.margen_con_estimado | number:'1.0-0':'es-CL' }})
+              <span *ngIf="clientesEnPerdida"> · {{ clientesEnPerdida }} en pérdida</span>
+            </p>
+          </div>
+          <div class="card-footer justify-content-end">
+            <a mat-raised-button routerLink="../rentabilidad" [queryParams]="{ desde: desde, hasta: hasta }" class="btn btn-info btn-sm">Ver</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="card">
+          <div class="card-header card-header-info card-header-icon">
+            <div class="card-icon"><i class="material-icons">inventory_2</i></div>
+            <h4 class="card-title">Consumo de bodega</h4>
+          </div>
+          <div class="card-body">
+            <p>Productos más pedidos, consumo por mes, frecuencia de compra y merma.</p>
+            <p class="text-muted">
+              <span *ngIf="porcentajeMerma !== null">Merma últimos 3 meses: {{ porcentajeMerma | number:'1.0-1':'es-CL' }} %</span>
+              <span *ngIf="!esAdmin && stockCritico !== null"> · {{ stockCritico }} productos bajo el mínimo</span>
+            </p>
+          </div>
+          <div class="card-footer justify-content-end">
+            <a mat-raised-button routerLink="../bodega" [queryParams]="{ desde: desde, hasta: hasta }" class="btn btn-info btn-sm">Ver</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="card">
+          <div class="card-header card-header-info card-header-icon">
+            <div class="card-icon"><i class="material-icons">fact_check</i></div>
+            <h4 class="card-title">Productividad PEV</h4>
+          </div>
+          <div class="card-body">
+            <p>Cumplimiento de chequeos por trabajador, supervisor y sector.</p>
+            <p class="text-muted" *ngIf="cumplimiento !== null">Cumplimiento últimos 3 meses: {{ cumplimiento | number:'1.0-1':'es-CL' }} %</p>
+          </div>
+          <div class="card-footer justify-content-end">
+            <a mat-raised-button routerLink="../productividad" [queryParams]="{ desde: desde, hasta: hasta }" class="btn btn-info btn-sm">Ver</a>
           </div>
         </div>
       </div>

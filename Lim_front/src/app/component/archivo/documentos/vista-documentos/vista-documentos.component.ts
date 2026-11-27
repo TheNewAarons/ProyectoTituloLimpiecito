@@ -35,7 +35,7 @@ export class VistaDocumentosComponent implements OnInit {
 
   ngOnInit() {
     this.obtenerDatosUsuario();
-    this.obtenerDocumentos();
+    this.refrescar();
     this.obtenerCategorias();
     this.documentoEdit = new Documento(null, '', null, '', null, null);
   }
@@ -65,19 +65,37 @@ export class VistaDocumentosComponent implements OnInit {
   obtenerDocumentos() {
     this.documentoService.obtenerDocumentos().subscribe(
       (response: any) => {
-        this.documentos = response.documentos;
+        this.asignarDocumentos(response.documentos);
       },
       (error) => {
         console.log(error);
       }
     );
   }
+  // Ajusta la página si la lista quedó más corta (p. ej. tras eliminar o filtrar), para no mostrar una página vacía.
+  private asignarDocumentos(documentos): void {
+    this.documentos = documentos || [];
+    const ultimaPagina = Math.max(1, Math.ceil(this.documentos.length / this.pageSize));
+    if (this.page > ultimaPagina) { this.page = ultimaPagina; }
+  }
+  // Cambio de filtro o búsqueda hecho por el usuario: vuelve a la primera página.
+  filtrar(): void {
+    this.page = 1;
+    this.buscar();
+  }
+  // Recarga la lista respetando el filtro de categoría y la búsqueda activos (tras editar/eliminar).
+  refrescar(): void {
+    if (this.categoria === 'Todos' && !this.search) {
+      this.obtenerDocumentos();
+    } else {
+      this.buscar();
+    }
+  }
   //BUSCAR EN DOCUMENTOS
   buscar() {
     this.documentoService.buscarDocumentos(this.categoria, this.search).subscribe(
       (response: any) => {
-        this.documentos = response.documentos;
-        // console.log(this.documentos);
+        this.asignarDocumentos(response.documentos);
       },
       (error) => {
         console.log(error);
@@ -99,7 +117,7 @@ export class VistaDocumentosComponent implements OnInit {
         this.documentoService.eliminarDocumento(idDocumento).subscribe(
           (response: any) => {
             if (response.eliminar) {
-              this.obtenerDocumentos();
+              this.refrescar();
               this.alertaService.alertaExitoMsj('Eliminado')
             } else {
               this.alertaService.alertaExitoMsj(response.mensaje)
@@ -122,7 +140,7 @@ export class VistaDocumentosComponent implements OnInit {
       this.documentoService.editarDocumento(this.documentoEdit, this.documentoEdit.id).subscribe(
         (response: any) => {
           if (response.filas != 0) {
-            this.obtenerDocumentos();
+            this.refrescar();
             $('#editModal').modal('hide');
             this.alertaService.alertaExitoMsj('Documento Editado Correctamente!')
           }
@@ -193,12 +211,12 @@ export class VistaDocumentosComponent implements OnInit {
         this.documentoService.reemplazarArchivo(this.documentoEdit.id, fd, this.loginService.getToken()).subscribe(
           () => {
             this.limpiarArchivoNuevo();
-            this.obtenerDocumentos();
+            this.refrescar();
             $('#editModal').modal('hide');
             this.alertaService.alertaExitoMsj('Documento actualizado', 'El archivo fue reemplazado correctamente.');
           },
           (error) => {
-            this.obtenerDocumentos();
+            this.refrescar();
             this.alertaService.alertaErrorMsj('No se pudo reemplazar el archivo', this.mensajeError(error, 'El documento conserva su archivo anterior.'));
           }
         );

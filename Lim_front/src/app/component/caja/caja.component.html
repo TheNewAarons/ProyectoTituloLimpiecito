@@ -1,5 +1,76 @@
 <div class="main-content">
   <div class="container-fluid">
+    <!-- KPIs -->
+    <div class="row kpis">
+      <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card card-stats">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">event</i></div>
+            <p class="card-category">Caja actual</p>
+            <h3 class="card-title">
+              {{ filaActual ? (fechaPeriodo(filaActual.periodo) | date: 'MMMM yyyy':'':'es-CL' | titlecase) : '—' }}
+            </h3>
+          </div>
+          <div class="card-footer">
+            <div class="stats">
+              <ng-container *ngIf="filaActual">
+                <i class="material-icons text-muted">{{ filaActual.estado === 'ABIERTA' ? 'lock_open' : 'lock' }}</i>
+                {{ filaActual.estado === 'ABIERTA' ? 'Abierta' : 'Cerrada' }}
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card card-stats">
+          <div class="card-header card-header-success card-header-icon">
+            <div class="card-icon"><i class="material-icons">account_balance_wallet</i></div>
+            <p class="card-category">Saldo actual</p>
+            <h3 class="card-title">
+              {{ filaActual?.saldo_final != null ? (filaActual.saldo_final | currency: 'USD':'symbol':'1.0') : '—' }}
+            </h3>
+          </div>
+          <div class="card-footer">
+            <div class="stats">
+              <ng-container *ngIf="filaActual?.provisional"><i class="material-icons text-warning">info</i> Provisional</ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card card-stats">
+          <div class="card-header card-header-warning card-header-icon">
+            <div class="card-icon"><i class="material-icons">lock_open</i></div>
+            <p class="card-category">Meses sin cerrar</p>
+            <h3 class="card-title">{{ mesesSinCerrar }}</h3>
+          </div>
+          <div class="card-footer">
+            <div class="stats">
+              <i class="material-icons" [ngClass]="mesesSinCerrar > 1 ? 'text-danger' : 'text-success'">
+                {{ mesesSinCerrar > 1 ? 'warning' : 'check_circle' }}
+              </i>
+              {{ mesesSinCerrar > 1 ? 'Hay meses pendientes de cierre' : 'Al día' }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card card-stats">
+          <div class="card-header card-header-info card-header-icon">
+            <div class="card-icon"><i class="material-icons">trending_up</i></div>
+            <p class="card-category">Resultado {{ anioSeleccionado || '' }}</p>
+            <h3 class="card-title" [ngClass]="resultadoAnio < 0 ? 'text-danger' : 'text-success'">
+              {{ resultadoAnio | currency: 'USD':'symbol':'1.0' }}
+            </h3>
+          </div>
+          <div class="card-footer">
+            <div class="stats">Ingresos − egresos del año</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTA -->
     <div class="row">
       <div class="col-md-12">
         <div class="card">
@@ -7,7 +78,7 @@
             <div class="card-icon">
               <i class="material-icons">assignment</i>
             </div>
-            <h4 class="card-title">Cajas Actuales</h4>
+            <h4 class="card-title">Cajas Mensuales</h4>
             <br />
             <button
               *ngIf="caja_actual == null"
@@ -22,27 +93,59 @@
               Crear
             </button>
           </div>
-          <div class="card-body" style="text-align: center;">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3 col-sm-6">
+                <mat-form-field class="example-full-width">
+                  <mat-select placeholder="Año" [(ngModel)]="anioSeleccionado">
+                    <mat-option *ngFor="let anio of anios" [value]="anio">{{ anio }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="col-md-3 col-sm-6">
+                <mat-form-field class="example-full-width">
+                  <mat-select placeholder="Estado" [(ngModel)]="filtroEstado">
+                    <mat-option value="TODAS">Todas</mat-option>
+                    <mat-option value="ABIERTA">Abiertas</mat-option>
+                    <mat-option value="CERRADA">Cerradas</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
             <div class="table-responsive">
               <table class="table">
                 <thead>
                   <tr>
-                    <th class="text-left">Periodo</th>
-                    <th>Fecha Apertura</th>
-                    <th>Fecha Cierre</th>
+                    <th>Periodo</th>
+                    <th class="text-right">Saldo inicial</th>
+                    <th class="text-right">Ingresos</th>
+                    <th class="text-right">Egresos</th>
+                    <th class="text-right">Saldo final</th>
                     <th class="text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let caja of cajas | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
-                    <td class="text-left">
-                      <strong>{{ caja.fecha_inicio | date: 'MMMM yyyy':'':'es-CL' | titlecase }}</strong>
-                    </td>
+                  <tr *ngFor="let fila of filasVisibles" [class.table-active]="fila.periodo === periodoHoy">
                     <td>
-                      {{ caja.fecha_inicio | date: 'dd/MM/yyyy HH:mm' }}
+                      <strong>{{ fechaPeriodo(fila.periodo) | date: 'MMMM yyyy':'':'es-CL' | titlecase }}</strong>
+                      <i
+                        class="material-icons text-muted icono-estado"
+                        [matTooltip]="fila.estado === 'ABIERTA' ? 'Caja abierta' : 'Caja cerrada'"
+                        >{{ fila.estado === 'ABIERTA' ? 'lock_open' : 'lock' }}</i
+                      >
                     </td>
-                    <td>
-                      {{ caja.fecha_cierre == null ? 'Caja Abierta' : (caja.fecha_cierre | date: 'dd/MM/yyyy HH:mm') }}
+                    <td class="text-right">
+                      <i
+                        *ngIf="fila.provisional"
+                        class="material-icons text-warning icono-provisional"
+                        matTooltip="Provisional: depende de meses aún abiertos"
+                        >info</i
+                      >{{ fila.saldo_inicial | currency: 'USD':'symbol':'1.0' }}
+                    </td>
+                    <td class="text-right text-success">{{ fila.ingresos | currency: 'USD':'symbol':'1.0' }}</td>
+                    <td class="text-right text-danger">{{ fila.egresos | currency: 'USD':'symbol':'1.0' }}</td>
+                    <td class="text-right">
+                      <strong>{{ fila.saldo_final != null ? (fila.saldo_final | currency: 'USD':'symbol':'1.0') : '—' }}</strong>
                     </td>
                     <td class="td-actions text-right">
                       <button
@@ -50,7 +153,7 @@
                         type="button"
                         matTooltip="Vista Previa"
                         class="btn btn-info btn-round"
-                        [routerLink]="['/cajas/vista/', caja.id]"
+                        [routerLink]="['/cajas/vista/', fila.id]"
                       >
                         <i class="material-icons">remove_red_eye</i>
                       </button>
@@ -59,33 +162,47 @@
                         type="button"
                         matTooltip="Movimiento"
                         class="btn btn-success btn-round"
-                        [routerLink]="['/cajas/ver/', caja.id]"
+                        [routerLink]="['/cajas/ver/', fila.id]"
                       >
                         <i class="material-icons">account_balance_wallet</i>
                       </button>
                       <button
-                        *ngIf="caja.estado == 1"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Ver historial de cambios"
+                        class="btn btn-info btn-round"
+                        (click)="verHistorial(fila)"
+                      >
+                        <i class="material-icons">history</i>
+                      </button>
+                      <button
+                        *ngIf="fila.estado === 'ABIERTA'"
                         mat-raised-button
                         type="button"
                         matTooltip="Cerrar caja"
                         class="btn btn-danger btn-round"
-                        (click)="cerrarCaja(caja.id)"
+                        (click)="cerrarCaja(fila.id)"
                       >
                         <i class="material-icons">close</i>
                       </button>
                     </td>
                   </tr>
+                  <tr *ngIf="filasVisibles.length === 0">
+                    <td colspan="6" class="text-center">Sin cajas para el filtro seleccionado</td>
+                  </tr>
                 </tbody>
+                <tfoot *ngIf="anioSeleccionado">
+                  <tr>
+                    <th colspan="2">Total {{ anioSeleccionado }}</th>
+                    <th class="text-right text-success">{{ totalAnio('ingresos') | currency: 'USD':'symbol':'1.0' }}</th>
+                    <th class="text-right text-danger">{{ totalAnio('egresos') | currency: 'USD':'symbol':'1.0' }}</th>
+                    <th class="text-right" [ngClass]="resultadoAnio < 0 ? 'text-danger' : 'text-success'">
+                      {{ resultadoAnio | currency: 'USD':'symbol':'1.0' }}
+                    </th>
+                    <th></th>
+                  </tr>
+                </tfoot>
               </table>
-              <ngb-pagination
-                [(page)]="page"
-                [pageSize]="pageSize"
-                [collectionSize]="cajas?.length"
-                [maxSize]="5"
-                [rotate]="true"
-                [boundaryLinks]="true"
-              >
-              </ngb-pagination>
             </div>
             <!-- TABLE RESPONSIVE END -->
           </div>

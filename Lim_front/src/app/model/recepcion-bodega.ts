@@ -38,12 +38,20 @@ export interface OrdenResumen {
   unidades_pendientes: number;
 }
 
+// RF-BOD-03: resultado de POST /ordenes-compra/desde-lista (una OC BORRADOR por proveedor)
+export interface ResultadoGenerarOrdenes {
+  creadas: { orden_id: number, proveedor_id: number, proveedor: string, items: number }[];
+  omitidas: { proveedor_id: number, proveedor: string }[];
+  sin_proveedor: { producto_id: number }[];
+}
+
 export interface LineaRecepcion {
   item_id: number;
   producto_id: number;
   producto: string;
   cantidad: number;
   cantidad_recibida: number;
+  cantidad_rechazada: number; // RF-BOD-04 merma
   pendiente: number;
   costo_unitario: number;
 }
@@ -68,7 +76,10 @@ export interface RecepcionHistorial {
   observacion: string;
   estado: string;
   historica: boolean;
-  items: { item_id: number, producto_id: number, producto: string, cantidad: number, costo_unitario: number }[];
+  items: {
+    item_id: number, producto_id: number, producto: string, cantidad: number, costo_unitario: number,
+    cantidad_rechazada: number, motivo_rechazo: string
+  }[];
 }
 
 export interface OrdenRecepcion {
@@ -86,6 +97,7 @@ export interface ResultadoRecepcion {
   recepcion_id: number;
   estado: EstadoOrden;
   recibidos: { producto_id: number, cantidad: number, costo_unitario: number }[];
+  rechazos: { item_id: number, producto_id: number, cantidad: number, motivo: string }[];
   diferencias_precio: { item_id: number, producto_id: number, costo_oc: number, costo_real: number }[];
   asignaciones: { solicitud_id: number, producto_id: number, cantidad: number }[];
   solicitudes_listas: number[];
@@ -196,4 +208,19 @@ export interface ResultadoAprobacionConteo {
   conteo: ConteoDetalle;
   ajustes: { item_id: number, producto_id: number, cantidad: number, movimiento_id: number }[];
   recalculados: { item_id: number, producto_id: number, cantidad_teorica: number, stock_actual: number }[];
+}
+
+// RF-BOD-03: OC manual (POST /ordenes-compra). Producto según GET /productos (activos)
+export interface ProductoOc {
+  id: number;
+  nombre: string;
+  stock: number;
+  proveedor_id: number;
+  costo_unitario: number;
+}
+
+export interface LineaNuevaOc {
+  producto_id: number;
+  cantidad: number;
+  costo_unitario: number;
 }

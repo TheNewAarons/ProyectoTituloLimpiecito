@@ -6,8 +6,19 @@
           <div class="card-header card-header-rose card-header-icon">
             <div class="card-icon"><i class="material-icons">attach_money</i></div>
             <h4 class="card-title">Dashboard financiero <small *ngIf="resumen">{{ resumen.periodo }}</small></h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Volver a Analytics" class="btn btn-rose btn-sm" routerLink="/analytics/inicio" [queryParams]="{ desde: desde, hasta: hasta }">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+              Volver
+            </button>
           </div>
           <div class="card-body">
+            <div class="row">
+              <div class="col-12 col-lg-6">
+                <app-filtro-periodo fuente="financiero" [desde]="desde" [hasta]="hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
+                <small class="text-muted">Utilidad y saldo son del mes "hasta"; proyección, liquidaciones, por cobrar y por pagar muestran el estado actual. El gráfico muestra todo el rango.</small>
+              </div>
+            </div>
             <div class="alert alert-warning" *ngIf="resumen?.alerta_utilidad.activa">
               Alerta de utilidad baja
               ({{ resumen.alerta_utilidad.motivo === 'UTILIDAD_REAL_BAJA' ? 'utilidad real del mes' : 'utilidad proyectada' }}
@@ -16,7 +27,7 @@
             <div class="row">
               <div class="col-12 col-sm-6 col-lg-4">
                 <app-kpi-card titulo="Utilidad real del mes" icono="trending_up" color="success" [cargando]="cargando"
-                  [valor]="resumen ? resumen.utilidad_real.utilidad : null"
+                  [valor]="resumen ? resumen.utilidad_real.utilidad : null" [variacion]="variacionUtilidad"
                   [detalle]="resumen ? (resumen.utilidad_real.cerrada ? 'Mes cerrado' : 'Mes abierto (provisional)') : ''"></app-kpi-card>
               </div>
               <div class="col-12 col-sm-6 col-lg-4">
@@ -27,7 +38,7 @@
               <div class="col-12 col-sm-6 col-lg-4">
                 <app-kpi-card titulo="Proyección de utilidad (Estimación)" icono="timeline" color="rose" [cargando]="cargando"
                   [valor]="proyeccionUtilidad"
-                  [detalle]="resumen ? (resumen.proyeccion.insuficiente ? 'Datos insuficientes' : 'Estimación: promedio móvil de 3 meses') : ''"></app-kpi-card>
+                  [detalle]="resumen ? (resumen.proyeccion.insuficiente ? 'Datos insuficientes' : 'Estimación: promedio móvil de 3 meses · Regresión lineal 6 meses: ' + (proyeccionRegresion !== null ? '$ ' + (proyeccionRegresion | number:'1.0-0':'es-CL') : 'requiere 6 meses de historia')) : ''"></app-kpi-card>
               </div>
               <div class="col-12 col-sm-6 col-lg-4">
                 <app-kpi-card titulo="Liquidaciones pendientes" icono="receipt" color="warning" [cargando]="cargando"
@@ -45,7 +56,12 @@
                   [detalle]="resumen ? resumen.por_pagar.cantidad + ' documentos' : ''"></app-kpi-card>
               </div>
             </div>
-            <app-grafico tipo="line" [pesos]="true" titulo="Ingresos, egresos y utilidad (últimos 12 meses)" [etiquetas]="etiquetas" [series]="series"></app-grafico>
+            <app-grafico tipo="line" [pesos]="true" titulo="Ingresos, egresos y utilidad ({{ desde }} a {{ hasta }})" [etiquetas]="etiquetas" [series]="series"></app-grafico>
+            <div class="d-flex justify-content-end">
+              <button mat-raised-button type="button" class="btn btn-info btn-sm" (click)="exportar()" [disabled]="!puntos.length">
+                <span class="btn-label"><i class="material-icons">download</i></span> Excel (CSV)
+              </button>
+            </div>
           </div>
         </div>
       </div>

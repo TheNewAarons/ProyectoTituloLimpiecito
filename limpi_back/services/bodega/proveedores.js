@@ -121,6 +121,8 @@ async function crear(datos, contexto) {
   validarEmail(email);
   const telefono = normalizarOpcional('telefono', d.telefono);
   const contacto = normalizarOpcional('contacto', d.contacto);
+  // AUT-023 (revisión): RUT con dígito verificador, teléfono numérico y contacto como nombre.
+  require('./proveedores-formato').validarFormatos({ rut: rut, telefono: telefono, contacto: contacto });
 
   return db.sequelize.transaction(async function (t) {
     const proveedor = await Proveedor.create(
@@ -165,6 +167,8 @@ async function editar(id, cambios, contexto) {
   }
   if (c.telefono !== undefined) datosActualizados.telefono = normalizarOpcional('telefono', c.telefono);
   if (c.contacto !== undefined) datosActualizados.contacto = normalizarOpcional('contacto', c.contacto);
+  // AUT-023 (revisión): solo se validan los campos que vienen en la edición.
+  require('./proveedores-formato').validarFormatos(datosActualizados);
 
   return db.sequelize.transaction(async function (t) {
     const proveedor = await obtenerOFallar(id, t);

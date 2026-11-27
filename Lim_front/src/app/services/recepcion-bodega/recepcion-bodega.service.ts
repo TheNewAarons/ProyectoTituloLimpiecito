@@ -6,7 +6,8 @@ import { LoginService } from '../login/login.service';
 import { RespuestaBodega, SolicitudBodega } from '../../model/solicitud-bodega';
 import {
   OrdenResumen, OrdenRecepcion, ResultadoRecepcion, DocumentoRecepcion, FormatoEntrega, MovimientoBodega, KardexProducto,
-  ConteoResumen, ConteoDetalle, ResultadoAprobacionConteo, Proveedor, DatosProveedor
+  ConteoResumen, ConteoDetalle, ResultadoAprobacionConteo, Proveedor, DatosProveedor, ResultadoGenerarOrdenes,
+  ProductoOc, LineaNuevaOc
 } from '../../model/recepcion-bodega';
 
 // RECEPCIÓN, ENTREGA Y MOVIMIENTOS DE BODEGA (RF-BOD-04) — /api/v1/bodega, formato { ok, data, meta }
@@ -32,6 +33,31 @@ export class RecepcionBodegaService {
     return this.http.get<RespuestaBodega<OrdenResumen[]>>(this.url_bodega + '/ordenes-compra', { headers: this.obtenerCabeceras(), params: params });
   }
 
+  //GENERAR OC BORRADOR DESDE LA LISTA DE COMPRA (RF-BOD-03)
+  generarOrdenes(): Observable<RespuestaBodega<ResultadoGenerarOrdenes>> {
+    return this.http.post<RespuestaBodega<ResultadoGenerarOrdenes>>(this.url_bodega + '/ordenes-compra/desde-lista', {}, { headers: this.obtenerCabeceras() });
+  }
+
+  //CREAR OC MANUAL EN BORRADOR, SIN DEPENDER DEL STOCK (RF-BOD-03)
+  crearOrden(datos: { proveedor_id: number, items: LineaNuevaOc[] }): Observable<RespuestaBodega<{ id: number, estado: string }>> {
+    return this.http.post<RespuestaBodega<{ id: number, estado: string }>>(this.url_bodega + '/ordenes-compra', datos, { headers: this.obtenerCabeceras() });
+  }
+
+  //PRODUCTOS ACTIVOS (TRAE proveedor_id Y costo_unitario PARA ARMAR LA OC MANUAL)
+  listarProductosActivos(): Observable<RespuestaBodega<ProductoOc[]>> {
+    return this.http.get<RespuestaBodega<ProductoOc[]>>(this.url_bodega + '/productos', { headers: this.obtenerCabeceras() });
+  }
+
+  //EDITAR OC EN BORRADOR: AJUSTAR CANTIDADES Y QUITAR ITEMS (RF-BOD-03)
+  actualizarOrden(id: number, cambios: { items: { id: number, cantidad: number }[], eliminar: number[] }): Observable<RespuestaBodega<{ id: number, estado: string }>> {
+    return this.http.patch<RespuestaBodega<{ id: number, estado: string }>>(this.url_bodega + '/ordenes-compra/' + id, cambios, { headers: this.obtenerCabeceras() });
+  }
+
+  //ENVIAR OC AL PROVEEDOR POR CORREO (RF-BOD-03)
+  enviarOrden(id: number): Observable<RespuestaBodega<{ id: number, estado: string }>> {
+    return this.http.post<RespuestaBodega<{ id: number, estado: string }>>(this.url_bodega + '/ordenes-compra/' + id + '/enviar', {}, { headers: this.obtenerCabeceras() });
+  }
+
   //DETALLE DE LA ORDEN PARA RECIBIR (LINEAS CON PENDIENTE)
   detalleRecepcion(id: number): Observable<RespuestaBodega<OrdenRecepcion>> {
     return this.http.get<RespuestaBodega<OrdenRecepcion>>(this.url_bodega + '/ordenes-compra/' + id + '/recepcion', { headers: this.obtenerCabeceras() });
@@ -39,7 +65,7 @@ export class RecepcionBodegaService {
 
   //CONFIRMAR RECEPCION POR LINEA
   recibir(
-    id: number, items: { item_id: number, cantidad_recibida: number, costo_unitario?: number }[], documento: DocumentoRecepcion
+    id: number, items: { item_id: number, cantidad_recibida: number, costo_unitario?: number, cantidad_rechazada?: number, motivo_rechazo?: string }[], documento: DocumentoRecepcion
   ): Observable<RespuestaBodega<ResultadoRecepcion>> {
     const body = Object.assign({ items: items }, documento);
     return this.http.post<RespuestaBodega<ResultadoRecepcion>>(this.url_bodega + '/ordenes-compra/' + id + '/recepcion', body, { headers: this.obtenerCabeceras() });

@@ -6,6 +6,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ClienteComponent } from './cliente/cliente.component';
 import { UsuarioComponent } from './usuario/usuario.component';
 import { EgresoComponent } from './egreso/egreso.component';
+import { IngresoComponent } from './ingreso/ingreso.component';
 
 import { ClientePevComponent } from './cliente-pev/cliente-pev.component';
 import { FormClienteSectorPevComponent } from './shared/form-cliente-sector-pev/form-cliente-sector-pev.component';
@@ -22,6 +23,7 @@ import { TareasPevComponent } from './tareas-pev/tareas-pev.component';
 import { GestionRoutes } from './gestion.routing';
 
 import { MaterialModule } from '../../app.module';
+import { HistorialModule } from '../historial/historial.module'; // RNF-SEC-02: botón Historial
 
 import { NgxCleaveDirectiveModule } from 'ngx-cleave-directive';
 
@@ -34,10 +36,13 @@ import { VerClienteComponent } from './ver-cliente/ver-cliente.component';
 import { DialogSectorEditarNombreComponent } from './shared/dialog-sector-editar-nombre/dialog-sector-editar-nombre.component';
 import { DialogAreaEditarNombreComponent } from './shared/dialog-area-editar-nombre/dialog-area-editar-nombre.component';
 import { DialogTareaEditarNombreComponent } from './shared/dialog-tarea-editar-nombre/dialog-tarea-editar-nombre.component';
+import { PaginacionModule } from '../paginacion/paginacion';
 
 @NgModule({
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
+    HistorialModule,
     RouterModule.forChild(GestionRoutes),
     NgbModule,
     FormsModule,
@@ -53,6 +58,7 @@ import { DialogTareaEditarNombreComponent } from './shared/dialog-tarea-editar-n
     ClienteComponent,
     UsuarioComponent,
     EgresoComponent,
+    IngresoComponent,
     CrearClienteComponent,
     VerClienteComponent,
     CrearAccesoClienteComponent,

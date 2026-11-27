@@ -22,10 +22,19 @@ bodega.get('/top-productos', asyncHandler(consumoBodega.topProductos));
 bodega.get('/consumo', asyncHandler(consumoBodega.consumo));
 bodega.get('/frecuencia-compra', asyncHandler(consumoBodega.frecuenciaCompra));
 bodega.get('/stock-critico', asyncHandler(consumoBodega.stockCritico));
+bodega.get('/merma', asyncHandler(consumoBodega.merma)); // RF-BOD-04: unidades rechazadas en recepciones
 const productividadPev = require('./productividad'); // RF-BI-04
 productividad.get('/trabajadores', asyncHandler(productividadPev.trabajadores));
 productividad.get('/supervisores', asyncHandler(productividadPev.supervisores));
 productividad.get('/sectores', asyncHandler(productividadPev.sectores));
+// Retroalimentación de la revisión: el texto de las observaciones de un sector (antes solo se veía el número).
+productividad.get('/observaciones', asyncHandler(async (req, res) => {
+  const r = await require('../../../services/analytics/observaciones-pev').listar(req.query);
+  return res.json({ ok: true, data: r.data, meta: r.meta });
+}));
+
+// Solo meses límite (sin montos): visible para Admin y Operaciones.
+router.get('/periodos', ADMIN_Y_OPS, asyncHandler(require('./periodos').listar));
 
 // noEncontrado corta aquí para que Operaciones no caiga en el gate de solo Admin de abajo.
 router.use('/bodega', ADMIN_Y_OPS, bodega, noEncontrado);

@@ -1,0 +1,108 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">local_shipping</i></div>
+            <h4 class="card-title">Crear Orden De Compra</h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Volver" class="btn btn-rose btn-sm" (click)="volver()">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
+            <div *ngIf="!loading">
+              <p>Elige el proveedor y los productos a pedir, aunque el stock no lo requiera. La orden queda en borrador para revisarla y enviarla.</p>
+              <div class="row">
+                <div class="col-12 col-md-6">
+                  <mat-form-field class="example-full-width">
+                    <mat-select placeholder="Proveedor" name="proveedor" [(ngModel)]="proveedorId" (selectionChange)="cambiarProveedor()">
+                      <mat-option *ngFor="let p of proveedores" [value]="p.id">{{ p.nombre }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <p class="text-warning" *ngIf="proveedorId && productosProveedor.length === 0">
+                Este proveedor no tiene productos asignados. Asígnalos desde Proveedores.
+              </p>
+
+              <div *ngIf="proveedorId && productosProveedor.length > 0">
+                <div class="table-responsive">
+                  <table class="table tabla-compacta">
+                    <thead>
+                      <tr>
+                        <th class="text-left">Producto</th>
+                        <th class="text-right">Stock</th>
+                        <th class="text-right">Cantidad</th>
+                        <th class="text-right">Costo Unitario</th>
+                        <th class="text-right">Subtotal</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngIf="lineas.length === 0">
+                        <td colspan="6" class="text-center">Sin registros</td>
+                      </tr>
+                      <tr *ngFor="let l of lineas; let i = index">
+                        <td class="text-left">
+                          <mat-form-field class="example-full-width">
+                            <mat-select placeholder="Producto" [name]="'producto' + i" [(ngModel)]="l.producto_id" (selectionChange)="elegirProducto(l)">
+                              <ng-container *ngFor="let p of productosProveedor">
+                                <mat-option *ngIf="disponible(p, l)" [value]="p.id">{{ p.nombre }}</mat-option>
+                              </ng-container>
+                            </mat-select>
+                          </mat-form-field>
+                          <small class="text-danger" *ngIf="errorLinea(l)">{{ errorLinea(l) }}</small>
+                        </td>
+                        <td class="text-right">{{ l.producto_id ? (producto(l.producto_id)?.stock | number:'1.0-0') : '—' }}</td>
+                        <td class="text-right">
+                          <mat-form-field class="example-full-width">
+                            <input matInput type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1"
+                              placeholder="Cantidad" [name]="'cantidad' + i" [(ngModel)]="l.cantidad">
+                          </mat-form-field>
+                        </td>
+                        <td class="text-right">
+                          <mat-form-field class="example-full-width">
+                            <input matInput type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1"
+                              placeholder="Sin precio" [name]="'costo' + i" [(ngModel)]="l.costo_unitario">
+                          </mat-form-field>
+                        </td>
+                        <td class="text-right">{{ l.costo_unitario ? ((l.costo_unitario * l.cantidad) | currency:'CLP':'symbol':'1.0-0') : '—' }}</td>
+                        <td class="td-actions text-right">
+                          <button mat-raised-button type="button" matTooltip="Quitar Producto" class="btn btn-danger btn-round"
+                            (click)="quitarLinea(i)" [disabled]="enviando">
+                            <i class="material-icons">close</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <button mat-raised-button type="button" matTooltip="Agregar Producto" class="btn btn-warning btn-sm"
+                  (click)="agregarLinea()" [disabled]="enviando || lineas.length >= productosProveedor.length">
+                  <span class="btn-label"><i class="material-icons">add</i></span>
+                  Agregar Producto
+                </button>
+                <p class="text-right"><strong>Total: {{ total | currency:'CLP':'symbol':'1.0-0' }}</strong></p>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer justify-content-end" *ngIf="!loading">
+            <button mat-raised-button type="button" matTooltip="Cancelar" class="btn btn-danger btn-sm" (click)="volver()" [disabled]="enviando">
+              <span class="btn-label"><i class="material-icons">close</i></span>
+              Cancelar
+            </button>
+            <button mat-raised-button type="button" matTooltip="Crear Orden En Borrador" class="btn btn-success btn-sm" (click)="guardar()" [disabled]="!puedeGuardar()">
+              <span class="btn-label"><i class="material-icons">save</i></span>
+              Crear Orden
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

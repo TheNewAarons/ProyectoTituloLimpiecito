@@ -13,6 +13,7 @@ import { PdfListaInsumoComponent } from './pdf-lista-insumo/pdf-lista-insumo.com
 import { CentroRoutes } from './centro.routing';
 
 import { MaterialModule } from '../../app.module';
+import { HistorialModule } from '../historial/historial.module'; // RNF-SEC-02: botón Historial
 import { NgxCleaveDirectiveModule } from 'ngx-cleave-directive';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Ng2Rut } from 'ng2-rut';
@@ -20,10 +21,13 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { NgOptionHighlightModule } from '@ng-select/ng-option-highlight';
 import { LoadingModule } from 'src/app/loading/loading.module';
 import { NuevaListaPdfComponent } from './nueva-lista-pdf/nueva-lista-pdf.component';
+import { PaginacionModule } from '../paginacion/paginacion';
 
 @NgModule({
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
+    HistorialModule,
     RouterModule.forChild(CentroRoutes),
     FormsModule, ReactiveFormsModule,
     MaterialModule,

@@ -4,6 +4,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
 import { ListasPevService } from 'src/app/services/listas-pev/listas-pev.service';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 @Component({
   selector: 'app-lista-pev-trabajador',
@@ -11,6 +12,8 @@ import { ListasPevService } from 'src/app/services/listas-pev/listas-pev.service
   styleUrls: ['./lista-pev-trabajador.component.css']
 })
 export class ListaPevTrabajadorComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagListas = nuevaPaginacion();
   id_cronograma;
   n_empleado;
   listasPevTrabajador;

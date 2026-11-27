@@ -11,6 +11,11 @@
               <span class="btn-label"><i class="material-icons">arrow_back</i></span>
               Volver
             </button>
+            <!-- Revisión de requerimientos: desde el detalle también se vuelve al panel de bodega -->
+            <button mat-raised-button type="button" matTooltip="Volver al Inicio Bodega" class="btn btn-rose btn-sm" routerLink="/bodega/inicio">
+              <span class="btn-label"><i class="material-icons">dashboard</i></span>
+              Inicio Bodega
+            </button>
           </div>
           <div class="card-body">
             <div class="text-center" *ngIf="loading"><app-loading></app-loading></div>
@@ -19,7 +24,47 @@
                 <strong>Proveedor:</strong> {{ orden.proveedor || '—' }} ·
                 <strong>Estado:</strong> <span [class]="badge[orden.estado]">{{ etiqueta[orden.estado] }}</span>
               </p>
-              <p class="text-warning" *ngIf="!orden.recibible">Solo se puede recibir una orden Enviada o Recibida parcial.</p>
+              <p class="text-warning" *ngIf="!orden.recibible && !esBorrador">Solo se puede recibir una orden Enviada o Recibida parcial.</p>
+
+              <!-- RF-BOD-03: borrador editable (cantidades y quitar productos) antes de enviar -->
+              <div *ngIf="esBorrador">
+                <p>Ajusta las cantidades o quita productos, guarda y luego envía la orden al proveedor.</p>
+                <div class="table-responsive">
+                  <table class="table tabla-compacta">
+                    <thead>
+                      <tr>
+                        <th class="text-left">Producto</th>
+                        <th class="text-right">Costo Unitario</th>
+                        <th class="text-right">Cantidad</th>
+                        <th class="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngIf="lineasBorrador.length === 0">
+                        <td colspan="4" class="text-center">Sin registros</td>
+                      </tr>
+                      <tr *ngFor="let l of lineasBorrador">
+                        <td class="text-left">{{ l.producto || ('Producto ' + l.producto_id) }}</td>
+                        <td class="text-right">{{ l.costo_unitario === null ? '—' : (l.costo_unitario | currency:'CLP':'symbol':'1.0-0') }}</td>
+                        <td class="text-right">
+                          <mat-form-field class="example-full-width">
+                            <input matInput type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1"
+                              placeholder="Cantidad" [name]="'cantidadOc' + l.item_id" [(ngModel)]="cantidadesOc[l.item_id]">
+                          </mat-form-field>
+                          <small class="text-danger" *ngIf="errorCantidadOc(l.item_id)">{{ errorCantidadOc(l.item_id) }}</small>
+                        </td>
+                        <td class="td-actions text-right">
+                          <button mat-raised-button type="button" matTooltip="Quitar Producto" class="btn btn-danger btn-round"
+                            (click)="quitar(l.item_id)" [disabled]="enviando || lineasBorrador.length === 1">
+                            <i class="material-icons">close</i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <small class="text-warning" *ngIf="hayCambios()">Tienes cambios sin guardar. Guárdalos antes de enviar.</small>
+              </div>
 
               <div class="row" *ngIf="orden.recibible">
                 <div class="col-md-3">
@@ -43,7 +88,7 @@
                 <div class="col-12"><small class="text-danger" *ngIf="errorDocumento()">{{ errorDocumento() }}</small></div>
               </div>
 
-              <div class="table-responsive">
+              <div class="table-responsive" *ngIf="!esBorrador">
                 <table class="table tabla-compacta">
                   <thead>
                     <tr>
@@ -51,6 +96,7 @@
                       <th class="text-right">Pedido</th>
                       <th class="text-right">Recibido</th>
                       <th class="text-right">Recibir Ahora</th>
+                      <th class="text-right">Rechazar</th>
                       <th class="text-right">Costo Unitario</th>
                     </tr>
                   </thead>
@@ -58,7 +104,10 @@
                     <tr *ngFor="let l of orden.items">
                       <td class="text-left">{{ l.producto || ('Producto ' + l.producto_id) }}</td>
                       <td class="text-right">{{ l.cantidad | number:'1.0-0' }}</td>
-                      <td class="text-right">{{ l.cantidad_recibida | number:'1.0-0' }}</td>
+                      <td class="text-right">
+                        {{ l.cantidad_recibida | number:'1.0-0' }}
+                        <br *ngIf="l.cantidad_rechazada" /><small *ngIf="l.cantidad_rechazada" class="text-danger">{{ l.cantidad_rechazada | number:'1.0-0' }} rechazada(s)</small>
+                      </td>
                       <td class="text-right">
                         <span *ngIf="l.pendiente === 0 || !orden.recibible" class="text-success">{{ l.pendiente === 0 ? 'Completo' : '—' }}</span>
                         <div *ngIf="l.pendiente > 0 && orden.recibible">
@@ -67,6 +116,20 @@
                               [placeholder]="'Pendiente ' + l.pendiente" [name]="'cantidad' + l.item_id" [(ngModel)]="cantidades[l.item_id]">
                           </mat-form-field>
                           <small class="text-danger" *ngIf="errorLinea(l.item_id, l.pendiente)">{{ errorLinea(l.item_id, l.pendiente) }}</small>
+                        </div>
+                      </td>
+                      <td class="text-right">
+                        <span *ngIf="l.pendiente === 0 || !orden.recibible">—</span>
+                        <div *ngIf="l.pendiente > 0 && orden.recibible">
+                          <mat-form-field class="example-full-width">
+                            <input matInput type="number" inputmode="numeric" pattern="[0-9]*" min="0" [max]="l.pendiente" step="1"
+                              placeholder="Dañadas / no llegan" matTooltip="Unidades rechazadas: no entran al stock y dejan de estar pendientes"
+                              [name]="'rechazo' + l.item_id" [(ngModel)]="rechazadas[l.item_id]">
+                          </mat-form-field>
+                          <mat-form-field class="example-full-width" *ngIf="rechazada(l.item_id) > 0">
+                            <input matInput placeholder="Motivo" maxlength="255" [name]="'motivo' + l.item_id" [(ngModel)]="motivos[l.item_id]">
+                          </mat-form-field>
+                          <small class="text-danger" *ngIf="errorRechazo(l.item_id)">{{ errorRechazo(l.item_id) }}</small>
                         </div>
                       </td>
                       <td class="text-right">
@@ -91,6 +154,9 @@
                 <p class="text-warning" *ngFor="let d of resultado.diferencias_precio">
                   {{ nombreProducto(d.producto_id) }}: costo real {{ d.costo_real | currency:'CLP':'symbol':'1.0-0' }} distinto al de la orden ({{ d.costo_oc | currency:'CLP':'symbol':'1.0-0' }}).
                 </p>
+                <p class="text-danger" *ngFor="let m of resultado.rechazos">
+                  {{ nombreProducto(m.producto_id) }}: {{ m.cantidad }} unidad(es) rechazada(s) — {{ m.motivo }}.
+                </p>
                 <p *ngIf="resultado.asignaciones.length === 0">Lo recibido quedó como stock libre (no había faltantes pendientes).</p>
                 <ul *ngIf="resultado.asignaciones.length">
                   <li *ngFor="let a of resultado.asignaciones">
@@ -112,6 +178,7 @@
                         <th class="text-left">Documento</th>
                         <th class="text-left">Producto</th>
                         <th class="text-right">Cantidad</th>
+                        <th class="text-right">Rechazado</th>
                         <th class="text-right">Costo Unitario</th>
                       </tr>
                     </thead>
@@ -128,12 +195,30 @@
                           </td>
                           <td class="text-left">{{ li.producto || ('Producto ' + li.producto_id) }}</td>
                           <td class="text-right">{{ li.cantidad | number:'1.0-0' }}</td>
+                          <td class="text-right">
+                            {{ li.cantidad_rechazada ? (li.cantidad_rechazada | number:'1.0-0') : '—' }}
+                            <br *ngIf="li.motivo_rechazo" /><small *ngIf="li.motivo_rechazo">{{ li.motivo_rechazo }}</small>
+                          </td>
                           <td class="text-right">{{ li.costo_unitario === null ? '—' : (li.costo_unitario | currency:'CLP':'symbol':'1.0-0') }}</td>
                         </tr>
                       </ng-container>
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer" *ngIf="!loading && esBorrador">
+            <div class="row w-100">
+              <div class="col-12 text-right">
+                <button mat-raised-button type="button" class="btn btn-success mb-2" [disabled]="!puedeGuardar()" (click)="guardar()">
+                  <span class="btn-label"><i class="material-icons">save</i></span>
+                  Guardar
+                </button>
+                <button mat-raised-button type="button" class="btn btn-success mb-2" [disabled]="enviando || hayCambios()" (click)="enviar()">
+                  <span class="btn-label"><i class="material-icons">done</i></span>
+                  Enviar Al Proveedor
+                </button>
               </div>
             </div>
           </div>

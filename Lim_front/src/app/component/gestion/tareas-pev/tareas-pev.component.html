@@ -83,7 +83,7 @@
                         <th class="text-right"> Acciones  </th>
                       </thead>
                       <tbody>
-                        <tr *ngFor="let tarea of tareas" >
+                        <tr *ngFor="let tarea of tareas | paginar: pagTareas" >
                           <td>{{tarea.nombre}} <a (click)="editarNombre(tarea)" matTooltip="Editar Nombre" class="btn btn-link btn-round"><i class="material-icons">edit</i></a></td>
                           <td class="td-actions text-right">
                             <div class="togglebutton">
@@ -125,6 +125,7 @@
                       </tr>
                       </tbody>
                   </table>
+                  <app-paginacion [estado]="pagTareas" [total]="(tareas || []).length"></app-paginacion>
               </div>
           </div>
           </div>

@@ -3,6 +3,7 @@
  * "Solicitado" = cantidad_pedida de solicitudes no anuladas, por mes de creación.
  * "Consumido"  = cantidad_asignada de solicitudes ENTREGADA, por mes de entregada_at (la entrega solo ocurre
  * con todo asignado, RF-BOD-04). Stock crítico = misma regla que el dashboard de bodega (RF-BOD-05).
+ * Merma (RF-BOD-04) = unidades rechazadas al recibir órdenes de compra, por mes de fecha_recepcion (recepciones confirmadas).
  * Las fechas se guardan en UTC: se filtra en SQL con ±1 día de margen y el mes se asigna en America/Santiago.
  */
 
@@ -154,6 +155,50 @@ function armarFrecuencia(lineas, r) {
   }).sort(function (a, b) { return b.ordenes - a.ordenes || b.cantidad - a.cantidad || a.producto.localeCompare(b.producto); });
 }
 
+/**
+ * Merma por producto (puro): recibido vs rechazado en recepciones del rango, % de merma y costo estimado de lo rechazado
+ * (costo real de la recepción o, sin él, el de la OC). Incluye todo producto recibido en el período, con o sin merma.
+ * @returns {{productos: object[], por_mes: object[], totales: object}}
+ */
+function armarMerma(lineas, r) {
+  const m = {};
+  const meses = {};
+  financiero.rangoPeriodos(r.desde, r.hasta).forEach(function (p) { meses[p] = { periodo: p, recibido: 0, rechazado: 0 }; });
+  lineas.forEach(function (l) {
+    if (!enRango(l.fecha_recepcion, r)) return;
+    const rechazado = entero(l.cantidad_rechazada);
+    const recibido = entero(l.cantidad);
+    const costo = l.costo_unitario !== null && l.costo_unitario !== undefined ? l.costo_unitario : l.costo_oc;
+    const f = m[l.producto_id] || (m[l.producto_id] = {
+      producto_id: l.producto_id, producto: nombreProducto(l), recibido: 0, rechazado: 0, costo_merma: 0, recepciones_con_rechazo: 0, ultimo_motivo: null, t: 0
+    });
+    f.recibido += recibido;
+    f.rechazado += rechazado;
+    const mes = meses[fecha.periodoSantiago(l.fecha_recepcion)];
+    mes.recibido += recibido;
+    mes.rechazado += rechazado;
+    if (rechazado > 0) {
+      f.recepciones_con_rechazo += 1;
+      if (costo !== null && costo !== undefined) f.costo_merma += rechazado * entero(costo);
+      const t = new Date(l.fecha_recepcion).getTime();
+      if (t >= f.t) { f.t = t; f.ultimo_motivo = l.motivo_rechazo || null; }
+    }
+  });
+  const porcentaje = function (rech, rec) { return rech + rec === 0 ? 0 : Math.round((rech / (rech + rec)) * 1000) / 10; };
+  const productos = Object.keys(m).map(function (k) {
+    const f = m[k];
+    return {
+      producto_id: f.producto_id, producto: f.producto, recibido: f.recibido, rechazado: f.rechazado, porcentaje_merma: porcentaje(f.rechazado, f.recibido),
+      costo_merma: f.costo_merma, recepciones_con_rechazo: f.recepciones_con_rechazo, ultimo_motivo: f.ultimo_motivo
+    };
+  }).filter(function (f) { return f.recibido + f.rechazado > 0; })
+    .sort(function (a, b) { return b.rechazado - a.rechazado || b.porcentaje_merma - a.porcentaje_merma || a.producto.localeCompare(b.producto); });
+  const tot = productos.reduce(function (a, f) { a.recibido += f.recibido; a.rechazado += f.rechazado; a.costo_merma += f.costo_merma; return a; },
+    { recibido: 0, rechazado: 0, costo_merma: 0 });
+  tot.porcentaje_merma = porcentaje(tot.rechazado, tot.recibido);
+  return { productos: productos, por_mes: Object.keys(meses).sort().map(function (k) { return meses[k]; }), totales: tot };
+}
+
 async function topProductos(q) {
   const r = rango(q.desde, q.hasta);
   let limite = LIMITE_TOP.defecto;
@@ -197,6 +242,20 @@ async function frecuenciaCompra(q) {
   return { data: armarFrecuencia(lineas, r), meta: { desde: r.desde, hasta: r.hasta, estados: ESTADOS_COMPRA } };
 }
 
+async function merma(q) {
+  const r = rango(q.desde, q.hasta);
+  const v = ventanaUtc(r);
+  const lineas = await consultar(
+    'SELECT ri.producto_id, p.nombre AS producto, ri.cantidad, ri.cantidad_rechazada, ri.motivo_rechazo, ri.costo_unitario, ' +
+    'oi.costo_unitario AS costo_oc, rc.fecha_recepcion ' +
+    'FROM recepcion_items ri JOIN recepciones_compra rc ON rc.id = ri.recepcion_id ' +
+    'LEFT JOIN orden_compra_items oi ON oi.id = ri.orden_item_id LEFT JOIN productos p ON p.id = ri.producto_id ' +
+    'WHERE rc.estado = :confirmada AND rc.fecha_recepcion >= :ini AND rc.fecha_recepcion < :fin',
+    { confirmada: 'CONFIRMADA', ini: v.ini, fin: v.fin });
+  const a = armarMerma(lineas, r);
+  return { data: a.productos, meta: Object.assign({ desde: r.desde, hasta: r.hasta, por_mes: a.por_mes }, a.totales) };
+}
+
 /** Productos activos en o bajo el mínimo (misma regla SQL que el dashboard de bodega), los más faltantes primero. */
 async function stockCritico() {
   const filas = await consultar(
@@ -211,6 +270,6 @@ async function stockCritico() {
 }
 
 module.exports = {
-  armarTop: armarTop, armarConsumo: armarConsumo, armarFrecuencia: armarFrecuencia, ventanaUtc: ventanaUtc, rango: rango,
-  topProductos: topProductos, consumo: consumo, frecuenciaCompra: frecuenciaCompra, stockCritico: stockCritico
+  armarTop: armarTop, armarConsumo: armarConsumo, armarFrecuencia: armarFrecuencia, armarMerma: armarMerma, ventanaUtc: ventanaUtc, rango: rango,
+  topProductos: topProductos, consumo: consumo, frecuenciaCompra: frecuenciaCompra, stockCritico: stockCritico, merma: merma
 };

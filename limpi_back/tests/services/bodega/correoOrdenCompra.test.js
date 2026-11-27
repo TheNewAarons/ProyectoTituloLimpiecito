@@ -41,6 +41,31 @@ describe('services/bodega/correoOrdenCompra', () => {
       expect(asunto).toBe('Orden de compra #42');
       expect(html).toContain('42');
     });
+
+    it('muestra el nombre del producto (escapado), su código y el total de unidades', () => {
+      const orden = ordenFake({ items: [{ producto_id: 10, cantidad: 5 }, { producto_id: 11, cantidad: '3' }] });
+      const { html } = renderizarOrden(orden, { 10: 'Cloro <gel>' });
+      expect(html).toContain('Cloro &lt;gel&gt;');
+      expect(html).toContain('Producto 11');
+      expect(html).toContain('Código 10');
+      expect(html).toMatch(/Total unidades<\/td>\s*<td[^>]*>8<\/td>/);
+    });
+
+    it('muestra precio unitario, subtotal y total en CLP; avisa si hay líneas sin precio', () => {
+      const orden = ordenFake({
+        items: [{ producto_id: 10, cantidad: 3, costo_unitario: '12500' }, { producto_id: 11, cantidad: 2, costo_unitario: null }]
+      });
+      const { html } = renderizarOrden(orden);
+      expect(html).toContain('$12.500');
+      expect(html).toMatch(/>Total<\/td>\s*<td[^>]*>\$37\.500<\/td>/);
+      expect(html).toContain('sin precio registrado');
+    });
+
+    it('sin líneas sin precio no muestra el aviso', () => {
+      const { html } = renderizarOrden(ordenFake({ items: [{ producto_id: 10, cantidad: 1, costo_unitario: 0 }] }));
+      expect(html).not.toContain('sin precio registrado');
+      expect(html).toMatch(/>Total<\/td>\s*<td[^>]*>\$0<\/td>/);
+    });
   });
 
   describe('crearTransporteDesdeEnv', () => {
@@ -68,6 +93,8 @@ describe('services/bodega/correoOrdenCompra', () => {
       const llamada = transporte.sendMail.mock.calls[0][0];
       expect(llamada.to).toBe('proveedor@test.com');
       expect(llamada.subject).toBe('Orden de compra #1');
+      expect(llamada.attachments).toEqual([expect.objectContaining({ cid: 'logo-limpiecito' })]);
+      expect(require('fs').existsSync(llamada.attachments[0].path)).toBe(true);
     });
 
     it('lanza ENVIO_FALLIDO (502) si sendMail rechaza, sin exponer credenciales', async () => {

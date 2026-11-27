@@ -24,12 +24,23 @@ export interface RespuestaAnalytics<T, M = MetaAnalytics> {
 export interface SerieGrafico {
   etiqueta: string;
   datos: number[];
+  color?: 'danger' | 'warning' | 'success'; // sin color: el de chart.js por defecto
 }
 
 export interface RangoPeriodo {
   desde: string;
   hasta: string;
 }
+
+// GET /analytics/periodos: primer mes (YYYY-MM) con datos por dashboard; null si aún no hay datos.
+export interface PrimerosPeriodos {
+  financiero: string | null;
+  rentabilidad: string | null;
+  bodega: string | null;
+  productividad: string | null;
+}
+
+export type FuenteAnalytics = keyof PrimerosPeriodos;
 
 export interface OpcionCliente {
   id: number;
@@ -175,6 +186,28 @@ export interface FilaFrecuenciaCompra {
   dias_promedio_entre_compras: number | null;
 }
 
+// RF-BOD-04: merma (unidades rechazadas al recibir órdenes de compra) por producto
+export interface FilaMerma {
+  producto_id: number;
+  producto: string;
+  recibido: number;
+  rechazado: number;
+  porcentaje_merma: number;
+  costo_merma: number;
+  recepciones_con_rechazo: number;
+  ultimo_motivo: string | null;
+}
+
+export interface MetaMerma {
+  desde: string;
+  hasta: string;
+  recibido: number;
+  rechazado: number;
+  porcentaje_merma: number;
+  costo_merma: number;
+  por_mes: { periodo: string, recibido: number, rechazado: number }[];
+}
+
 export interface FilaStockCritico {
   producto_id: number;
   producto: string;
@@ -236,4 +269,15 @@ export interface MetaProductividad {
   cumplimiento_pct?: number | null;
   verificacion_pct?: number | null;
   observaciones?: number;
+}
+
+// Retroalimentación de la revisión: una observación PEV con su texto (GET /productividad/observaciones).
+export interface ObservacionPev {
+  fecha: string;
+  origen: 'TRABAJADOR' | 'SUPERVISOR';
+  autor: string;
+  area: string | null;
+  tarea: string | null;
+  texto: string;
+  lista_id: number;
 }

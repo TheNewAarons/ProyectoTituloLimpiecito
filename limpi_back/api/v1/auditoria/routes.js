@@ -10,6 +10,10 @@ const { asyncHandler } = require('../../../middleware/errores');
 const controlador = require('./controlador');
 
 router.get('/', asyncHandler(controlador.listar));
+// Botón "Historial" del ERP (revisión de requerimientos); antes de '/:id' para que no lo capture.
+router.get('/historial', asyncHandler(require('./historial').historial));
+// Historial completo de una caja mensual (caja + sus movimientos).
+router.get('/historial-caja', asyncHandler(require('./historial').historialCaja));
 router.get('/:id', asyncHandler(controlador.obtener));
 
 module.exports = router;

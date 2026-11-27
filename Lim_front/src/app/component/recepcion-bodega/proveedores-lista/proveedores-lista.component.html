@@ -17,8 +17,10 @@
                 </div>
                 <div class="col-12 col-md-6">
                   <mat-form-field class="example-full-width">
-                    <input matInput placeholder="RUT" name="rut" maxlength="12" [(ngModel)]="formulario.datos.rut">
+                    <input matInput placeholder="RUT (ej. 76.086.428-5)" name="rut" maxlength="12" [(ngModel)]="formulario.datos.rut" (blur)="ordenarCampo('rut')">
+                    <mat-hint *ngIf="!errorRut()">Opcional. Se valida el dígito verificador.</mat-hint>
                   </mat-form-field>
+                  <small class="text-danger" *ngIf="errorRut()">{{ errorRut() }}</small>
                 </div>
                 <div class="col-12 col-md-4">
                   <mat-form-field class="example-full-width">
@@ -27,13 +29,16 @@
                 </div>
                 <div class="col-12 col-md-4">
                   <mat-form-field class="example-full-width">
-                    <input matInput placeholder="Teléfono" name="telefono" maxlength="30" [(ngModel)]="formulario.datos.telefono">
+                    <input matInput type="tel" inputmode="tel" placeholder="Teléfono (ej. +56 9 1234 5678)" name="telefono" maxlength="30" [(ngModel)]="formulario.datos.telefono" (blur)="ordenarCampo('telefono')">
                   </mat-form-field>
+                  <small class="text-danger" *ngIf="errorTelefono()">{{ errorTelefono() }}</small>
                 </div>
                 <div class="col-12 col-md-4">
                   <mat-form-field class="example-full-width">
-                    <input matInput placeholder="Contacto" name="contacto" maxlength="150" [(ngModel)]="formulario.datos.contacto">
+                    <input matInput placeholder="Persona de contacto (nombre)" name="contacto" maxlength="150" [(ngModel)]="formulario.datos.contacto">
+                    <mat-hint *ngIf="!errorContacto()">Quién atiende los pedidos, ej. Ana Pérez.</mat-hint>
                   </mat-form-field>
+                  <small class="text-danger" *ngIf="errorContacto()">{{ errorContacto() }}</small>
                 </div>
               </div>
               <div class="text-right">
@@ -41,7 +46,7 @@
                   <span class="btn-label"><i class="material-icons">close</i></span>
                   Cancelar
                 </button>
-                <button mat-raised-button type="submit" class="btn btn-success btn-sm" [disabled]="guardando">
+                <button mat-raised-button type="submit" class="btn btn-success btn-sm" [disabled]="guardando || hayErroresFormulario()">
                   <span class="btn-label"><i class="material-icons">save</i></span>
                   Guardar
                 </button>
@@ -95,9 +100,9 @@
                   </tr>
                   <tr *ngFor="let p of proveedores">
                     <td>{{ p.nombre }}</td>
-                    <td>{{ p.rut || '—' }}</td>
+                    <td class="text-nowrap">{{ p.rut ? formatoRut(p.rut) : '—' }}</td>
                     <td>{{ p.email || '—' }}</td>
-                    <td>{{ p.telefono || '—' }}</td>
+                    <td class="text-nowrap">{{ p.telefono ? formatoTelefono(p.telefono) : '—' }}</td>
                     <td>{{ p.contacto || '—' }}</td>
                     <td>
                       <span [class]="p.activo ? 'badge badge-success' : 'badge badge-default'">{{ p.activo ? 'Activo' : 'Inactivo' }}</span>
@@ -106,8 +111,8 @@
                       <button mat-raised-button type="button" matTooltip="Editar" class="btn btn-warning btn-round" (click)="editar(p)">
                         <i class="material-icons">edit</i>
                       </button>
-                      <button *ngIf="p.activo" mat-raised-button type="button" matTooltip="Desactivar" class="btn btn-danger btn-round" (click)="desactivar(p)">
-                        <i class="material-icons">close</i>
+                      <button *ngIf="p.activo" mat-raised-button type="button" matTooltip="Desactivar (no se elimina)" class="btn btn-danger btn-round" (click)="desactivar(p)">
+                        <i class="material-icons">toggle_off</i>
                       </button>
                       <button *ngIf="!p.activo" mat-raised-button type="button" matTooltip="Reactivar" class="btn btn-success btn-round" (click)="reactivar(p)">
                         <i class="material-icons">done</i>

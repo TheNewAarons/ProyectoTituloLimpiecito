@@ -92,6 +92,8 @@
               </span>
               Cerrar
             </button>
+            <!-- RNF-SEC-02: quién cerró el centro de costo y con qué valores -->
+            <app-historial class="float-right" entidad="centro_costos" [entidadId]="centro?.id" [titulo]="'Centro de costo N° ' + (centro?.numero_cc || '')"></app-historial>
             <h4 *ngIf="centro?.estado == 0 && usuario.role.nombre != 'APOYO_LVL_1'"><strong>LISTA DE TRABAJADORES</strong></h4>
             <!-- TABLA DE TRABAJADORES -->
             <div class="table-responsive" *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
@@ -109,7 +111,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let trabajador of trabajadores">
+                  <tr *ngFor="let trabajador of trabajadores | paginar: pagTrabajadores">
                     <td class="text-center">-</td>
                     <td>{{ trabajador.trabajadore.nombre }}</td>
                     <td>{{ trabajador.trabajadore.apellido }}</td>
@@ -148,10 +150,12 @@
                       >
                         <i class="material-icons">close</i>
                       </button>
+                      <app-historial *ngIf="trabajador.liquidacione" [compacto]="true" entidad="liquidaciones" [entidadId]="trabajador.liquidacione.id" [titulo]="'Liquidación de ' + trabajador.trabajadore.nombre + ' ' + trabajador.trabajadore.apellido"></app-historial>
                     </td>
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagTrabajadores" [total]="(trabajadores || []).length"></app-paginacion>
             </div>
             <!-- END TABLE RESPONSIVE-->
             <button
@@ -186,7 +190,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let listaInsumo of listaInsumos">
+                  <tr *ngFor="let listaInsumo of listaInsumos | paginar: pagListasInsumo">
                     <td class="text-center">-</td>
                     <td>{{ listaInsumo.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td>{{ listaInsumo.total | currency: 'USD':'symbol':'1.0' }}</td>
@@ -204,6 +208,7 @@
                       >
                         <i class="material-icons">done</i>
                       </button>
+                      <app-historial [compacto]="true" entidad="lista_insumos" [entidadId]="listaInsumo.id" [titulo]="'Lista de insumos del ' + (listaInsumo.fecha | date: 'dd/MM/yyyy')"></app-historial>
                       <button
                         
                         mat-raised-button
@@ -249,6 +254,7 @@
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagListasInsumo" [total]="(listaInsumos || []).length"></app-paginacion>
             </div>
             <!-- END TABLE RESPONSIVE-->
             <button
@@ -280,7 +286,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let egreso of egresos">
+                  <tr *ngFor="let egreso of egresos | paginar: pagEgresos">
                     <td class="text-center">-</td>
                     <td>{{ egreso.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td>{{ egreso.monto | currency: 'USD':'symbol':'1.0' }}</td>
@@ -296,10 +302,12 @@
                       >
                         <i class="material-icons">close</i>
                       </button>
+                      <app-historial [compacto]="true" entidad="cc_egresos" [entidadId]="egreso.id" titulo="Egreso del centro de costo"></app-historial>
                     </td>
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagEgresos" [total]="(egresos || []).length"></app-paginacion>
             </div>
             <!-- END TABLE RESPONSIVE-->
             <!-- Tabla Ingreso -->
@@ -332,7 +340,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let ingreso of ingresos">
+                  <tr *ngFor="let ingreso of ingresos | paginar: pagIngresos">
                     <td class="text-center">-</td>
                     <td>{{ ingreso.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td>{{ ingreso.monto | currency: 'USD':'symbol':'1.0' }}</td>
@@ -348,10 +356,12 @@
                       >
                         <i class="material-icons">close</i>
                       </button>
+                      <app-historial [compacto]="true" entidad="cc_ingresos" [entidadId]="ingreso.id" titulo="Ingreso del centro de costo"></app-historial>
                     </td>
                   </tr>
                 </tbody>
               </table>
+              <app-paginacion [estado]="pagIngresos" [total]="(ingresos || []).length"></app-paginacion>
             </div>
             <!-- END TABLE RESPONSIVE-->
           </div>

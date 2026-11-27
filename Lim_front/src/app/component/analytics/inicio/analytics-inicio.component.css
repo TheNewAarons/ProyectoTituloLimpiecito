@@ -1,0 +1,27 @@
+/* Alertas como notificaciones flotantes (bajo la barra superior), no banners a lo ancho. */
+.avisos-flotantes {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 1031;
+  width: 360px;
+  max-width: calc(100% - 32px);
+}
+
+.avisos-flotantes .alert {
+  margin-bottom: 10px;
+}
+
+.avisos-flotantes .alert a {
+  color: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+@media (max-width: 575px) {
+  .avisos-flotantes {
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+}

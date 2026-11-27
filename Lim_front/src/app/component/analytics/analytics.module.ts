@@ -20,11 +20,15 @@ import { GraficoComponent } from './compartido/grafico/grafico.component';
 import { FiltroPeriodoComponent } from './compartido/filtro-periodo/filtro-periodo.component';
 import { SelectorCentroCostoComponent } from './compartido/selector-centro-costo/selector-centro-costo.component';
 import { SelectorClienteComponent } from './compartido/selector-cliente/selector-cliente.component';
+import { PaginacionModule } from '../paginacion/paginacion';
+import { ObservacionesPevDialogoModule } from './productividad/observaciones-pev-dialogo';
 
 // RF-BI-01a: módulo lazy de Analytics. ChartsModule solo aquí para que chart.js quede en este chunk (D-149).
 @NgModule({
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
+    ObservacionesPevDialogoModule, // retroalimentación: modal con el texto de las observaciones PEV
     FormsModule,
     RouterModule.forChild(AnalyticsRoutes),
     RouterModule.forChild(AnalyticsBodegaRoutes),

@@ -1,8 +1,9 @@
-import { ProductividadPevComponent, aCsv } from './productividad-pev.component';
+import { ProductividadPevComponent } from './productividad-pev.component';
+import { aCsv } from '../compartido/csv';
 
 describe('ProductividadPevComponent', () => {
   it('por defecto cubre los últimos 3 meses', () => {
-    const c = new ProductividadPevComponent(null, null);
+    const c = new ProductividadPevComponent(null, null, null);
     expect(c.desde < c.hasta).toBe(true);
   });
 
@@ -12,7 +13,7 @@ describe('ProductividadPevComponent', () => {
   });
 
   it('KPI Verificación: total sin supervisor; con supervisor, el % de su fila del ranking (obs. 1)', () => {
-    const c = new ProductividadPevComponent(null, null);
+    const c = new ProductividadPevComponent(null, null, null);
     c.supervisores = [{ n_empleado: 1002, verificacion_pct: 61.1 }, { n_empleado: 1005, verificacion_pct: 100 }] as any;
     c.verificacionTotal = 87.8;
     c.supervisor = null;

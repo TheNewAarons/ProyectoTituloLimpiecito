@@ -7,6 +7,7 @@ import { LoginService } from '../../../services/login/login.service';
 import * as html2pdf from 'html2pdf.js';
 import { OrdenResumen, FILTROS_ORDEN, ETIQUETA_ORDEN } from '../../../model/recepcion-bodega';
 import { mostrarErrorBodega } from '../../solicitudes-bodega/solicitudes-bodega.errores';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 export interface FilaInformeCompra {
   proveedor: string;
@@ -46,6 +47,8 @@ export function agruparPorProveedor(ordenes: OrdenResumen[]): FilaInformeCompra[
   templateUrl: './informe-compra.component.html'
 })
 export class InformeCompraComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagFilas = nuevaPaginacion();
   readonly MAX_ORDENES = 200;
   filtros = FILTROS_ORDEN;
   estado = '';

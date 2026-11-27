@@ -7,44 +7,67 @@
             <div class="card-icon">
               <i class="material-icons">assignment</i>
             </div>
-            <h4 class="card-title">Crear Anuncio</h4>
+            <h4 class="card-title">{{ id ? 'Editar Anuncio' : 'Crear Anuncio' }}</h4>
             <br />
-            <button mat-raised-button matTooltip="Volver" class="btn btn-warning btn-sm" routerLink="/pagina_web/anuncios">
-              <span class="btn-label"></span>
+            <button mat-raised-button matTooltip="Volver" class="btn btn-rose btn-sm" routerLink="/pagina_web/anuncios">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
               Volver
             </button>
           </div>
           <div class="card-body">
-            <form #f1="ngForm" (submit)="crearAnuncio(f1.valid)">
+            <form #f1="ngForm" (submit)="guardar(f1.valid)">
               <mat-form-field class="example-full-width">
-                <input matInput placeholder="Titulo" name="titulo" #titulo="ngModel" [(ngModel)]="anuncio.titulo" required type="text" />
-                <small [hidden]="titulo.valid || (titulo.pristine && !f1.submitted)" class="text-danger">
-                  Titulo es requerido.
-                </small>
-              </mat-form-field>
-              <mat-form-field class="example-full-width">
-                <input matInput placeholder="Sub Titulo" name="sub_titulo" #sub_titulo="ngModel" [(ngModel)]="anuncio.sub_titulo" required type="text" />
-                <small [hidden]="sub_titulo.valid || (sub_titulo.pristine && !f1.submitted)" class="text-danger">
-                  Sub Titulo es requerido.
+                <input matInput placeholder="Título" name="titulo" #tituloCtrl="ngModel" [(ngModel)]="titulo" required maxlength="150" type="text" />
+                <small [hidden]="tituloCtrl.valid || (tituloCtrl.pristine && !f1.submitted)" class="text-danger">
+                  Título es requerido.
                 </small>
               </mat-form-field>
 
               <mat-form-field class="example-full-width">
-                <input matInput placeholder="Descripcion" name="descripcion" #descripcion="ngModel" [(ngModel)]="anuncio.descripcion" required type="text" />
-                <small [hidden]="descripcion.valid || (descripcion.pristine && !f1.submitted)" class="text-danger">
-                  Descripcion requerido.
+                <textarea matInput placeholder="Texto del anuncio" name="cuerpo" #cuerpoCtrl="ngModel" [(ngModel)]="cuerpo" required maxlength="20000" rows="4"></textarea>
+                <small [hidden]="cuerpoCtrl.valid || (cuerpoCtrl.pristine && !f1.submitted)" class="text-danger">
+                  Texto requerido.
                 </small>
               </mat-form-field>
 
-              <input type="file" #fo name="fo" accept="image/jpeg,image/png,image/webp" (change)="imagenSelecionado($event)" />
-              <small [hidden]="file" class="text-danger">
-                Imagen requerida (jpg, png o webp).
-              </small>
+              <div class="row">
+                <div class="col-md-6">
+                  <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Fecha de publicación" name="fecha_publicacion" #pubCtrl="ngModel" [(ngModel)]="fecha_publicacion" required type="datetime-local" />
+                    <mat-hint>Desde cuándo se muestra en la web.</mat-hint>
+                  </mat-form-field>
+                  <small [hidden]="pubCtrl.valid || (pubCtrl.pristine && !f1.submitted)" class="text-danger">
+                    Fecha de publicación requerida.
+                  </small>
+                </div>
+                <div class="col-md-6">
+                  <mat-form-field class="example-full-width">
+                    <input matInput placeholder="Fecha de expiración (opcional)" name="fecha_expiracion" [(ngModel)]="fecha_expiracion" type="datetime-local" />
+                    <mat-hint>Al llegar esta fecha deja de mostrarse solo. Vacío = sin expiración.</mat-hint>
+                  </mat-form-field>
+                  <small *ngIf="expiracionInvalida()" class="text-danger">
+                    La expiración debe ser posterior a la publicación.
+                  </small>
+                </div>
+              </div>
+              <br />
 
+              <mat-checkbox name="publicado" [(ngModel)]="publicado">Publicado</mat-checkbox>
+              <br /><br />
 
-              <div class="modal-footer justify-content-center">
-                <button mat-raised-button type="submit" class="btn btn-info btn-round" [disabled]="!f1.valid || !file">
-                  Crear
+              <label>{{ id ? 'Cambiar imagen (opcional: jpg, png o webp)' : 'Imagen (opcional: jpg, png o webp)' }}</label><br />
+              <span class="btn btn-rose btn-round btn-file">
+                {{ file ? 'Cambiar' : 'Seleccionar' }}
+                <input type="file" accept="image/jpeg,image/png,image/webp" (change)="imagenSelecionado($event)" />
+              </span>
+              <small *ngIf="file" class="text-muted">{{ file.name }}</small>
+
+              <div class="modal-footer justify-content-end">
+                <button mat-raised-button type="button" class="btn btn-danger" routerLink="/pagina_web/anuncios" [disabled]="guardando">
+                  Cancelar
+                </button>
+                <button mat-raised-button type="submit" class="btn btn-success" [disabled]="!f1.valid || expiracionInvalida() || guardando">
+                  {{ id ? 'Guardar' : 'Crear' }}
                 </button>
               </div>
             </form>

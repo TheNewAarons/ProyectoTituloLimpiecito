@@ -1,16 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError, map, shareReplay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { LoginService } from '../login/login.service';
 import {
   DetalleRentabilidad, FiltrosAnalytics, FilaGastosGenerales, FilaRentabilidad, MetaAnalytics, MetaRentabilidad, PuntoTendencia,
-  RespuestaAnalytics, ResumenFinanciero
+  PrimerosPeriodos, RespuestaAnalytics, ResumenFinanciero
 } from '../../model/analytics';
 import {
-  AgruparConsumo, FilaConsumoGrupo, FilaConsumoMes, FilaFrecuenciaCompra, FilaStockCritico, FilaTopProducto, MetaConsumo
+  AgruparConsumo, FilaConsumoGrupo, FilaConsumoMes, FilaFrecuenciaCompra, FilaStockCritico, FilaMerma, MetaMerma, FilaTopProducto, MetaConsumo
 } from '../../model/analytics';
 import { FiltrosProductividad, MetaProductividad } from '../../model/analytics';
+import { ObservacionPev } from '../../model/analytics';
 
 type FilaRankingRentabilidad = FilaRentabilidad | FilaGastosGenerales;
 
@@ -20,6 +22,7 @@ type FilaRankingRentabilidad = FilaRentabilidad | FilaGastosGenerales;
 })
 export class AnalyticsService {
   public url_analytics: string;
+  private primeros$: Observable<PrimerosPeriodos | null> | null = null;
 
   constructor(private http: HttpClient, private loginService: LoginService) {
     this.url_analytics = environment.url + '/api/v1/analytics';
@@ -47,6 +50,18 @@ export class AnalyticsService {
       }
     });
     return this.http.get<RespuestaAnalytics<T, M>>(this.url_analytics + ruta, { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  // Primer mes con datos por dashboard; una petición por sesión. null si falla (el filtro usa su rango por defecto).
+  primerosPeriodos(): Observable<PrimerosPeriodos | null> {
+    if (!this.primeros$) {
+      this.primeros$ = this.obtener<PrimerosPeriodos>('/periodos', {}).pipe(
+        map((r: RespuestaAnalytics<PrimerosPeriodos>) => r.data),
+        catchError(() => of(null)),
+        shareReplay(1)
+      );
+    }
+    return this.primeros$;
   }
 
   //DASHBOARD FINANCIERO (RF-BI-01)
@@ -91,6 +106,10 @@ export class AnalyticsService {
     return this.obtenerBodega<FilaFrecuenciaCompra[]>('/frecuencia-compra', { desde: desde, hasta: hasta });
   }
 
+  mermaBodega(desde: string, hasta: string): Observable<RespuestaAnalytics<FilaMerma[], MetaMerma>> {
+    return this.obtenerBodega<FilaMerma[], MetaMerma>('/merma', { desde: desde, hasta: hasta });
+  }
+
   stockCriticoBodega(): Observable<RespuestaAnalytics<FilaStockCritico[]>> {
     return this.obtenerBodega<FilaStockCritico[]>('/stock-critico', {});
   }
@@ -101,5 +120,13 @@ export class AnalyticsService {
     if (f.clienteId) params = params.set('cliente_id', String(f.clienteId));
     if (f.supervisor) params = params.set('supervisor', String(f.supervisor));
     return this.http.get<RespuestaAnalytics<T, MetaProductividad>>(this.url_analytics + '/productividad/' + vista, { headers: this.obtenerCabeceras(), params: params });
+  }
+
+  // Retroalimentación de la revisión: texto de las observaciones PEV de un sector (mismos filtros que el dashboard).
+  observacionesPev(sectorId: number, f: FiltrosProductividad): Observable<RespuestaAnalytics<ObservacionPev[], any>> {
+    let params = new HttpParams().set('sector_id', String(sectorId)).set('desde', f.desde).set('hasta', f.hasta);
+    if (f.clienteId) params = params.set('cliente_id', String(f.clienteId));
+    if (f.supervisor) params = params.set('supervisor', String(f.supervisor));
+    return this.http.get<RespuestaAnalytics<ObservacionPev[], any>>(this.url_analytics + '/productividad/observaciones', { headers: this.obtenerCabeceras(), params: params });
   }
 }

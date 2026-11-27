@@ -7,6 +7,11 @@
             <div class="card-icon"><i class="material-icons">list_alt</i></div>
             <h4 class="card-title">Solicitudes De Bodega</h4>
             <br />
+            <!-- Revisión de requerimientos: volver al panel desde donde se llega -->
+            <button mat-raised-button type="button" matTooltip="Volver al Inicio Bodega" class="btn btn-rose btn-sm" routerLink="/bodega/inicio">
+              <span class="btn-label"><i class="material-icons">dashboard</i></span>
+              Inicio Bodega
+            </button>
             <button mat-raised-button type="button" matTooltip="Nueva Solicitud" class="btn btn-warning btn-sm" (click)="nueva()">
               <span class="btn-label"><i class="material-icons">add</i></span>
               Nueva Solicitud

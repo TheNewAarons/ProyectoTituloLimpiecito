@@ -129,11 +129,17 @@
                   >
                     <i class="material-icons">lock_open</i> Reabrir mes
                   </button>
+                  <!-- RNF-SEC-02: quién cerró / reabrió el mes, cuándo y con qué motivo -->
+                  <app-historial entidad="cajas" [entidadId]="caja?.id" [titulo]="'Caja ' + (periodo || '')"></app-historial>
                 </div>
               </div>
             </div>
             <br />
             <h4><strong>LISTA DE CENTROS CC</strong></h4>
+            <mat-form-field class="example-full-width" data-html2canvas-ignore>
+              <input matInput [(ngModel)]="busqueda['centros']" placeholder="Buscar por N° centro o cliente" />
+              <i matSuffix class="material-icons">search</i>
+            </mat-form-field>
             <!-- TABLA DE CENTRO DE COSTOS-->
             <div class="table-responsive">
               <!-- TABLE RESPONSIVE -->
@@ -150,7 +156,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let centro of centros">
+                  <tr *ngFor="let centro of filas(centros, 'centros')">
                     <td class="text-center">-</td>
                     <td>{{ centro.fecha_inicio | date: 'dd/MM/yyyy ' }}</td>
                     <td>{{ centro.numero_cc }}</td>
@@ -165,11 +171,29 @@
                       {{ centro.utilidad | currency: 'USD':'symbol':'1.0' }}
                     </td>
                   </tr>
+                  <tr *ngIf="busqueda['centros'] && filas(centros, 'centros').length === 0">
+                    <td colspan="7" class="text-center">Sin resultados</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
+            <button
+              *ngIf="!busqueda['centros'] && centros?.length > FILAS_VISIBLES"
+              mat-raised-button
+              type="button"
+              class="btn btn-link btn-sm"
+              data-html2canvas-ignore
+              (click)="alternarLista('centros')"
+            >
+              <i class="material-icons">{{ desplegada['centros'] ? 'expand_less' : 'expand_more' }}</i>
+              {{ desplegada['centros'] ? 'Ver menos' : 'Ver todos (' + centros.length + ')' }}
+            </button>
             <!-- END TABLE RESPONSIVE-->
             <h4><strong>LIQUIDACION DE TRABAJADORES</strong></h4>
+            <mat-form-field class="example-full-width" data-html2canvas-ignore>
+              <input matInput [(ngModel)]="busqueda['liquidaciones']" placeholder="Buscar por trabajador, N° centro o cliente" />
+              <i matSuffix class="material-icons">search</i>
+            </mat-form-field>
             <!-- TABLA DE LIQUIDACIONES -->
             <div class="table-responsive">
               <!-- TABLE RESPONSIVE -->
@@ -184,7 +208,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let tablaLiquidacion of tablaLiquidaciones">
+                  <tr *ngFor="let tablaLiquidacion of filas(tablaLiquidaciones, 'liquidaciones')">
                     <td class="text-center">-</td>
                     <td>{{ tablaLiquidacion.trabajador }}</td>
                     <td>{{ tablaLiquidacion.numero_cc }}</td>
@@ -193,11 +217,29 @@
                       {{ tablaLiquidacion.liquido_pagar | currency: 'USD':'symbol':'1.0' }}
                     </td>
                   </tr>
+                  <tr *ngIf="busqueda['liquidaciones'] && filas(tablaLiquidaciones, 'liquidaciones').length === 0">
+                    <td colspan="5" class="text-center">Sin resultados</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
+            <button
+              *ngIf="!busqueda['liquidaciones'] && tablaLiquidaciones?.length > FILAS_VISIBLES"
+              mat-raised-button
+              type="button"
+              class="btn btn-link btn-sm"
+              data-html2canvas-ignore
+              (click)="alternarLista('liquidaciones')"
+            >
+              <i class="material-icons">{{ desplegada['liquidaciones'] ? 'expand_less' : 'expand_more' }}</i>
+              {{ desplegada['liquidaciones'] ? 'Ver menos' : 'Ver todos (' + tablaLiquidaciones.length + ')' }}
+            </button>
             <!-- END TABLE RESPONSIVE-->
             <h4><strong>LISTA DE INSUMOS</strong></h4>
+            <mat-form-field class="example-full-width" data-html2canvas-ignore>
+              <input matInput [(ngModel)]="busqueda['insumos']" placeholder="Buscar por producto" />
+              <i matSuffix class="material-icons">search</i>
+            </mat-form-field>
             <!-- TABLA DE LISTAS DE INSUMO -->
             <div class="table-responsive">
               <!-- TABLE RESPONSIVE -->
@@ -211,7 +253,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let tablaInsumo of tablaInsumos">
+                  <tr *ngFor="let tablaInsumo of filas(tablaInsumos, 'insumos')">
                     <td class="text-center">-</td>
                     <td>{{ tablaInsumo.producto }}</td>
                     <td>{{ tablaInsumo.cantidad }}</td>
@@ -219,11 +261,29 @@
                       {{ tablaInsumo.total | currency: 'USD':'symbol':'1.0' }}
                     </td>
                   </tr>
+                  <tr *ngIf="busqueda['insumos'] && filas(tablaInsumos, 'insumos').length === 0">
+                    <td colspan="4" class="text-center">Sin resultados</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
+            <button
+              *ngIf="!busqueda['insumos'] && tablaInsumos?.length > FILAS_VISIBLES"
+              mat-raised-button
+              type="button"
+              class="btn btn-link btn-sm"
+              data-html2canvas-ignore
+              (click)="alternarLista('insumos')"
+            >
+              <i class="material-icons">{{ desplegada['insumos'] ? 'expand_less' : 'expand_more' }}</i>
+              {{ desplegada['insumos'] ? 'Ver menos' : 'Ver todos (' + tablaInsumos.length + ')' }}
+            </button>
             <!-- END TABLE RESPONSIVE-->
             <h4><strong>LISTA DE EGRESOS</strong></h4>
+            <mat-form-field class="example-full-width" data-html2canvas-ignore>
+              <input matInput [(ngModel)]="busqueda['egresos']" placeholder="Buscar por N° centro o cliente" />
+              <i matSuffix class="material-icons">search</i>
+            </mat-form-field>
             <!-- TABLA DE EGRESO POR CC  -->
             <div class="table-responsive">
               <!-- TABLE RESPONSIVE -->
@@ -237,15 +297,29 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let egreso of tablaEgresos">
+                  <tr *ngFor="let egreso of filas(tablaEgresos, 'egresos')">
                     <td class="text-center">-</td>
                     <td>{{ egreso.numero_cc }}</td>
                     <td>{{ egreso.centro }}</td>
                     <td>{{ egreso.monto | currency: 'USD':'symbol':'1.0' }}</td>
                   </tr>
+                  <tr *ngIf="busqueda['egresos'] && filas(tablaEgresos, 'egresos').length === 0">
+                    <td colspan="4" class="text-center">Sin resultados</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
+            <button
+              *ngIf="!busqueda['egresos'] && tablaEgresos?.length > FILAS_VISIBLES"
+              mat-raised-button
+              type="button"
+              class="btn btn-link btn-sm"
+              data-html2canvas-ignore
+              (click)="alternarLista('egresos')"
+            >
+              <i class="material-icons">{{ desplegada['egresos'] ? 'expand_less' : 'expand_more' }}</i>
+              {{ desplegada['egresos'] ? 'Ver menos' : 'Ver todos (' + tablaEgresos.length + ')' }}
+            </button>
             <!-- END TABLE RESPONSIVE-->
           </div>
         </div>

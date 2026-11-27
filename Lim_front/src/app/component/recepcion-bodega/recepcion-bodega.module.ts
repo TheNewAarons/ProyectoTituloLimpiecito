@@ -18,11 +18,14 @@ import { ConteosListaComponent } from './conteos-lista/conteos-lista.component';
 import { ConteoDetalleComponent } from './conteo-detalle/conteo-detalle.component';
 import { ProveedoresListaComponent } from './proveedores-lista/proveedores-lista.component';
 import { InformeCompraComponent } from './informe-compra/informe-compra.component';
+import { OrdenCompraNuevaComponent } from './orden-compra-nueva/orden-compra-nueva.component';
+import { PaginacionModule } from '../paginacion/paginacion';
 
 // RF-BOD-04: recepción de órdenes, movimientos y formato de entrega (módulo nuevo con carga diferida)
 @NgModule({
   imports: [
     CommonModule,
+    PaginacionModule, // AUT-024: tablas paginadas
     RouterModule.forChild(RecepcionBodegaRoutes),
     FormsModule,
     NgbModule,
@@ -32,7 +35,7 @@ import { InformeCompraComponent } from './informe-compra/informe-compra.componen
   ],
   declarations: [
     OrdenesCompraListaComponent, OrdenRecepcionComponent, MovimientosBodegaComponent, FormatoEntregaComponent, KardexProductoComponent,
-    ConteosListaComponent, ConteoDetalleComponent, ProveedoresListaComponent, InformeCompraComponent
+    ConteosListaComponent, ConteoDetalleComponent, ProveedoresListaComponent, InformeCompraComponent, OrdenCompraNuevaComponent
   ]
 })
 export class RecepcionBodegaModule {}

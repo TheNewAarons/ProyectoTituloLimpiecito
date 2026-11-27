@@ -23,6 +23,7 @@ declare const $: any;
 import swal from 'sweetalert2';
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
 import { forkJoin } from 'rxjs';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 @Component({
   selector: 'app-ver-centro',
@@ -30,6 +31,11 @@ import { forkJoin } from 'rxjs';
   styleUrls: ['./ver-centro.component.css']
 })
 export class VerCentroComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagTrabajadores = nuevaPaginacion();
+  pagListasInsumo = nuevaPaginacion();
+  pagEgresos = nuevaPaginacion();
+  pagIngresos = nuevaPaginacion();
   public centro: any;
   public trabajadores;
   public listaInsumos;
@@ -442,7 +448,16 @@ export class VerCentroComponent implements OnInit {
           });
         } else {
           this.alertaService.cerrarAlerta()
-          this.alertaService.alertaExitoMsj('Faltan Aprobar Lista de insumos y/o Liquidaciones')
+          const liquidacionesPendientes = this.trabajadores.filter(t => !t.liquidacione || t.liquidacione.estado != 0).length;
+          const listasPendientes = this.listaInsumos.filter(l => l.estado != 1).length;
+          const faltantes = [];
+          if (liquidacionesPendientes > 0) {
+            faltantes.push(liquidacionesPendientes + ' liquidación(es) sin crear o sin cerrar');
+          }
+          if (listasPendientes > 0) {
+            faltantes.push(listasPendientes + ' lista(s) de insumos sin aprobar');
+          }
+          this.alertaService.alertaErrorMsj('No se puede cerrar el Centro de Costo', 'Falta: ' + faltantes.join(' y ') + '.')
         }
       }
     });

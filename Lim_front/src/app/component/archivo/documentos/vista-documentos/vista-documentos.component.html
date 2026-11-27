@@ -25,12 +25,12 @@
               placeholder="Categoria.."
               [loading]="categoriasListo"
               [clearable]="false"
-              (change)="buscar()"
+              (change)="filtrar()"
             >
             </ng-select>
             <!-- BUSCADOR -->
             <div class="input-group no-border">
-              <input type="text" name="search" class="form-control" [(ngModel)]="search" placeholder="Buscar..." (change)="buscar()" />
+              <input type="text" name="search" class="form-control" [(ngModel)]="search" placeholder="Buscar..." (change)="filtrar()" />
             </div>
             <div class="table-responsive">
               <!-- TABLE RESPONSIVE -->
@@ -126,7 +126,8 @@
       </div>
       <div class="modal-body">
         <form #f2="ngForm" (submit)="guardarEdicion(f2.valid)">
-          <mat-form-field class="example-full-width">
+          <!-- floatLabel always: el valor se carga con el modal oculto y la etiqueta quedaba encima del texto -->
+          <mat-form-field class="example-full-width" floatLabel="always">
             <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]="documentoEdit.nombre" required type="text" />
             <small [hidden]="nombre.valid || (nombre.pristine && !f2.submitted)" class="text-danger">
               Nombre es requerido.

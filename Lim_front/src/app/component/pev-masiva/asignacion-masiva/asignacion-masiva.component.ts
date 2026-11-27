@@ -6,6 +6,7 @@ import { AlertasService } from '../../../services/alertas/alertas.service';
 import { LoginService } from '../../../services/login/login.service';
 import { OpcionSimple, OpcionesCliente, PlanAsignacion, TrabajadorPev, ETIQUETA_RESULTADO } from '../../../model/pev-masiva';
 import { mostrarErrorBodega as mostrarError } from '../../solicitudes-bodega/solicitudes-bodega.errores';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 interface FilaTrabajador {
   trabajador: TrabajadorPev;
@@ -21,6 +22,9 @@ interface FilaTrabajador {
   styleUrls: ['../../solicitudes-bodega/solicitudes-bodega.css']
 })
 export class AsignacionMasivaComponent implements OnInit {
+  // AUT-025 (revisión): paginación de la lista de trabajadores y de la vista previa
+  pagTrabajadores = nuevaPaginacion();
+  pagPlan = nuevaPaginacion();
   static readonly TOPE = 500;
 
   clientes: OpcionSimple[] = [];

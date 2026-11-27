@@ -10,6 +10,8 @@ const Sequelize = require('sequelize');
 
 //Importar modelos
 const Anuncio = require('../../modelos/sistema_web/Anuncio');
+const Publicacion = require('../../modelos/sistema_web/Publicacion');
+const publicacionServicio = require('../../services/web/publicacion');
 // Obs. 22-23 (AUT-019): la imagen se valida por contenido (jpg/png/webp) y borrar un archivo ausente no detiene el backend.
 const { validarMagicBytes } = require('../../libs/multer_publicaciones');
 const borrarSinFallar = (ruta) => { try { if (ruta) fs.unlinkSync(path.resolve(ruta)); } catch (e) { /* ya no existe: se ignora */ } };
@@ -66,18 +68,22 @@ anuncios_web.post('/crear_anuncio/crear', multer.single('imagen'),  async (req, 
 
 
 //Obtener el anuncio para la pagina web
+// RF-WEB-03: la web pública lee aquí. Primero las publicaciones vigentes (respetan fecha_expiracion),
+// luego los anuncios antiguos que aún no se hayan eliminado, todo en el formato de siempre.
 anuncios_web.get('/obtener_anuncio/obtener/', async (req, res) =>{
-
-        let cant_anuncios = await Anuncio.count();
-        Anuncio.findAll()
-        .then((anuncios) => {
-            return res.json({ anuncios, cant_anuncios });
-          })
-          .catch((error) => {
-            return res.status(400).send('error: ' + error);
-          });
-    
-    
+  try {
+    const [vigentes, antiguos] = await Promise.all([
+      Publicacion.findAll({ where: publicacionServicio.filtroVigentes(new Date()), order: [['fecha_publicacion', 'DESC']] }),
+      Anuncio.findAll()
+    ]);
+    const anuncios = vigentes.map(publicacionServicio.aLegacy).concat(antiguos.map((a) => {
+      const plano = a && a.get ? a.get({ plain: true }) : a;
+      return Object.assign({}, plano, { origen: 'anuncio' });
+    }));
+    return res.json({ anuncios, cant_anuncios: anuncios.length });
+  } catch (error) {
+    return res.status(400).send('error: ' + error);
+  }
 })
 
 

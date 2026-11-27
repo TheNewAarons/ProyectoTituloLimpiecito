@@ -8,7 +8,7 @@ jest.mock('../../../modelos/sistema_bodega/Recepcion_compra', () => require('../
 jest.mock('../../../modelos/sistema_bodega/Recepcion_item', () => require('../../helpers/bd-memoria-bodega').modelo('recepcion_items'));
 jest.mock('../../../modelos/sistema_base/Producto', () => require('../../helpers/bd-memoria-bodega').modelo('productos'));
 
-const { reiniciar } = require('../../helpers/bd-memoria-bodega');
+const { reiniciar, tabla } = require('../../helpers/bd-memoria-bodega');
 const consulta = require('../../../services/bodega/ordenesConsulta');
 
 beforeEach(() => reiniciar({
@@ -43,8 +43,8 @@ it('detalle para recepción: nombre, recibido y pendiente por línea', async () 
   const d = await consulta.detalleRecepcion(10);
   expect(d).toMatchObject({ id: 10, recibible: true, proveedor: 'Distribuidora Norte' });
   expect(d.items).toEqual([
-    { item_id: 100, producto_id: 5, producto: 'Guantes', cantidad: 10, cantidad_recibida: 4, pendiente: 6, costo_unitario: 900 },
-    { item_id: 101, producto_id: 6, producto: 'Cloro', cantidad: 3, cantidad_recibida: 0, pendiente: 3, costo_unitario: null }
+    { item_id: 100, producto_id: 5, producto: 'Guantes', cantidad: 10, cantidad_recibida: 4, cantidad_rechazada: 0, pendiente: 6, costo_unitario: 900 },
+    { item_id: 101, producto_id: 6, producto: 'Cloro', cantidad: 3, cantidad_recibida: 0, cantidad_rechazada: 0, pendiente: 3, costo_unitario: null }
   ]);
 });
 
@@ -52,9 +52,16 @@ it('RF-BOD-04b: detalle incluye el historial de recepciones con su costo real', 
   const d = await consulta.detalleRecepcion(10);
   expect(d.recepciones).toEqual([{
     id: 1, fecha_recepcion: '2026-11-20', documento_tipo: 'GUIA', documento_numero: '55', observacion: null, estado: 'CONFIRMADA', historica: false,
-    items: [{ item_id: 100, producto_id: 5, producto: 'Guantes', cantidad: 4, costo_unitario: 950 }]
+    items: [{ item_id: 100, producto_id: 5, producto: 'Guantes', cantidad: 4, costo_unitario: 950, cantidad_rechazada: 0, motivo_rechazo: null }]
   }]);
   expect((await consulta.detalleRecepcion(11)).recepciones).toEqual([]);
+});
+
+it('RF-BOD-04 merma: lo rechazado no queda pendiente', async () => {
+  tabla('orden_items')[0].cantidad_rechazada = 2;
+  const d = await consulta.detalleRecepcion(10);
+  expect(d.items[0]).toMatchObject({ cantidad_recibida: 4, cantidad_rechazada: 2, pendiente: 4 });
+  expect((await consulta.listar({ estados: ['ENVIADA'], page: 1, limit: 50 })).data[0].unidades_pendientes).toBe(7);
 });
 
 it('una orden RECIBIDA o BORRADOR no es recibible; inexistente -> 404', async () => {

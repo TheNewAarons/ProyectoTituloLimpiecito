@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import {
@@ -5,23 +6,9 @@ import {
 } from '../../../model/analytics';
 import { AnalyticsService } from '../../../services/analytics/analytics.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
-import { generarMeses, mesActualSantiago } from '../compartido/filtro-periodo/filtro-periodo.component';
-
-type Columna = [string, string]; // [título, clave]
-
-/** CSV para Excel en español: separador ';', coma decimal y BOM para que respete tildes. */
-export function aCsv(columnas: Columna[], filas: object[]): string {
-  const celda = (v: any): string => {
-    if (v === null || v === undefined) return '';
-    let s = typeof v === 'number' ? String(v).replace('.', ',') : String(v);
-    // Texto que Excel interpretaría como fórmula (nombres de sector o cliente los escriben usuarios): se antepone '.
-    if (typeof v !== 'number' && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
-    return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  };
-  const lineas = [columnas.map((c: Columna) => celda(c[0])).join(';')]
-    .concat(filas.map((f: object) => columnas.map((c: Columna) => celda((f as any)[c[1]])).join(';')));
-  return '﻿' + lineas.join('\r\n');
-}
+import { generarMeses, idDesdeQuery, mesActualSantiago, rangoDesdeQuery } from '../compartido/filtro-periodo/filtro-periodo.component';
+import { Columna, descargarCsv } from '../compartido/csv';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 // RF-BI-04: productividad PEV — cumplimiento por trabajador, verificación por supervisor y observaciones por sector (D-BI-04-1..4).
 @Component({
@@ -29,6 +16,10 @@ export function aCsv(columnas: Columna[], filas: object[]): string {
   templateUrl: './productividad-pev.component.html'
 })
 export class ProductividadPevComponent implements OnInit, OnDestroy {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagTrabajadores = nuevaPaginacion();
+  pagSupervisores = nuevaPaginacion();
+  pagSectores = nuevaPaginacion();
   static readonly COLUMNAS: { [vista: string]: Columna[] } = {
     trabajadores: [['Trabajador', 'nombre'], ['N° empleado', 'n_empleado'], ['Días', 'dias'], ['Tareas', 'tareas'],
       ['Pasos asignados', 'pasos_asignados'], ['Pasos marcados', 'pasos_marcados'], ['Cumplimiento %', 'cumplimiento_pct']],
@@ -58,9 +49,15 @@ export class ProductividadPevComponent implements OnInit, OnDestroy {
   private subsFiltradas: Subscription[] = [];
   private alertaMostrada = false;
 
-  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService) {}
+  constructor(private analyticsService: AnalyticsService, private alertas: AlertasService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
+    const rango = rangoDesdeQuery(this.route.snapshot.queryParamMap);
+    this.clienteId = idDesdeQuery(this.route.snapshot.queryParamMap, 'cliente_id');
+    if (rango) {
+      this.desde = rango.desde;
+      this.hasta = rango.hasta;
+    }
     this.cargar();
   }
 
@@ -97,7 +94,7 @@ export class ProductividadPevComponent implements OnInit, OnDestroy {
     const listo = () => { pendientes--; if (pendientes <= 0) this.cargando = false; };
     const error = () => {
       listo();
-      if (!this.alertaMostrada) { this.alertaMostrada = true; this.alertas.alertaErrorMsj('No se pudo cargar la productividad PEV'); }
+      if (!this.alertaMostrada) { this.alertaMostrada = true; this.alertas.showNotification('No se pudo cargar la productividad PEV', 'danger'); }
     };
     return { listo: listo, error: error };
   }
@@ -153,11 +150,6 @@ export class ProductividadPevComponent implements OnInit, OnDestroy {
 
   exportar(vista: 'trabajadores' | 'supervisores' | 'sectores'): void {
     const filas: object[] = { trabajadores: this.trabajadores, supervisores: this.supervisores, sectores: this.sectores }[vista];
-    const blob = new Blob([aCsv(ProductividadPevComponent.COLUMNAS[vista], filas)], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'productividad-pev-' + vista + '-' + this.desde + '_' + this.hasta + '.csv';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000); // revocar en el mismo tick puede cortar la descarga
+    descargarCsv('productividad-pev-' + vista + '-' + this.desde + '_' + this.hasta, ProductividadPevComponent.COLUMNAS[vista], filas);
   }
 }

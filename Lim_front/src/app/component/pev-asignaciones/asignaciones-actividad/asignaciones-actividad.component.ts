@@ -8,6 +8,7 @@ import { LoginService } from '../../../services/login/login.service';
 import { OpcionSimple } from '../../../model/pev-masiva';
 import { AsignacionPev, LineaCumplimiento } from '../../../model/pev-asignaciones';
 import { mostrarErrorBodega as mostrarError } from '../../solicitudes-bodega/solicitudes-bodega.errores';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 // RF-PEV-02 (AUT-016, obs. 12 / SCRUM-17): ver las asignaciones de una actividad, quitar a un trabajador (cerrar con
 // fecha, sin borrar) y ver su historial de cumplimiento, que se conserva aunque la asignación esté cerrada.
@@ -16,6 +17,9 @@ import { mostrarErrorBodega as mostrarError } from '../../solicitudes-bodega/sol
   templateUrl: './asignaciones-actividad.component.html'
 })
 export class AsignacionesActividadComponent implements OnInit {
+  // AUT-024 (revisión): paginación de las listas que crecen con el uso
+  pagAsignaciones = nuevaPaginacion();
+  pagCumplimiento = nuevaPaginacion();
   clientes: OpcionSimple[] = [];
   actividades: OpcionSimple[] = [];
   clienteId: number = null;
@@ -109,6 +113,44 @@ export class AsignacionesActividadComponent implements OnInit {
           this.cargar();
         },
         (e: HttpErrorResponse) => mostrarError(e, this.alertas, this.loginService)
+      );
+    });
+  }
+
+  // Anular: la asignación fue un error (no un cambio de dotación). Solo si nunca tuvo cumplimiento; si no, se cierra.
+  anular(a: AsignacionPev) {
+    swal.fire({
+      title: 'Anular la asignación de ' + this.escapar(this.nombre(a)),
+      html: 'Usa <b>Anular</b> solo si la asignación <b>fue un error</b> (trabajador o área equivocados, duplicada).<br>' +
+        'Si el trabajador dejó la actividad, usa <b>Quitar</b>. Nada se borra: queda como ANULADA con su motivo.',
+      input: 'textarea',
+      inputPlaceholder: 'Motivo (obligatorio, mínimo 5 caracteres)',
+      inputAttributes: { maxlength: '500' },
+      showCancelButton: true,
+      buttonsStyling: false,
+      customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-default' },
+      confirmButtonText: 'Anular',
+      cancelButtonText: 'Cancelar',
+      preConfirm: (motivo: string) => {
+        const m = String(motivo || '').trim();
+        if (m.length < 5) { swal.showValidationMessage('Escribe el motivo (mínimo 5 caracteres)'); return false; }
+        return m;
+      }
+    }).then((res) => {
+      if (!res.value) { return; }
+      this.servicio.anular(a.id, String(res.value)).subscribe(
+        () => {
+          this.alertas.alertaExitoMsj('Asignación anulada', 'Quedó como ANULADA con su motivo; las demás no cambian.');
+          this.cargar();
+        },
+        (e: HttpErrorResponse) => {
+          const codigo = e && e.error && e.error.error ? e.error.error.code : '';
+          if (codigo === 'ASIGNACION_CON_HISTORIAL') {
+            this.alertas.alertaErrorMsj('No se puede anular', 'Esta asignación ya tiene cumplimiento registrado. Usa Quitar para cerrarla desde una fecha (su historial se conserva).');
+            return;
+          }
+          mostrarError(e, this.alertas, this.loginService);
+        }
       );
     });
   }
