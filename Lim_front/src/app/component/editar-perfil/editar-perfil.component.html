@@ -16,14 +16,14 @@
             <div class="card-body" *ngIf="usuario != null"> <!-- BODY -->
               <form #f1="ngForm" (submit)="editar(f1.valid)">
                 <mat-form-field class="example-full-width">
-                  <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]= "usuario.nombre" 
+                  <input appSoloPermitidos="letras" matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]= "usuario.nombre" 
                   required type="text">
                   <small [hidden]="nombre.valid || (nombre.pristine && !f1.submitted)" class="text-danger">
                     Nombre es requerido.
                   </small>
                 </mat-form-field>
                 <mat-form-field class="example-full-width">
-                  <input matInput placeholder="Apellido" name="apellido" #apellido="ngModel" [(ngModel)]="usuario.apellido" 
+                  <input appSoloPermitidos="letras" matInput placeholder="Apellido" name="apellido" #apellido="ngModel" [(ngModel)]="usuario.apellido" 
                   type="text">
                 </mat-form-field>
                 <mat-form-field class="example-full-width">
@@ -33,7 +33,7 @@
                   </small>
                 </mat-form-field>
                 <mat-form-field class="example-full-width">
-                  <input matInput placeholder="Rut" name="rut" #rut="ngModel" [(ngModel)]="usuario.rut" type="text">
+                  <input appSoloPermitidos="rut" matInput placeholder="Rut" name="rut" #rut="ngModel" [(ngModel)]="usuario.rut" type="text">
                 </mat-form-field> 
                 <!-- <mat-form-field class="example-full-width">
                   <input matInput placeholder="Contraseña" name="password" #password="ngModel" [(ngModel)]="usuario.password" type="password">

@@ -60,6 +60,7 @@ import { LvlAppGuardService } from './services/guard/lvl-app-guard.service';
 import { RolGuardService } from './services/guard/rol-guard.service';
 
 import { NgxCleaveDirectiveModule } from 'ngx-cleave-directive';
+import { SoloPermitidosModule } from './shared/solo-permitidos/solo-permitidos.directive';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { SesionHttpModule } from './services/sesion/token-sesion.interceptor';
 
@@ -104,7 +105,9 @@ registerLocaleData(localeEsCl);
     MatTableModule,
     MatTabsModule,
     MatToolbarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    // Se exporta aquí porque todos los módulos con formularios ya importan MaterialModule.
+    SoloPermitidosModule
   ],
   declarations: []
 })

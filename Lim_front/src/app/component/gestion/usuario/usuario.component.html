@@ -263,7 +263,7 @@
       <div class="modal-body">
         <form #f1="ngForm" (submit)="crearUsuario(f1.valid)">
           <mat-form-field class="example-full-width">
-            <input
+            <input appSoloPermitidos="letras"
               matInput
               placeholder="Nombre"
               name="nombre"
@@ -280,7 +280,7 @@
             </small>
           </mat-form-field>
           <mat-form-field class="example-full-width">
-            <input
+            <input appSoloPermitidos="letras"
               matInput
               placeholder="Apellido"
               name="apellido"
@@ -307,7 +307,7 @@
             </small>
           </mat-form-field>
           <mat-form-field class="example-full-width">
-            <input
+            <input appSoloPermitidos="rut"
               matInput
               placeholder="Rut"
               name="rut"
@@ -400,7 +400,7 @@
         <form #f2="ngForm" (submit)="editarUsuario(f2.valid)">
           <!-- floatLabel always: el valor se carga con el modal oculto y la etiqueta quedaba encima del texto -->
           <mat-form-field class="example-full-width" floatLabel="always">
-            <input
+            <input appSoloPermitidos="letras"
               matInput
               placeholder="Nombre"
               name="nombre1"
@@ -417,7 +417,7 @@
             </small>
           </mat-form-field>
           <mat-form-field class="example-full-width" floatLabel="always">
-            <input
+            <input appSoloPermitidos="letras"
               matInput
               placeholder="Apellido"
               name="apellido1"
@@ -444,7 +444,7 @@
             </small>
           </mat-form-field>
           <mat-form-field class="example-full-width" floatLabel="always">
-            <input
+            <input appSoloPermitidos="rut"
               matInput
               placeholder="Rut"
               name="rut1"

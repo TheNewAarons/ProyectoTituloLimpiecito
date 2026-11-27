@@ -22,7 +22,7 @@
                 <div class="col-md-4">
                   <label class="col-md-12" style="text-align:center;"><b>NOMBRE</b></label>
                   <mat-form-field class="col-md-12" style="display:inline-block !important">
-                    <input matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]= "trabajador.nombre" 
+                    <input appSoloPermitidos="letras" matInput placeholder="Nombre" name="nombre" #nombre="ngModel" [(ngModel)]= "trabajador.nombre" 
                     required type="text">
                     <small [hidden]="nombre.valid || (nombre.pristine && !f1.submitted)" class="text-danger">
                       Nombre es requerido.
@@ -32,14 +32,14 @@
                 <div class="col-md-4">
                   <label class="col-md-12" style="text-align:center;"><b>APELLIDO</b></label>
                   <mat-form-field class="col-md-12" style="display:inline-block !important">
-                    <input matInput placeholder="Apellido" name="apellido" #apellido="ngModel" [(ngModel)]="trabajador.apellido" 
+                    <input appSoloPermitidos="letras" matInput placeholder="Apellido" name="apellido" #apellido="ngModel" [(ngModel)]="trabajador.apellido" 
                     type="text">
                   </mat-form-field>
                 </div>
                 <div class="col-md-4">
                   <label class="col-md-12" style="text-align:center;"><b>RUT</b></label>
                   <mat-form-field class="col-md-12" style="display:inline-block !important">
-                    <input matInput placeholder="Rut" name="rut" #rut="ngModel" validateRut maxlength="9" formatRut [(ngModel)]="trabajador.rut" type="text" required>
+                    <input appSoloPermitidos="rut" matInput placeholder="Rut" name="rut" #rut="ngModel" validateRut maxlength="9" formatRut [(ngModel)]="trabajador.rut" type="text" required>
                     <small [hidden]="rut.valid || (rut.pristine && !f1.submitted)" class="text-danger">
                       Rut es Inválido.
                     </small>
@@ -52,7 +52,7 @@
                 <div class="col-md-4">
                   <label class="col-md-12" style="text-align:center;"><b>TELEFONO</b></label>
                   <mat-form-field class="col-md-12" style="display:inline-block !important">
-                    <input matInput placeholder="Telefono" name="telefono" #telefono="ngModel" pattern="\d*" maxlength="11" [(ngModel)]="trabajador.telefono" type="text">
+                    <input appSoloPermitidos="telefono" matInput placeholder="Telefono" name="telefono" #telefono="ngModel" pattern="\d*" maxlength="11" [(ngModel)]="trabajador.telefono" type="text">
                     <small [hidden]="telefono.valid || (telefono.pristine && !f1.submitted)" class="text-danger">
                       Teléfono es inválido.
                     </small>
@@ -61,7 +61,7 @@
                 <div class="col-md-4">
                   <label class="col-md-12" style="text-align:center;"><b>TELEFONO EMERG.</b></label>
                   <mat-form-field class="col-md-12" style="display:inline-block !important">
-                    <input matInput placeholder="Telefono Emergencia" name="telefono_emergencia" #telefono_emergencia="ngModel" pattern="\d*" maxlength="11" [(ngModel)]="trabajador.telefono_emergencia" type="text">
+                    <input appSoloPermitidos="telefono" matInput placeholder="Telefono Emergencia" name="telefono_emergencia" #telefono_emergencia="ngModel" pattern="\d*" maxlength="11" [(ngModel)]="trabajador.telefono_emergencia" type="text">
                     <small [hidden]="telefono.valid || (telefono.pristine && !f1.submitted)" class="text-danger">
                       Teléfono es inválido.
                     </small>

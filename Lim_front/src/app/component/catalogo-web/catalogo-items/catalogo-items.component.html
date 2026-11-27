@@ -43,7 +43,7 @@
             </div>
             <div class="col-12 col-md-3" *ngIf="!servicioElegido()">
               <mat-form-field class="w-100">
-                <input matInput placeholder="Precio CLP (opcional)" name="precio" [(ngModel)]="form.precio" inputmode="numeric" pattern="[0-9.]*">
+                <input appSoloPermitidos="entero" matInput placeholder="Precio CLP (opcional)" name="precio" [(ngModel)]="form.precio" inputmode="numeric" pattern="[0-9.]*">
               </mat-form-field>
             </div>
             <div class="col-12 col-md-3" *ngIf="servicioElegido() as s">

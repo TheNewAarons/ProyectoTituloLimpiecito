@@ -17,7 +17,7 @@
                 </div>
                 <div class="col-12 col-md-6">
                   <mat-form-field class="example-full-width">
-                    <input matInput placeholder="RUT (ej. 76.086.428-5)" name="rut" maxlength="12" [(ngModel)]="formulario.datos.rut" (input)="soloPermitidos('rut', $event)" (blur)="ordenarCampo('rut')">
+                    <input matInput placeholder="RUT (ej. 76.086.428-5)" name="rut" maxlength="12" [(ngModel)]="formulario.datos.rut" appSoloPermitidos="rut" (blur)="ordenarCampo('rut')">
                     <mat-hint *ngIf="!errorRut()">Opcional. Se valida el dígito verificador.</mat-hint>
                   </mat-form-field>
                   <small class="text-danger" *ngIf="errorRut()">{{ errorRut() }}</small>
@@ -29,13 +29,13 @@
                 </div>
                 <div class="col-12 col-md-4">
                   <mat-form-field class="example-full-width">
-                    <input matInput type="tel" inputmode="tel" placeholder="Teléfono (ej. +56 9 1234 5678)" name="telefono" maxlength="30" [(ngModel)]="formulario.datos.telefono" (input)="soloPermitidos('telefono', $event)" (blur)="ordenarCampo('telefono')">
+                    <input matInput type="tel" inputmode="tel" placeholder="Teléfono (ej. +56 9 1234 5678)" name="telefono" maxlength="30" [(ngModel)]="formulario.datos.telefono" appSoloPermitidos="telefono" (blur)="ordenarCampo('telefono')">
                   </mat-form-field>
                   <small class="text-danger" *ngIf="errorTelefono()">{{ errorTelefono() }}</small>
                 </div>
                 <div class="col-12 col-md-4">
                   <mat-form-field class="example-full-width">
-                    <input matInput placeholder="Persona de contacto (nombre)" name="contacto" maxlength="150" [(ngModel)]="formulario.datos.contacto" (input)="soloPermitidos('contacto', $event)">
+                    <input matInput placeholder="Persona de contacto (nombre)" name="contacto" maxlength="150" [(ngModel)]="formulario.datos.contacto" appSoloPermitidos="letras">
                     <mat-hint *ngIf="!errorContacto()">Quién atiende los pedidos, ej. Ana Pérez.</mat-hint>
                   </mat-form-field>
                   <small class="text-danger" *ngIf="errorContacto()">{{ errorContacto() }}</small>
