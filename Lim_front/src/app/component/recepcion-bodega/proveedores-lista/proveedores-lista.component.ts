@@ -127,6 +127,18 @@ export class ProveedoresListaComponent implements OnInit {
     return '+56 ' + d.slice(0, 2) + ' ' + d.slice(2, 5) + ' ' + d.slice(5);
   }
 
+  // Bloquea al tipear (y al pegar) los caracteres que no corresponden: letras en RUT/teléfono, números en contacto.
+  // Se escribe input.value además del modelo porque ngModel no repinta si el valor limpio coincide con el anterior.
+  soloPermitidos(campo: 'rut' | 'telefono' | 'contacto', evento: Event): void {
+    const noPermitidos = { rut: /[^\dkK.\- ]/g, telefono: /[^\d+ ]/g, contacto: /[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ.' -]/g };
+    const input = evento.target as HTMLInputElement;
+    const limpio = input.value.replace(noPermitidos[campo], '');
+    if (limpio !== input.value) {
+      input.value = limpio;
+      this.formulario.datos[campo] = limpio;
+    }
+  }
+
   ordenarCampo(campo: 'rut' | 'telefono'): void {
     if (!this.formulario) { return; }
     const v = this.formulario.datos[campo];
