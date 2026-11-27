@@ -218,7 +218,7 @@
       <div class="modal-body">
         <form #f1="ngForm" (submit)="crearCliente(f1.valid)" (keydown.enter)="$event.preventDefault()">
           <mat-form-field class="example-full-width">
-            <input
+            <input appSoloPermitidos="letras"
               matInput
               placeholder="Representante"
               name="representante"
@@ -232,7 +232,7 @@
             </small>
           </mat-form-field>
           <mat-form-field class="example-full-width">
-            <input
+            <input appSoloPermitidos="letras"
               matInput
               placeholder="Encargado"
               name="encargado_contrato"
@@ -282,7 +282,7 @@
             />
           </mat-form-field>
           <mat-form-field class="example-full-width">
-            <input
+            <input appSoloPermitidos="telefono"
               matInput
               placeholder="Número contacto"
               name="numero_contacto"
@@ -339,7 +339,7 @@
       <div class="modal-body">
         <form #f2="ngForm" (submit)="editarCliente(f2.valid)">
           <mat-form-field class="example-full-width">
-            <input
+            <input appSoloPermitidos="letras"
               matInput
               placeholder="Representante"
               name="representante1"
@@ -353,7 +353,7 @@
             </small>
           </mat-form-field>
           <mat-form-field class="example-full-width">
-            <input
+            <input appSoloPermitidos="letras"
               matInput
               placeholder="Encargado"
               name="encargado_contrato1"
@@ -403,7 +403,7 @@
             />
           </mat-form-field>
           <mat-form-field class="example-full-width">
-            <input
+            <input appSoloPermitidos="telefono"
               matInput
               placeholder="Número contacto"
               name="numero_contacto1"
