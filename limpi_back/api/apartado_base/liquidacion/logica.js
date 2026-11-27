@@ -11,6 +11,7 @@ const CentroCostoTrabajador = require('../../../modelos/sistema_base/Centro_cost
 const { Op } = require('sequelize');
 const db = require('../../../database/database');
 const { auditar } = require('../../../services/auditoria');
+const AppError = require('../../../libs/app-error');
 
 /** RELACIONES   */
 CentroCostoTrabajador.belongsTo(Liquidacion);
@@ -55,6 +56,10 @@ const editarLiquidacionDB = async (id, liquidacion, ctx) => {
     const existente = await Liquidacion.findById(id, { transaction: t, lock: t.LOCK.UPDATE });
     if (!existente) {
       return Liquidacion.update(liquidacion, { where: { id }, transaction: t });
+    }
+    // estado 0 = cerrada: sus montos ya alimentan pagos y caja, no se editan.
+    if (Number(existente.estado) === 0) {
+      throw new AppError('LIQUIDACION_CERRADA', 'la liquidación está cerrada y no se puede editar', 409, { liquidacion_id: Number(id) });
     }
     const antes = existente.get({ plain: true });
     const actualizadas = await Liquidacion.update(liquidacion, { where: { id }, transaction: t });

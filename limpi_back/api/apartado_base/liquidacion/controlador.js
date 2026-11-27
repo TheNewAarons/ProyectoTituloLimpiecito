@@ -104,6 +104,9 @@ const editarLiquidacion = async (req, res) => {
         let filas = await logicaDB.editarLiquidacionDB(req.params.id, liquidacionData, actorDeRequest(req))
         return res.json({ filas })
     } catch (error) {
+        if (error.code === 'LIQUIDACION_CERRADA') {
+            return res.status(409).json({ ok: false, error: { code: error.code, message: error.message, details: error.details } })
+        }
         return res.send('error')
     }
 }
