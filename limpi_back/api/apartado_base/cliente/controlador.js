@@ -35,7 +35,7 @@ const crearCliente = async (req, res) => {
 
 const editarCliente = async (req, res) => {
     const cliente = JSON.parse(req.body.cliente);
-    if (require('../../../services/validacion/fechas-rango').responderSiInvalidas(res, 'cliente', cliente)) return // AUT-026
+    if (await require('../../../services/validacion/fechas-rango').responderSiInvalidasAlEditar(res, 'cliente', cliente, req.params.id)) return // AUT-026: solo lo que cambió
     const clienteData = {
         representante: cliente.representante,
         encargado_contrato: cliente.encargado_contrato,

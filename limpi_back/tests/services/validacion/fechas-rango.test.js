@@ -35,3 +35,35 @@ it('responderSiInvalidas responde 400 con el formato de error de la API', () => 
   expect(res.json.mock.calls[0][0]).toMatchObject({ ok: false, error: { code: 'FECHA_FUERA_DE_RANGO', details: { campo: 'fecha_inicio_contrato' } } });
   expect(responderSiInvalidas({}, 'cliente', {})).toBe(false);
 });
+
+describe('validarCambios (editar): solo se valida lo que cambió', () => {
+  const { validarCambios } = require('../../../services/validacion/fechas-rango');
+  const guardada = {
+    fecha_nacimiento: new Date('1990-05-10T00:00:00Z'),
+    fecha_inicio_contrato: new Date('2020-01-01T09:00:00Z'),
+    fecha_termino_contrato: new Date('2099-12-31T09:00:00Z') // "indefinido" puesto a mano
+  };
+
+  it('una ficha antigua fuera de rango se puede editar si no se toca esa fecha (llega ISO con hora)', () => {
+    expect(validarCambios('trabajador', {
+      fecha_nacimiento: '1990-05-10T00:00:00.000Z', fecha_inicio_contrato: '2020-01-01', fecha_termino_contrato: '2099-12-31T09:00:00.000Z'
+    }, guardada, HOY)).toBeNull();
+  });
+
+  it('si se cambia una fecha, esa sí se valida', () => {
+    expect(validarCambios('trabajador', {
+      fecha_nacimiento: '2015-01-01', fecha_inicio_contrato: '2020-01-01', fecha_termino_contrato: '2099-12-31'
+    }, guardada, HOY)).toMatchObject({ campo: 'fecha_nacimiento' });
+  });
+
+  it('cambiar el inicio a después del término guardado se rechaza', () => {
+    const g = Object.assign({}, guardada, { fecha_termino_contrato: new Date('2026-06-30T09:00:00Z') });
+    expect(validarCambios('trabajador', {
+      fecha_nacimiento: '1990-05-10', fecha_inicio_contrato: '2026-07-01', fecha_termino_contrato: '2026-06-30'
+    }, g, HOY)).toMatchObject({ campo: 'fecha_termino_contrato' });
+  });
+
+  it('sin la fila guardada valida todo', () => {
+    expect(validarCambios('cliente', { fecha_facturacion: '1900-01-01' }, null, HOY)).toMatchObject({ campo: 'fecha_facturacion' });
+  });
+});

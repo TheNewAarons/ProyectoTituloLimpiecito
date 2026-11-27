@@ -58,4 +58,50 @@ function responderSiInvalidas(res, tipo, datos) {
   return true;
 }
 
-module.exports = { validar, responderSiInvalidas, RANGOS };
+const MODELOS = {
+  trabajador: () => require('../../modelos/sistema_base/Trabajadore'),
+  cliente: () => require('../../modelos/sistema_base/Cliente')
+};
+const comoTexto = (v) => (v instanceof Date ? (isNaN(v.getTime()) ? String(v) : v.toISOString()) : v);
+
+/**
+ * Al editar se valida solo lo que cambió: una ficha antigua con una fecha fuera de rango (p. ej. término
+ * "indefinido" en 2099) se sigue pudiendo editar mientras no se toque esa fecha.
+ * @param {object} actual fila guardada (o null si no existe: se valida todo)
+ * @returns {{campo:string, mensaje:string}|null}
+ */
+function validarCambios(tipo, datos, actual, hoy) {
+  if (!actual) return validar(tipo, datos, hoy);
+  const d = datos || {};
+  const cambiados = {};
+  let algunoDelContrato = false;
+  CAMPOS[tipo].forEach((campo) => {
+    const cambio = aYmd(d[campo]) !== aYmd(comoTexto(actual[campo]));
+    cambiados[campo] = cambio ? d[campo] : null;
+    if (cambio && /contrato$/.test(campo)) algunoDelContrato = true;
+  });
+  const e = validar(tipo, cambiados, hoy);
+  if (e) return e;
+  const ini = aYmd(d.fecha_inicio_contrato);
+  const fin = aYmd(d.fecha_termino_contrato);
+  if (algunoDelContrato && ini && fin && fin < ini) {
+    return { campo: 'fecha_termino_contrato', mensaje: 'El término de contrato no puede ser anterior al inicio' };
+  }
+  return null;
+}
+
+/** Para los editar legacy: compara con la fila guardada; responde 400 y devuelve true si hay un error. */
+async function responderSiInvalidasAlEditar(res, tipo, datos, id) {
+  let actual = null;
+  try {
+    actual = await MODELOS[tipo]().findById(id, { raw: true });
+  } catch (err) {
+    actual = null; // sin la fila guardada se valida todo (más estricto, nunca deja la petición colgada)
+  }
+  const e = validarCambios(tipo, datos, actual);
+  if (!e) return false;
+  res.status(400).json({ ok: false, error: { code: 'FECHA_FUERA_DE_RANGO', message: e.mensaje, details: { campo: e.campo } } });
+  return true;
+}
+
+module.exports = { validar, validarCambios, responderSiInvalidas, responderSiInvalidasAlEditar, RANGOS };

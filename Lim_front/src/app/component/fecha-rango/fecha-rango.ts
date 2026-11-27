@@ -58,6 +58,8 @@ export class FechaRangoDirective implements Validator, OnChanges {
     if (!v || !RANGOS_FECHA[this.appFechaRango]) return null;
     const despues = aYmd(this.fechaDespuesDe);
     if (despues && v < despues) return { fechaRango: 'No puede ser anterior al inicio de contrato' };
+    // Una fecha que no se tocó (p. ej. la guardada en una ficha antigua) no bloquea el editar; el backend hace lo mismo.
+    if (c.pristine) return null;
     const l = this.limites();
     return v < l.min || v > l.max ? { fechaRango: l.mensaje } : null;
   }

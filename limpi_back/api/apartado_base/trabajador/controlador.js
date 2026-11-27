@@ -63,7 +63,7 @@ const crearTrabajador = async(req,res) => {
 
 const editarTrabajador = async(req,res) => {
     const trabajadore = JSON.parse(req.body.trabajadore);
-    if (require('../../../services/validacion/fechas-rango').responderSiInvalidas(res, 'trabajador', trabajadore)) return // AUT-026
+    if (await require('../../../services/validacion/fechas-rango').responderSiInvalidasAlEditar(res, 'trabajador', trabajadore, req.params.id)) return // AUT-026: solo lo que cambió
     const trabajadoreData = {
         nombre: trabajadore.nombre,
         apellido: trabajadore.apellido,
