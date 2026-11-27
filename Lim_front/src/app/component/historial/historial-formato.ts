@@ -11,6 +11,7 @@ const ACCIONES: { [k: string]: string } = {
   PAGO: 'Registró el pago',
   REVERSION_PAGO: 'Revirtió el pago',
   ANULAR: 'Anuló',
+  ACTIVAR: 'Activó',
   APROBAR: 'Aprobó',
   AJUSTE: 'Ajustó',
   ENTREGA: 'Entregó',
@@ -91,6 +92,14 @@ const CAMPOS: { [entidad: string]: { [campo: string]: Campo } } = {
     estado: { etiqueta: 'Estado', valores: { '0': 'En espera', '1': 'Aprobada' } },
     total: { etiqueta: 'Total', tipo: 'monto' },
     fecha: { etiqueta: 'Fecha', tipo: 'fecha' }
+  },
+  proveedores: {
+    activo: { etiqueta: 'Estado', valores: { '1': 'Activo', '0': 'Inactivo', 'true': 'Activo', 'false': 'Inactivo' } },
+    nombre: { etiqueta: 'Nombre' },
+    rut: { etiqueta: 'RUT' },
+    email: { etiqueta: 'Email' },
+    telefono: { etiqueta: 'Teléfono' },
+    contacto: { etiqueta: 'Contacto' }
   }
 };
 
@@ -127,6 +136,7 @@ export function textoAccion(entidad: string, accion: string, antes: any, despues
   // Las pantallas antiguas guardan estas decisiones como EDITAR de estado.
   if (entidad === 'lista_insumos' && de(0, 1)) { return 'Aprobó la lista'; }    // 0 = En espera, 1 = Aprobada
   if (entidad === 'liquidaciones' && de(1, 0)) { return 'Cerró la liquidación'; } // 1 = Abierta, 0 = Cerrada
+  if (entidad === 'proveedores' && accion === 'ANULAR') { return 'Desactivó'; }  // baja lógica, no anulación
   return ACCIONES[accion] || accion;
 }
 
@@ -175,7 +185,8 @@ const RESUMEN: { [entidad: string]: string[] } = {
   cc_ingresos: ['monto', 'comentario', 'estado_pago'],
   liquidaciones: ['estado_pago', 'liquido_pagar', 'fecha_pago'],
   actividad_asignaciones: ['estado', 'fecha_desde', 'fecha_hasta'],
-  lista_insumos: ['estado', 'total']
+  lista_insumos: ['estado', 'total'],
+  proveedores: ['activo', 'nombre', 'rut']
 };
 
 export function fechaHoraSantiago(iso: string): string {

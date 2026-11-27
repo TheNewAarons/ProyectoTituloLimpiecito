@@ -7,7 +7,8 @@ jest.mock('../../../database/database', () => ({
 }));
 jest.mock('../../../modelos/sistema_bodega/Proveedor', () => ({
   create: jest.fn(),
-  findById: jest.fn()
+  findById: jest.fn(),
+  findAndCountAll: jest.fn()
 }));
 jest.mock('../../../services/auditoria', () => ({
   auditar: jest.fn()
@@ -17,7 +18,7 @@ const db = require('../../../database/database');
 const Proveedor = require('../../../modelos/sistema_bodega/Proveedor');
 const { auditar } = require('../../../services/auditoria');
 const AppError = require('../../../libs/app-error');
-const { crear, editar, desactivar, reactivar } = require('../../../services/bodega/proveedores');
+const { listar, crear, editar, desactivar, reactivar } = require('../../../services/bodega/proveedores');
 
 function instanciaProveedor(data) {
   const inst = Object.assign({}, data);
@@ -239,5 +240,25 @@ describe('services/bodega/proveedores · formatos de RUT, teléfono y contacto',
     await editar(1, { nombre: 'ACME Ltda' }, { usuario }); // el RUT antiguo inválido no bloquea cambiar otro campo
     expect(proveedor.update).toHaveBeenCalled();
     await expect(editar(1, { rut: '12.345.678-9' }, { usuario })).rejects.toMatchObject({ code: 'RUT_INVALIDO' });
+  });
+
+  describe('listar con buscar', () => {
+    const { Op } = require('sequelize');
+    beforeEach(() => Proveedor.findAndCountAll.mockResolvedValue({ rows: [], count: 0 }));
+
+    it('busca literal (comodines escapados) en nombre, rut, email y contacto', async () => {
+      await listar({ buscar: '  50%_a ', activo: 1 });
+      const where = Proveedor.findAndCountAll.mock.calls[0][0].where;
+      const patron = { [Op.like]: '%50\\%\\_a%' };
+      expect(where.activo).toBe(1);
+      expect(where[Op.or]).toEqual([{ nombre: patron }, { rut: patron }, { email: patron }, { contacto: patron }]);
+    });
+
+    it('sin buscar ni activo no filtra (todos)', async () => {
+      await listar({ buscar: '   ' });
+      const where = Proveedor.findAndCountAll.mock.calls[0][0].where;
+      expect(where).toEqual({});
+      expect(where[Op.or]).toBeUndefined();
+    });
   });
 });

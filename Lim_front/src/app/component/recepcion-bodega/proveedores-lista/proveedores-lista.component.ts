@@ -20,7 +20,8 @@ export class ProveedoresListaComponent implements OnInit {
     { valor: 0, nombre: 'Inactivos' },
     { valor: null, nombre: 'Todos' }
   ];
-  activo = 1;
+  activo: number = null; // por defecto: todos
+  buscar = '';
   page = 1;
   pageSize = 20;
   total = 0;
@@ -41,7 +42,7 @@ export class ProveedoresListaComponent implements OnInit {
 
   cargar(): void {
     this.loading = true;
-    this.recepcionService.listarProveedores(this.activo, this.page, this.pageSize).subscribe(
+    this.recepcionService.listarProveedores(this.activo, this.page, this.pageSize, this.buscar).subscribe(
       (r) => {
         this.proveedores = r.data;
         this.total = r.meta.total || 0;
@@ -164,47 +165,67 @@ export class ProveedoresListaComponent implements OnInit {
     );
   }
 
-  desactivar(p: Proveedor): void {
+  // Activar/desactivar: motivo -> código al correo del usuario -> confirmar con el código (queda en el historial).
+  cambiarEstado(p: Proveedor): void {
+    const activo = p.activo ? 0 : 1;
+    const accion = activo ? 'Activar' : 'Desactivar';
     swal.fire({
-      title: '¿Desactivar proveedor?',
-      text: p.nombre + ' dejará de aparecer como activo. No se borra y sus órdenes se conservan.',
-      icon: 'warning',
+      title: accion + ' proveedor ' + p.nombre,
+      text: (activo ? 'Volverá a estar disponible para órdenes de compra.' : 'Dejará de aparecer como activo. No se borra y sus órdenes se conservan.') +
+        ' Ingresa el motivo.',
+      input: 'text',
+      inputPlaceholder: 'Motivo',
+      icon: activo ? 'question' : 'warning',
       showCancelButton: true,
       buttonsStyling: false,
       customClass: { confirmButton: 'btn btn-success', cancelButton: 'btn btn-danger' },
-      confirmButtonText: 'Si, Desactivar',
-      cancelButtonText: 'Cancelar'
+      confirmButtonText: 'Si, ' + accion,
+      cancelButtonText: 'Cancelar',
+      inputValidator: (valor: string) => {
+        const longitud = valor ? valor.trim().length : 0;
+        return longitud < 5 || longitud > 500 ? 'El motivo debe tener entre 5 y 500 caracteres' : null;
+      }
     }).then((resultado) => {
       if (!resultado.value) { return; }
-      this.recepcionService.desactivarProveedor(p.id).subscribe(
-        () => {
-          this.alertas.alertaExitoMsj('Proveedor desactivado');
-          this.cargar();
+      this.alertas.loading();
+      this.recepcionService.pedirCodigoEstadoProveedor(p.id, activo, resultado.value.trim()).subscribe(
+        (r) => {
+          this.alertas.cerrarAlerta();
+          this.confirmarConCodigo(p, activo, r.data.correo);
         },
-        (error: HttpErrorResponse) => mostrarErrorBodega(error, this.alertas, this.loginService)
+        (error: HttpErrorResponse) => {
+          this.alertas.cerrarAlerta();
+          mostrarErrorBodega(error, this.alertas, this.loginService);
+        }
       );
     });
   }
 
-  reactivar(p: Proveedor): void {
+  // Si el código es incorrecto muestra el error sin cerrar el diálogo.
+  private confirmarConCodigo(p: Proveedor, activo: number, correo: string): void {
     swal.fire({
-      title: '¿Reactivar proveedor?',
-      text: p.nombre + ' volverá a estar disponible para órdenes de compra.',
-      icon: 'question',
+      title: 'Código de confirmación',
+      text: 'Enviamos un código de 6 dígitos a ' + correo + '. Vence en 10 minutos.',
+      input: 'text',
+      inputPlaceholder: '000000',
+      inputAttributes: { maxlength: '6', inputmode: 'numeric', autocomplete: 'one-time-code' },
       showCancelButton: true,
       buttonsStyling: false,
       customClass: { confirmButton: 'btn btn-success', cancelButton: 'btn btn-danger' },
-      confirmButtonText: 'Si, Reactivar',
-      cancelButtonText: 'Cancelar'
+      confirmButtonText: 'Confirmar',
+      cancelButtonText: 'Cancelar',
+      showLoaderOnConfirm: true,
+      allowOutsideClick: () => !swal.isLoading(),
+      inputValidator: (valor: string) => /^\d{6}$/.test((valor || '').trim()) ? null : 'Ingresa los 6 dígitos del código',
+      preConfirm: (valor: string) =>
+        this.recepcionService.cambiarEstadoProveedor(p.id, activo, valor.trim()).toPromise().catch((error: HttpErrorResponse) => {
+          const mensaje = error && error.error && error.error.error && error.error.error.message;
+          swal.showValidationMessage(mensaje || 'Ha ocurrido un problema al procesar la solicitud.');
+        })
     }).then((resultado) => {
       if (!resultado.value) { return; }
-      this.recepcionService.reactivarProveedor(p.id).subscribe(
-        () => {
-          this.alertas.alertaExitoMsj('Proveedor reactivado');
-          this.cargar();
-        },
-        (error: HttpErrorResponse) => mostrarErrorBodega(error, this.alertas, this.loginService)
-      );
+      this.alertas.alertaExitoMsj(activo ? 'Proveedor activado' : 'Proveedor desactivado');
+      this.cargar();
     });
   }
 }

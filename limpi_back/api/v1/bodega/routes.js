@@ -45,8 +45,17 @@ router.get('/proveedores/:id/productos', ADMIN_Y_OPERACIONES, asyncHandler(prove
 router.get('/proveedores/:id', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.obtener));
 router.post('/proveedores', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.crear));
 router.patch('/proveedores/:id', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.editar));
-router.delete('/proveedores/:id', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.desactivar));
-router.patch('/proveedores/:id/reactivar', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.reactivar));
+// Activar/desactivar exige motivo y código por correo. Las rutas antiguas responden 410 con la ruta nueva
+// (antes no tenían motivo ni código: dejarlas activas sería un atajo sin trazabilidad).
+const rutaReemplazada = (req, res) => res.status(410).json({ ok: false, error: {
+  code: 'RUTA_REEMPLAZADA',
+  message: 'para activar o desactivar un proveedor usa POST /proveedores/:id/estado/codigo { activo, motivo } y luego POST /proveedores/:id/estado { activo, codigo }',
+  details: { codigo: 'POST /api/v1/bodega/proveedores/:id/estado/codigo', confirmar: 'POST /api/v1/bodega/proveedores/:id/estado' }
+} });
+router.delete('/proveedores/:id', ADMIN_Y_OPERACIONES, rutaReemplazada);
+router.patch('/proveedores/:id/reactivar', ADMIN_Y_OPERACIONES, rutaReemplazada);
+router.post('/proveedores/:id/estado/codigo', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.pedirCodigoEstado));
+router.post('/proveedores/:id/estado', ADMIN_Y_OPERACIONES, asyncHandler(proveedores.cambiarEstado));
 
 router.patch('/productos/:id/proveedor', ADMIN_Y_OPERACIONES, asyncHandler(productos.asignarProveedor));
 
