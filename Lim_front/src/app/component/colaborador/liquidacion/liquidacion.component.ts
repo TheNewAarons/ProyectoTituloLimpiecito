@@ -92,6 +92,8 @@ export class LiquidacionComponent implements OnInit {
       if (cc && String(centroTrabajador.centro_costo ? centroTrabajador.centro_costo.numero_cc : '') !== cc) { return false; }
       return true;
     });
+    // Retroalimentación: la más nueva primero (la recién creada tiene el id más alto, aunque su fecha sea de otro mes).
+    this.centroTrabajadoresFiltrados.sort((a, b) => Number(b.liquidacioneId || 0) - Number(a.liquidacioneId || 0));
   }
 
   //FECHA DE LA LIQUIDACION EN HORA DE CHILE (yyyy-MM-dd), PARA COMPARAR CON LOS CAMPOS DESDE/HASTA
