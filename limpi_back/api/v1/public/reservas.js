@@ -9,5 +9,5 @@ const web = require('../../../services/reservas/web');
 module.exports = {
   catalogo: async (req, res) => res.json({ ok: true, data: await web.catalogo(), meta: {} }),
   disponibilidad: async (req, res) => res.json({ ok: true, data: await web.disponibilidad(req.query), meta: {} }),
-  crear: async (req, res) => res.status(201).json({ ok: true, data: await web.crear(req.body), meta: {} })
+  crear: async (req, res) => res.status(201).json({ ok: true, data: await web.crear(req.body, { ip: req.ip }), meta: {} })
 };

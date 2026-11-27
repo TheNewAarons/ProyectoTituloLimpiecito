@@ -19,11 +19,15 @@ const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', '
 const PAGOS = { SIMULADO: 'Se coordina con el equipo (sin cobro en línea)', Transbank: 'Webpay (Transbank)', Transferencia: 'Transferencia', Efectivo: 'Efectivo' };
 const plantillas = {};
 
-/** Fecha de la reserva en Santiago -> 'martes 1 de diciembre de 2026' (el legacy mostraba Date.toString()). */
+/**
+ * Fecha de la reserva -> 'martes 1 de diciembre de 2026' (el legacy mostraba Date.toString()).
+ * fecha_reserva guarda el día (y la hora del bloque) escritos en UTC, igual que lo leen las consultas (DATE_FORMAT):
+ * se formatea en UTC; en hora de Chile una reserva guardada a las 00:00 aparecería un día antes (revisión).
+ */
 function fechaLarga(valor) {
   const d = valor instanceof Date ? valor : new Date(valor);
   if (isNaN(d.getTime())) return String(valor || '');
-  const ymd = d.toLocaleDateString('en-CA', { timeZone: 'America/Santiago' }).split('-').map(Number);
+  const ymd = d.toISOString().slice(0, 10).split('-').map(Number);
   return DIAS[new Date(Date.UTC(ymd[0], ymd[1] - 1, ymd[2])).getUTCDay()] + ' ' + ymd[2] + ' de ' + MESES[ymd[1] - 1] + ' de ' + ymd[0];
 }
 

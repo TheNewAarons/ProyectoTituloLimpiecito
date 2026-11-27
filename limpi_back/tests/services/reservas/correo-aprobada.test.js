@@ -18,7 +18,10 @@ beforeEach(() => { jest.clearAllMocks(); Extra.findOne.mockResolvedValue(null); 
 
 it('fecha en español según Santiago (el legacy mostraba "Tue Dec 01 2026 06:00:00 GMT-0300")', () => {
   expect(fechaLarga(new Date('2026-12-01T09:00:00Z'))).toBe('martes 1 de diciembre de 2026');
-  expect(fechaLarga(new Date('2026-12-01T02:00:00Z'))).toBe('lunes 30 de noviembre de 2026'); // 23:00 del 30 en Chile
+  // Revisión: el día se lee en UTC, igual que las consultas (DATE_FORMAT). Reservas de la app guardadas a las 00:00
+  // salían un día antes si se formateaba en hora de Chile.
+  expect(fechaLarga(new Date('2026-12-01T00:00:00Z'))).toBe('martes 1 de diciembre de 2026');
+  expect(fechaLarga(new Date('2026-12-01T02:00:00Z'))).toBe('martes 1 de diciembre de 2026');
 });
 
 it('arma asunto, destinatario, pago SIMULADO legible y total a pagar', async () => {

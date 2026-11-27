@@ -13,7 +13,8 @@ const esc = (s: any) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => '&
 const hhmm = (t: string) => (t ? String(t).slice(0, 5) : '');
 function fechaCorta(v: any): string {
   const d = new Date(v);
-  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-CL', { timeZone: 'America/Santiago', weekday: 'long', day: 'numeric', month: 'long' });
+  // fecha_reserva guarda el día en UTC (como lo leen las consultas): en hora de Chile una reserva a las 00:00 saldría un día antes.
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-CL', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 const TEXTOS: { [a: string]: { titulo: string; boton: string; clase: string; icono: 'question' | 'warning'; aviso: string; exito: string } } = {

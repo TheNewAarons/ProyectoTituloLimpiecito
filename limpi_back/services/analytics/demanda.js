@@ -248,7 +248,9 @@ function armarDia(ymd, bloques, reservas) {
 async function delDia(q) {
   const qq = q || {};
   const ymd = qq.fecha || fecha.hoySantiago();
-  if (typeof ymd !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(ymd) || new Date(ymd + 'T00:00:00Z').toISOString().slice(0, 10) !== ymd) {
+  const comoFecha = typeof ymd === 'string' ? new Date(ymd + 'T00:00:00Z') : null;
+  // isNaN antes de toISOString: con '2026-13-45' toISOString lanza RangeError (respondía 500 en vez de 400).
+  if (!comoFecha || !/^\d{4}-\d{2}-\d{2}$/.test(ymd) || isNaN(comoFecha.getTime()) || comoFecha.toISOString().slice(0, 10) !== ymd) {
     throw new AppError('CAMPO_INVALIDO', 'fecha debe ser YYYY-MM-DD', 400, { fecha: qq.fecha });
   }
   const f = filtros({ categoria_id: qq.categoria_id });

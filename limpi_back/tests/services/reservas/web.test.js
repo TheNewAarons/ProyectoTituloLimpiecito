@@ -2,7 +2,8 @@
  * RF-BI-05 — reservas desde la web: validación, cupos (misma regla que la app) y creación en transacción.
  */
 jest.mock('../../../database/database', () => ({ sequelize: { query: jest.fn(), transaction: jest.fn() } }));
-jest.mock('../../../modelos/sist_app/Reserva', () => ({ max: jest.fn(), create: jest.fn() }));
+jest.mock('../../../modelos/sist_app/Reserva', () => ({ max: jest.fn(), create: jest.fn(), count: jest.fn(async () => 0) }));
+jest.mock('../../../services/auditoria', () => ({ auditar: jest.fn(async () => ({})) }));
 jest.mock('../../../modelos/sist_app/Usuario_app', () => ({ findOne: jest.fn(), create: jest.fn() }));
 jest.mock('../../../modelos/sist_app/Extra', () => ({ create: jest.fn() }));
 jest.mock('../../../modelos/sist_app/Extra_lavado', () => ({ create: jest.fn() }));
@@ -30,6 +31,7 @@ function bd(o) {
     if (/FROM servicios s JOIN categoria_servicios c ON c.id = s.categoriaServicioId WHERE s.id/.test(sql)) return o.servicio ? [o.servicio] : [];
     if (/FROM horarios h JOIN dias/.test(sql)) return BLOQUES;
     if (/FROM reservas r/.test(sql)) return o.ocupados || [];
+    if (/MAX\(orden\) maximo FROM reservas FOR UPDATE/.test(sql)) return [{ maximo: 1122 }];
     if (/FOR UPDATE/.test(sql)) return [{ id: 2 }];
     if (/FROM categoria_servicios c JOIN servicios/.test(sql)) return o.catalogo || [];
     return [];
@@ -189,4 +191,33 @@ it('catálogo agrupa por categoría y marca cantidad y vehículo', async () => {
     { id: 1, nombre: 'Aseo de hogar', pide_cantidad: true, pide_vehiculo: false, servicios: [{ id: 7, nombre: 'Aseo profundo', descripcion: 'd', precio: 45000 }] },
     { id: 2, nombre: 'Lavado de vehiculos', pide_cantidad: false, pide_vehiculo: true, servicios: [{ id: 8, nombre: 'Lavado completo', descripcion: 'd', precio: null }] }
   ]);
+});
+
+describe('revisión: abuso, auditoría y numeración', () => {
+  const { auditar } = require('../../../services/auditoria');
+
+  it('un correo con 3 reservas en proceso no puede crear otra (429) y no se crea nada', async () => {
+    bd({ servicio: SERVICIO_HOGAR });
+    UsuarioApp.findOne.mockResolvedValue({ id: 3, correo: 'ana@correo.cl' });
+    Reserva.count.mockResolvedValueOnce(3);
+    await expect(web.crear(cuerpo(), { hoy: HOY })).rejects.toMatchObject({ code: 'DEMASIADAS_PENDIENTES', httpStatus: 429 });
+    expect(Reserva.create).not.toHaveBeenCalled();
+    expect(Reserva.count).toHaveBeenCalledWith({ where: { usuarioAppId: 3, estado: 3 }, transaction: T });
+  });
+
+  it('el cliente nuevo queda auditado (CREAR usuario_apps, contexto sistema, IP) dentro de la transacción', async () => {
+    bd({ servicio: SERVICIO_HOGAR });
+    await web.crear(cuerpo(), { hoy: HOY, ip: '9.9.9.9' });
+    expect(auditar).toHaveBeenCalledWith(expect.objectContaining({
+      transaction: T, entidad: 'usuario_apps', entidad_id: 40, accion: 'CREAR', usuario: { id: null, contexto: 'sistema' }, ip: '9.9.9.9'
+    }));
+  });
+
+  it('la orden sale de una lectura bloqueante del máximo (no de Reserva.max sin bloqueo)', async () => {
+    bd({ servicio: SERVICIO_HOGAR });
+    await web.crear(cuerpo(), { hoy: HOY });
+    expect(db.sequelize.query.mock.calls.some((c) => /SELECT MAX\(orden\) maximo FROM reservas FOR UPDATE/.test(c[0]) && c[1].transaction === T)).toBe(true);
+    expect(Reserva.create.mock.calls[0][0].orden).toBe(1123);
+    expect(Reserva.max).not.toHaveBeenCalled();
+  });
 });

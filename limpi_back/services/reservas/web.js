@@ -19,12 +19,14 @@ const UsuarioApp = require('../../modelos/sist_app/Usuario_app');
 const Extra = require('../../modelos/sist_app/Extra');
 const ExtraLavado = require('../../modelos/sist_app/Extra_lavado');
 const { crearTransporte, smtpConfigurado } = require('../correo/transporte');
+const { auditar } = require('../auditoria');
 
 const ESTADO = { FINALIZADO: 1, APROBADO: 2, EN_PROCESO: 3, RECHAZADO: 4 };
 const ESTADOS_OCUPAN_CUPO = [ESTADO.APROBADO, ESTADO.EN_PROCESO];
 const ACTIVO = 1;
 const DIAS_MAXIMOS = 60; // se reserva desde mañana hasta 60 días
 const CANTIDAD_MAXIMA = 10;
+const MAX_EN_PROCESO = 3; // reservas esperando aprobación por correo (contra el abuso del endpoint público)
 const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
 const RE_EMAIL = /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/;
 const RE_FECHA = /^\d{4}-\d{2}-\d{2}$/;
@@ -218,12 +220,29 @@ async function crear(body, opciones) {
     }
 
     let cliente = await UsuarioApp.findOne({ where: { correo: d.cliente.correo }, transaction: t });
+    // Revisión: contra el abuso del endpoint público, un mismo correo no puede tener más de MAX_EN_PROCESO reservas
+    // esperando aprobación (además del límite por IP del router).
+    if (cliente) {
+      const pendientes = await Reserva.count({ where: { usuarioAppId: cliente.id, estado: ESTADO.EN_PROCESO }, transaction: t });
+      if (pendientes >= MAX_EN_PROCESO) {
+        throw new AppError('DEMASIADAS_PENDIENTES', 'Ya tienes ' + pendientes + ' reservas esperando confirmación. Espera nuestra respuesta antes de reservar otra.', 429);
+      }
+    }
     if (!cliente) {
       cliente = await UsuarioApp.create({
         nombre: d.cliente.nombre, correo: d.cliente.correo, celular: d.cliente.celular, direccion: d.cliente.direccion, estado: ACTIVO
       }, { transaction: t });
+      // usuario_apps está en la auditoría manual (el hook global no lo registra): el alta desde la web queda auditada.
+      await auditar({
+        transaction: t, usuario: { id: null, contexto: 'sistema' }, entidad: 'usuario_apps', entidad_id: cliente.id,
+        accion: 'CREAR', antes: null, despues: cliente, motivo: 'Cliente creado desde la web de reservas (RF-BI-05)', ip: o.ip || null
+      });
     }
-    const maxOrden = await Reserva.max('orden', { transaction: t });
+    // Numeración global (revisión): lectura bloqueante del máximo. Ve el último valor confirmado y bloquea las filas
+    // hasta el commit, así dos reservas web simultáneas (aunque sean de categorías distintas) no repiten la orden.
+    // shortcut: la app legacy (rutas_app/Reserva.js) numera sin transacción; si vuelve a operar, compartir este mecanismo.
+    const filaMax = await consultar('SELECT MAX(orden) maximo FROM reservas FOR UPDATE', {}, t);
+    const maxOrden = filaMax[0] ? filaMax[0].maximo : 0;
     const precio = servicio.precio === null ? 0 : Number(servicio.precio);
     const reserva = await Reserva.create({
       orden: (Number(maxOrden) || 0) + 1,
