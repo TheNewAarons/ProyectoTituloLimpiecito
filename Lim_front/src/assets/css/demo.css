@@ -96,6 +96,19 @@
 .table .td-actions app-historial + .btn {
     margin-left: 6px;
 }
+/* RF-BI-05: botones Aprobar / Rechazar / Finalizar de las reservas (van dentro de su componente) */
+.table .td-actions .btn + app-acciones-reserva .btn:first-child,
+.table .td-actions app-acciones-reserva .btn + .btn {
+    margin-left: 6px;
+}
+/* RF-BI-05: el enlace "Entrar" de las tarjetas de Reservas usaba el violeta por defecto del tema; rosa del sistema. */
+app-reservas .card-stats .card-footer a {
+    color: #e91e63;
+    font-weight: 500;
+}
+app-reservas .card-stats .card-footer a:hover {
+    color: #c2185b;
+}
 
 /* Revisión de requerimientos (2026-11): los paginadores (ngb-pagination) usaban el azul por defecto de Bootstrap;
    se llevan al color de la marca ($brand-rose #e91e63, GUIA-ESTILO-UI) en todas las listas del ERP. */

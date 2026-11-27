@@ -329,6 +329,8 @@ app.use(process.env.PREFIJO + '/api/v1/bodega', BodegaV1);
 // RF-FAC-01: estado de pago de ingresos/egresos (facturas), SOLO bajo /api/v1 (solo Admin).
 const FacturasV1 = require('./api/v1/facturas/routes');
 app.use(process.env.PREFIJO + '/api/v1', FacturasV1);
+// RF-BI-05: aprobar/rechazar/finalizar reservas con validación de estado, auditoría y correo (solo Admin).
+app.use(process.env.PREFIJO + '/api/v1/reservas', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), require('./api/v1/reservas/routes'));
 // Reabrir centro de costo cerrado por error (motivo + auditoría REAPERTURA), SOLO bajo /api/v1.
 app.use(process.env.PREFIJO + '/api/v1/centros-costo', require('./api/v1/centros-costo/routes'));
 

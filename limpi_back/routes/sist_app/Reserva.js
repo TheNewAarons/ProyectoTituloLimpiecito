@@ -107,21 +107,21 @@ reservas.delete('/aprobar-reserva/:idReserva', async (req, res) => {
   let servicio = await Servicio.findById(reserva.servicioId);
 
   const transporter = crearTransporte()
-  const mailOptions = {
-      from:"no-reply@aseolimpiecito.cl",
-      to: usuario.correo,
-      subject:"Confirmación de reserva exitosa",
-      text: 'Has Realizado una reserva en la Aplicación móvil de Limpiecito.',
-      html: `Hola ${usuario.nombre}!<br>
-      Le informamos que tu reserva con n° de orden ${reserva.orden} correspondiente al servicio de ${servicio.nombre}, ha sido reservada exitosamente para el día ${reserva.fecha_reserva} a las ${reserva.hora_inicio}hrs.<br> 
-      El cúal tiene un valor equivalente de $${reserva.precio} a cancelar mediante ${reserva.metodo_pago}.<br>
-      ¡Muchas Gracias por su reseva!<br>`,
+  // AUT-031 (RF-BI-05): correo "reserva confirmada" con el diseño de la empresa, fecha en español y datos escapados.
+  // Si no se puede armar, la reserva se aprueba igual (como antes, el correo no bloquea la aprobación).
+  let mailOptions = null
+  try {
+    mailOptions = await require('../../services/reservas/correo-aprobada').armarCorreoAprobada({ reserva, usuario, servicio })
+  } catch (e) {
+    console.log('[reserva] no se pudo armar el correo de confirmacion:', e && e.message)
   }
-  transporter.sendMail(mailOptions, (error,info)=>{
-    if(error){
-        console.log(error)
-    }
-  })
+  if (mailOptions) {
+    transporter.sendMail(mailOptions, (error,info)=>{
+      if(error){
+          console.log(error)
+      }
+    })
+  }
 
   Reserva.update({ estado: 2 }, { where: { id: req.params.idReserva } })
     .then((filas) => {

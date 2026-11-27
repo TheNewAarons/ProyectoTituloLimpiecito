@@ -24,15 +24,7 @@
               Agregar Observación
             </button>
             <div style="text-align: center">
-              <button
-                *ngIf="reserva?.estado == 3"
-                mat-raised-button
-                matTooltip="Aprobar"
-                (click)="aprobar(reserva?.id)"
-                class="btn btn-success btn-sm"
-              >
-                Aprobar
-              </button>
+              <!-- AUT-032: Aprobar y Rechazar se hacen desde las listas de reservas y la Agenda del día (con confirmación). -->
               <button
                 *ngIf="reserva?.estado == 2"
                 mat-raised-button
@@ -41,15 +33,6 @@
                 class="btn btn-warning btn-sm"
               >
                 Finalizar
-              </button>
-              <button
-                *ngIf="reserva?.estado == 3 || reserva?.estado == 2"
-                mat-raised-button
-                matTooltip="Rechazar"
-                (click)="rechazar(reserva.id)"
-                class="btn btn-danger btn-sm"
-              >
-                Rechazar
               </button>
             </div>
           </div>

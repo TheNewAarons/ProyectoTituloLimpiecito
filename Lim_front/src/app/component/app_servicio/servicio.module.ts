@@ -12,6 +12,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { NgOptionHighlightModule } from '@ng-select/ng-option-highlight';
 import { LoadingModule } from 'src/app/loading/loading.module';
+import { AccionesReservaModule } from './reserva/acciones-reserva';
 
 import { serviceRoutes } from './servicio.routing';
 //SERVICIOS
@@ -60,6 +61,7 @@ import { EditarImgExtraComponent } from './img_extra/editar-img-extra/editar-img
 @NgModule({
   imports: [
     CommonModule,
+    AccionesReservaModule, // RF-BI-05 (AUT-032): aprobar/rechazar/finalizar desde la lista
     RouterModule.forChild(serviceRoutes),
     NgbModule,
     FormsModule,
