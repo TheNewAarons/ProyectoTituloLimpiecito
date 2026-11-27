@@ -5,6 +5,7 @@ import { environment } from '../../../../environments/environment';
 import { LoginService } from '../../../services/login/login.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { SerieGrafico, RangoPeriodo } from '../../../model/analytics';
+import { nuevaPaginacion } from '../../paginacion/paginacion';
 
 interface DiaProyeccion { fecha: string; dia: string; proyectado: number; agendadas: number; capacidad: number; ocupacion: number | null; excede: boolean; }
 interface Demanda {
@@ -56,6 +57,8 @@ export class DemandaReservasComponent implements OnInit {
   etiquetasProyeccion: string[] = [];
   seriesProyeccion: SerieGrafico[] = [];
 
+  // Detalle por día de las próximas 4 semanas: una semana (7 días) por página.
+  pagSemanas = nuevaPaginacion(7);
   fechaAgenda = '';
   agenda: AgendaDia = null;
   cargandoAgenda = false;
@@ -173,6 +176,7 @@ export class DemandaReservasComponent implements OnInit {
     d.temporada.forEach((t) => Object.keys(t.por_categoria).forEach((c) => { if (nombres.indexOf(c) === -1) { nombres.push(c); } }));
     this.etiquetasTemporada = d.temporada.map((t) => this.mesCorto(t.periodo));
     this.seriesTemporada = nombres.map((c) => ({ etiqueta: c, datos: d.temporada.map((t) => t.por_categoria[c] || 0) }));
+    this.pagSemanas.pagina = 1; // al recargar (otra categoría) vuelve a la semana 1
     const semanas = d.proyeccion.semanas || [];
     this.etiquetasProyeccion = semanas.map((s) => this.dm(s.desde) + ' – ' + this.dm(s.hasta));
     this.seriesProyeccion = semanas.length ? [
