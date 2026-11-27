@@ -57,7 +57,7 @@ function pedirMotivo(o: {
     o.alertas.loading();
     o.servicio.pedirCodigoAnular(o.tipo, o.id, r.value.trim()).subscribe(
       (envio) => { o.alertas.cerrarAlerta(); pedirCodigo(o, envio.data.correo); },
-      (e: HttpErrorResponse) => { o.alertas.cerrarAlerta(); o.alertas.alertaErrorMsj(mensajeDe(e, 'No se pudo enviar el código.')); }
+      (e: HttpErrorResponse) => { o.alertas.cerrarAlerta(); o.alertas.alertaErrorMsj('No se pudo enviar el código', mensajeDe(e, 'Intente nuevamente.')); }
     );
   });
 }
@@ -80,7 +80,8 @@ function pedirCodigo(o: { tipo: 'ingresos' | 'egresos'; id: number; exito: strin
     inputValidator: (valor: string) => /^\d{6}$/.test((valor || '').trim()) ? null : 'Ingresa los 6 dígitos del código',
     preConfirm: (valor: string) =>
       o.servicio.anularConCodigo(o.tipo, o.id, valor.trim()).toPromise().catch((e: HttpErrorResponse) => {
-        swal.showValidationMessage(mensajeDe(e, 'Ha ocurrido un problema al procesar la solicitud.'));
+        // showValidationMessage interpreta HTML: el mensaje del servidor se escapa.
+        swal.showValidationMessage(mensajeDe(e, 'Ha ocurrido un problema al procesar la solicitud.').replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';'));
       })
   }).then((r) => {
     if (!r.value) { return; }

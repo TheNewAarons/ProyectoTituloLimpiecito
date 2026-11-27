@@ -52,6 +52,15 @@ async function verificarAnulable(tipo, fila) {
     throw new AppError('EGRESO_PAGO_LIQUIDACION', 'Este egreso es el pago de una liquidación: para deshacerlo, revierta el pago desde Liquidaciones.', 409);
   }
   const tocaCaja = legacy || fila.estado_pago === 'PAGADA';
+  // Factura PAGADA: mismas reglas que pago.anular (bloquearCajaRealDelEgreso) para no enviar un código que fallará.
+  if (!legacy && fila.estado_pago === 'PAGADA') {
+    if (fila.cajaId === null || fila.cajaId === undefined) {
+      throw new AppError('CAJA_NO_ASIGNADA', 'Este egreso pagado no tiene caja asignada: revise el registro antes de anularlo.', 409, { id: fila.id });
+    }
+    if (fila.fecha_pago === null || fila.fecha_pago === undefined) {
+      throw new AppError('FECHA_PAGO_INVALIDA', 'Este egreso pagado no tiene fecha de pago registrada: revise el registro antes de anularlo.', 409, { id: fila.id });
+    }
+  }
   if (tocaCaja && fila.cajaId !== null && fila.cajaId !== undefined) {
     const caja = await Caja.findById(fila.cajaId);
     if (caja && Number(caja.estado) !== CAJA_ABIERTA) {
