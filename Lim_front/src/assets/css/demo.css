@@ -96,6 +96,19 @@
 .table .td-actions app-historial + .btn {
     margin-left: 6px;
 }
+/* Retroalimentación: los enlaces del pie de los indicadores de Inicio Bodega usaban el violeta por defecto del tema;
+   se usa el rosa del sistema (mismo que los encabezados y el paginador). */
+app-dashboard-bodega .card-footer a {
+    color: #e91e63;
+    font-weight: 500;
+}
+app-dashboard-bodega .card-footer a:hover {
+    color: #c2185b;
+}
+/* Retroalimentación: el botón "Productos" del proveedor va envuelto en su componente */
+.table .td-actions app-productos-proveedor + .btn {
+    margin-left: 6px;
+}
 
 /* Revisión de requerimientos (2026-11): los paginadores (ngb-pagination) usaban el azul por defecto de Bootstrap;
    se llevan al color de la marca ($brand-rose #e91e63, GUIA-ESTILO-UI) en todas las listas del ERP. */

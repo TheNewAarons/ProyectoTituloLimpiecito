@@ -34,3 +34,14 @@
 .firma-nombre {
   min-height: 1.5em;
 }
+
+/* Retroalimentación: con min-height 44px el texto de los botones quedaba pegado arriba (sobre todo .btn-sm).
+   Se centra vertical y horizontalmente; los redondos de solo ícono quedan como estaban. */
+.btn:not(.btn-round):not(.btn-link) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn.btn-block:not(.btn-round) {
+  display: flex;
+}
