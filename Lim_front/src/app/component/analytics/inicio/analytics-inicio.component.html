@@ -1,15 +1,28 @@
 <div class="main-content">
   <div class="container-fluid">
+    <!-- Alertas flotantes arriba a la derecha: cada una lleva a su tablero con el período ya puesto. -->
+    <div class="avisos-flotantes">
+      <div class="alert alert-warning alert-with-icon" *ngIf="esAdmin && resumen?.alerta_utilidad.activa && !cerradas.utilidad">
+        <button type="button" class="close" aria-label="Cerrar" (click)="cerradas.utilidad = true"><i class="material-icons">close</i></button>
+        <i class="material-icons" data-notify="icon">trending_down</i>
+        <span>Alerta de utilidad baja ({{ resumen.alerta_utilidad.motivo === 'UTILIDAD_REAL_BAJA' ? 'utilidad real del mes' : 'utilidad proyectada' }}).
+        <a routerLink="../financiero" [queryParams]="{ desde: desde, hasta: hasta }">Ver dashboard financiero</a></span>
+      </div>
+      <div class="alert alert-danger alert-with-icon" *ngIf="esAdmin && clientesEnPerdida && !cerradas.perdida">
+        <button type="button" class="close" aria-label="Cerrar" (click)="cerradas.perdida = true"><i class="material-icons">close</i></button>
+        <i class="material-icons" data-notify="icon">money_off</i>
+        <span>{{ clientesEnPerdida }} {{ clientesEnPerdida === 1 ? 'cliente en pérdida' : 'clientes en pérdida' }} en los últimos 3 meses.
+        <a routerLink="../rentabilidad" [queryParams]="{ desde: desde, hasta: hasta }">Ver rentabilidad</a></span>
+      </div>
+      <div class="alert alert-warning alert-with-icon" *ngIf="stockCritico && !cerradas.stock">
+        <button type="button" class="close" aria-label="Cerrar" (click)="cerradas.stock = true"><i class="material-icons">close</i></button>
+        <i class="material-icons" data-notify="icon">inventory_2</i>
+        <span>{{ stockCritico }} {{ stockCritico === 1 ? 'producto bajo el mínimo' : 'productos bajo el mínimo' }} de stock.
+        <a routerLink="../bodega" [queryParams]="{ pestana: 'critico' }">Ver stock crítico</a></span>
+      </div>
+    </div>
+
     <ng-container *ngIf="esAdmin">
-      <!-- Alertas: cada una lleva a su tablero con el período ya puesto. -->
-      <div class="alert alert-warning" *ngIf="resumen?.alerta_utilidad.activa">
-        Alerta de utilidad baja ({{ resumen.alerta_utilidad.motivo === 'UTILIDAD_REAL_BAJA' ? 'utilidad real del mes' : 'utilidad proyectada' }}).
-        <a routerLink="../financiero" [queryParams]="{ desde: desde, hasta: hasta }">Ver dashboard financiero</a>
-      </div>
-      <div class="alert alert-danger" *ngIf="clientesEnPerdida">
-        {{ clientesEnPerdida }} {{ clientesEnPerdida === 1 ? 'cliente en pérdida' : 'clientes en pérdida' }} en los últimos 3 meses.
-        <a routerLink="../rentabilidad" [queryParams]="{ desde: desde, hasta: hasta }">Ver rentabilidad</a>
-      </div>
       <div class="row">
         <div class="col-12 col-sm-6 col-lg-3">
           <app-kpi-card titulo="Ingresos del mes" icono="call_received" color="success" [cargando]="cargando"
@@ -45,11 +58,6 @@
         </div>
       </div>
     </ng-container>
-
-    <div class="alert alert-warning" *ngIf="stockCritico">
-      {{ stockCritico }} {{ stockCritico === 1 ? 'producto bajo el mínimo' : 'productos bajo el mínimo' }} de stock.
-      <a routerLink="../bodega" [queryParams]="{ pestana: 'critico' }">Ver stock crítico</a>
-    </div>
 
     <div class="row">
       <div class="col-12 col-md-6" *ngIf="esAdmin">

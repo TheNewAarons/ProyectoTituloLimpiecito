@@ -99,7 +99,7 @@ export class ConsumoBodegaComponent implements OnInit, OnDestroy {
     this.cargando = true;
     let pendientes = 5;
     const listo = () => { pendientes--; if (pendientes === 0) this.cargando = false; };
-    const error = (msj: string) => () => { listo(); this.alertas.alertaErrorMsj(msj); };
+    const error = (msj: string) => () => { listo(); this.alertas.showNotification(msj, 'danger'); };
     this.subs.add(this.analyticsService.topProductosBodega(this.desde, this.hasta, 20).subscribe((r) => { this.top = r.data; listo(); }, error('No se pudo cargar el ranking de productos')));
     this.cargarMensual(listo, error);
     this.cargarGrupos(listo, error);
@@ -112,15 +112,15 @@ export class ConsumoBodegaComponent implements OnInit, OnDestroy {
       listo();
     }, error('No se pudo cargar la merma de recepciones')));
     // Stock crítico es el estado actual: no depende del período, pero se refresca junto con el resto.
-    this.subs.add(this.analyticsService.stockCriticoBodega().subscribe((r) => { this.critico = r.data; }, () => this.alertas.alertaErrorMsj('No se pudo cargar el stock crítico')));
+    this.subs.add(this.analyticsService.stockCriticoBodega().subscribe((r) => { this.critico = r.data; }, () => this.alertas.showNotification('No se pudo cargar el stock crítico', 'danger')));
   }
 
   cambiarProducto(): void {
-    this.cargarMensual(() => {}, (msj: string) => () => this.alertas.alertaErrorMsj(msj));
+    this.cargarMensual(() => {}, (msj: string) => () => this.alertas.showNotification(msj, 'danger'));
   }
 
   cambiarAgrupacion(): void {
-    this.cargarGrupos(() => {}, (msj: string) => () => this.alertas.alertaErrorMsj(msj));
+    this.cargarGrupos(() => {}, (msj: string) => () => this.alertas.showNotification(msj, 'danger'));
   }
 
   private cargarMensual(listo: () => void, error: (msj: string) => () => void): void {

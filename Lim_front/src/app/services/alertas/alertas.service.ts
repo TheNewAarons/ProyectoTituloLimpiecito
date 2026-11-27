@@ -70,12 +70,13 @@ export class AlertasService {
       icon: "error"
     });
   }
-  showNotification(mensaje){
+  // tipo: clase de alerta Bootstrap ('info' | 'danger' | 'warning' | 'success')
+  showNotification(mensaje, tipo = 'info'){
     $.notify({
       icon: 'notifications',
       message: mensaje
     }, {
-        type: 'info',
+        type: tipo,
         timer: 1000,
         placement: {
             from: 'top',
