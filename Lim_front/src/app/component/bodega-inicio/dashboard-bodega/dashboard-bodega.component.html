@@ -13,16 +13,23 @@
     </div>
 
     <div *ngIf="datos">
+      <!-- Revisión de requerimientos: ir al análisis de consumo (y volver desde "Editar mínimos" de ese tablero) -->
+      <div class="text-right">
+        <button mat-raised-button type="button" matTooltip="Ver el análisis de consumo de bodega" class="btn btn-info btn-sm" routerLink="/analytics/bodega">
+          <span class="btn-label"><i class="material-icons">insights</i></span>
+          Consumo de bodega
+        </button>
+      </div>
       <!-- Resumen: los contadores vienen de COUNT en el backend -->
       <div class="row">
-        <div class="col-12 col-sm-6 col-lg-3">
-          <div class="card card-stats">
+        <div class="col-12 col-sm-6 col-lg-3 d-flex">
+          <div class="card card-stats w-100">
             <div class="card-header card-header-warning card-header-icon">
               <div class="card-icon"><i class="material-icons">list_alt</i></div>
               <p class="card-category">Solicitudes Activas</p>
               <h3 class="card-title">{{ datos.solicitudes.total_activas }}</h3>
             </div>
-            <div class="card-footer">
+            <div class="card-footer mt-auto">
               <div class="stats">
                 Pend. {{ datos.solicitudes.por_estado.PENDIENTE }} · En proceso {{ datos.solicitudes.por_estado.PARCIAL + datos.solicitudes.por_estado.LISTA_ENTREGA }}
               </div>
@@ -30,39 +37,40 @@
             </div>
           </div>
         </div>
-        <div class="col-12 col-sm-6 col-lg-3">
-          <div class="card card-stats">
+        <div class="col-12 col-sm-6 col-lg-3 d-flex">
+          <div class="card card-stats w-100">
             <div class="card-header card-header-info card-header-icon">
               <div class="card-icon"><i class="material-icons">shopping_cart</i></div>
               <p class="card-category">Lista De Compra</p>
               <h3 class="card-title">{{ datos.lista_compra.total_productos }}</h3>
             </div>
-            <div class="card-footer">
+            <div class="card-footer mt-auto">
               <div class="stats">{{ datos.lista_compra.total_unidades | number:'1.0-0':'es-CL' }} unidades por comprar</div>
+              <a href="javascript:void(0)" (click)="ir('/bodega/ordenes-compra/nueva')">Generar OC</a>
             </div>
           </div>
         </div>
-        <div class="col-12 col-sm-6 col-lg-3">
-          <div class="card card-stats">
+        <div class="col-12 col-sm-6 col-lg-3 d-flex">
+          <div class="card card-stats w-100">
             <div class="card-header card-header-icon" [class.card-header-rose]="datos.stock.total_bajo_minimo > 0" [class.card-header-success]="datos.stock.total_bajo_minimo === 0">
               <div class="card-icon"><i class="material-icons">inventory_2</i></div>
               <p class="card-category">Bajo Stock Mínimo</p>
               <h3 class="card-title">{{ datos.stock.total_bajo_minimo }}</h3>
             </div>
-            <div class="card-footer">
+            <div class="card-footer mt-auto">
               <div class="stats">de {{ datos.stock.total_activos }} productos activos</div>
               <a href="javascript:void(0)" (click)="ir('/bodega/movimientos')">Movimientos</a>
             </div>
           </div>
         </div>
-        <div class="col-12 col-sm-6 col-lg-3">
-          <div class="card card-stats">
+        <div class="col-12 col-sm-6 col-lg-3 d-flex">
+          <div class="card card-stats w-100">
             <div class="card-header card-header-success card-header-icon">
               <div class="card-icon"><i class="material-icons">local_shipping</i></div>
               <p class="card-category">Órdenes En Tránsito</p>
               <h3 class="card-title">{{ datos.ordenes_transito.total }}</h3>
             </div>
-            <div class="card-footer">
+            <div class="card-footer mt-auto">
               <div class="stats">Parciales: {{ datos.ordenes_transito.por_estado.RECIBIDA_PARCIAL }}</div>
               <a href="javascript:void(0)" (click)="ir('/bodega/ordenes-compra')">Recibir</a>
             </div>
