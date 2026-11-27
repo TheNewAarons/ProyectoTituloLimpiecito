@@ -89,3 +89,10 @@
         position: absolute;
     }
 }
+
+/* Revisión de requerimientos (2026-11): separar los botones de acción de las tablas, que quedaban demasiado juntos. */
+.table .td-actions .btn + .btn,
+.table .td-actions .btn + app-historial,
+.table .td-actions app-historial + .btn {
+    margin-left: 6px;
+}
