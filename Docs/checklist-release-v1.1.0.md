@@ -21,6 +21,13 @@
 - [ ] Estado de RF-CAJA-01/02 en la spec actualizado tras la verificación.
 - [ ] `CHANGELOG.md` `[Sin publicar]` completo (hoy lista RF-CAJA-01, RF-CAJA-02 y middleware de auth; revisar RNF-API-01/02 y RNF-SEC-01).
 
+### QA manual en navegador (2026-11-02, local, rol Admin)
+- [x] Pagar liquidación con fecha de hoy sin caja del mes: abre la caja y paga (D-042).
+- [x] Pago en lote (2 liquidaciones, $1.703.480) y filtro "En espera".
+- [x] Revertir pago restaura totales exactos.
+- [x] Cerrar mes con CC abiertos se bloquea; reabrir exige motivo 5-500; reabrir y re-cerrar septiembre conserva la cadena de saldos (oct y nov consistentes, saldo provisional visible).
+- [ ] No probado: cierre exitoso de un mes con todos los CC cerrados, rol RRHH (paga pero no revierte), filas de `auditoria` de estas acciones.
+
 ## 2. Tras la aprobación del dueño (§5.2) — lo hace el RM a mano
 - [ ] Subir `"version": "1.1.0"` en `limpi_back/package.json` y `Lim_front/package.json`.
 - [ ] Mover `[Sin publicar]` a `[1.1.0] - AAAA-MM-DD` en `CHANGELOG.md`.
