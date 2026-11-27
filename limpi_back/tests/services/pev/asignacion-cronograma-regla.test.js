@@ -36,3 +36,11 @@ it('validarDesde rechaza fechas absurdas o fuera de rango, y explica si no hay c
     code: 'FECHA_FUERA_DE_CRONOGRAMA', message: expect.stringMatching(/no tiene cronogramas vigentes/)
   });
 });
+
+it('validarDesde rechaza un "Desde" anterior a hoy aunque caiga dentro del cronograma', async () => {
+  cronogramasDestino.mockResolvedValue([NOV]);
+  await expect(regla.validarDesde(3, 2, '2026-11-10')).rejects.toMatchObject({
+    code: 'FECHA_FUERA_DE_CRONOGRAMA', message: expect.stringMatching(/anterior a hoy/)
+  });
+  await expect(regla.validarDesde(3, 2, '2026-11-27')).resolves.toEqual(NOV);
+});

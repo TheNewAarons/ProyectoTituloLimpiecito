@@ -23,6 +23,10 @@ async function vigentes(clienteId, turnoId) {
  */
 async function validarDesde(clienteId, turnoId, fechaDesde) {
   const lista = await vigentes(clienteId, turnoId);
+  // Misma regla que la pantalla: no se asigna con "Desde" en el pasado.
+  if (fechaDesde < fecha.hoySantiago()) {
+    throw new AppError('FECHA_FUERA_DE_CRONOGRAMA', 'La fecha "Desde" no puede ser anterior a hoy.', 400, { fecha_desde: fechaDesde, cronogramas: lista });
+  }
   const c = lista.find((x) => fechaDesde >= x.inicio && fechaDesde <= x.fin);
   if (!c) {
     throw new AppError('FECHA_FUERA_DE_CRONOGRAMA',
