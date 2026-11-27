@@ -1,10 +1,10 @@
 const logicaDB = require('./logica')
 const { actorDeRequest } = require('../../../services/auditoria/actor')
 
-// tope de días trabajados = días del mes de la fecha de la liquidación (28-31)
+// La liquidación se calcula sobre 30 días fijos (sueldo * días / 30), sin importar los días reales del mes.
+const DIAS_MES = 30
 const diasInvalidos = (res, liquidacion) => {
-    const [anio, mes] = String(liquidacion.fecha_creacion || '').split('-').map(Number)
-    const maxDias = anio && mes ? new Date(anio, mes, 0).getDate() : 31
+    const maxDias = DIAS_MES
     if (Number(liquidacion.dias_trabajados) > maxDias) {
         res.status(400).json({ ok: false, error: { code: 'DIAS_INVALIDOS', message: 'Los días trabajados no pueden superar ' + maxDias + '.' } })
         return true
