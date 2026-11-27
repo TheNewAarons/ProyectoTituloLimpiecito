@@ -61,7 +61,7 @@ export class DashboardFinancieroComponent implements OnInit, OnDestroy {
       },
       () => {
         this.cargando = false;
-        this.alertas.alertaErrorMsj('No se pudo cargar el dashboard financiero');
+        this.alertas.showNotification('No se pudo cargar el dashboard financiero', 'danger');
       }
     ));
   }
@@ -79,7 +79,7 @@ export class DashboardFinancieroComponent implements OnInit, OnDestroy {
           { etiqueta: 'Utilidad', datos: puntos.map((p: PuntoTendencia): number => p.utilidad), color: 'success' }
         ];
       },
-      () => this.alertas.alertaErrorMsj('No se pudo cargar la tendencia')
+      () => this.alertas.showNotification('No se pudo cargar la tendencia', 'danger')
     ));
   }
 

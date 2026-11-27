@@ -11,7 +11,8 @@ import { Variacion, variacionMensual } from '../compartido/csv';
 // solo los pide el Administrador (el backend responde 403 a Operaciones). Cada dato falla por separado.
 @Component({
   selector: 'app-analytics-inicio',
-  templateUrl: './analytics-inicio.component.html'
+  templateUrl: './analytics-inicio.component.html',
+  styleUrls: ['./analytics-inicio.component.css']
 })
 export class AnalyticsInicioComponent implements OnInit, OnDestroy {
   readonly hasta = mesActualSantiago();
@@ -30,6 +31,7 @@ export class AnalyticsInicioComponent implements OnInit, OnDestroy {
   stockCritico: number | null = null;
   porcentajeMerma: number | null = null;
   cumplimiento: number | null = null;
+  cerradas: { utilidad?: boolean, perdida?: boolean, stock?: boolean } = {};
 
   private destroy$ = new Subject<void>();
 

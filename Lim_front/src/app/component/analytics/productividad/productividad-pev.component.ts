@@ -94,7 +94,7 @@ export class ProductividadPevComponent implements OnInit, OnDestroy {
     const listo = () => { pendientes--; if (pendientes <= 0) this.cargando = false; };
     const error = () => {
       listo();
-      if (!this.alertaMostrada) { this.alertaMostrada = true; this.alertas.alertaErrorMsj('No se pudo cargar la productividad PEV'); }
+      if (!this.alertaMostrada) { this.alertaMostrada = true; this.alertas.showNotification('No se pudo cargar la productividad PEV', 'danger'); }
     };
     return { listo: listo, error: error };
   }

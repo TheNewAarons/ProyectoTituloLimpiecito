@@ -79,7 +79,7 @@ export class RentabilidadComponent implements OnInit, OnDestroy {
       },
       () => {
         this.cargando = false;
-        this.alertas.alertaErrorMsj('No se pudo cargar la rentabilidad');
+        this.alertas.showNotification('No se pudo cargar la rentabilidad', 'danger');
       }
     );
   }
@@ -94,7 +94,7 @@ export class RentabilidadComponent implements OnInit, OnDestroy {
       },
       () => {
         this.cargandoDetalle = false;
-        this.alertas.alertaErrorMsj('No se pudo cargar el detalle del centro');
+        this.alertas.showNotification('No se pudo cargar el detalle del centro', 'danger');
       }
     );
   }
