@@ -47,6 +47,21 @@ export class LiquidacionService {
   cerrarLiquidacion(id){
     return this.http.delete(this.url_backend+"/liquidacion/cerrar/"+id);
   }
+  //REABRIR LIQUIDACION CERRADA (solo Admin): 1) motivo -> código al correo, 2) código -> reabre
+  pedirCodigoReaperturaLiquidacion(id: number, motivo: string): Observable<object> {
+    return this.http.post(this.url_backend_v1 + '/liquidaciones/' + id + '/reabrir/codigo', { motivo }, { headers: this.obtenerCabeceras() });
+  }
+  reabrirLiquidacion(id: number, codigo: string): Observable<object> {
+    return this.http.post(this.url_backend_v1 + '/liquidaciones/' + id + '/reabrir', { codigo }, { headers: this.obtenerCabeceras() });
+  }
+
+  //IDS DE LAS LIQUIDACIONES QUE FUERON REABIERTAS O EDITADAS (para marcarlas)
+  obtenerLiquidacionesModificadas(ids: number[]): Observable<ApiOkResponse<{ ids: number[] }>> {
+    return this.http.get<ApiOkResponse<{ ids: number[] }>>(
+      this.url_backend_v1 + '/liquidaciones/modificadas?ids=' + ids.join(','),
+      { headers: this.obtenerCabeceras() }
+    );
+  }
 
   //OBTENER TODAS LAS LIQUIDACIONES
   obtenerLiquidaciones(){

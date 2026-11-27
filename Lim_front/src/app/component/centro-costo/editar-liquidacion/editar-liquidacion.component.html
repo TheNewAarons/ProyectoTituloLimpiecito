@@ -44,7 +44,7 @@
                 <div class="col-md-3">
                   <label class="col-md-12" style="text-align:center;"><b>DIAS TRABAJADOS</b></label>
                   <mat-form-field class="col-md-12" style="display:inline-block !important">
-                    <input matInput placeholder="Dias Trabajados" name="dias_trabajados" #dias_trabajados="ngModel" min='0' [(ngModel)]="liquidacion.dias_trabajados" 
+                    <input matInput placeholder="Dias Trabajados" name="dias_trabajados" #dias_trabajados="ngModel" min='0' [max]="diasDelMes()" [(ngModel)]="liquidacion.dias_trabajados" 
                     type="number" (change)="calcularMontoMes()">
                   </mat-form-field>
                 </div>

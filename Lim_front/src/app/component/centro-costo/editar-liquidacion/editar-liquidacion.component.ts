@@ -76,8 +76,18 @@ export class EditarLiquidacionComponent implements OnInit {
     ]);
   }
 
+  // tope de días trabajados = días del mes de la fecha de la liquidación (28-31)
+  diasDelMes(): number {
+    const [anio, mes] = String(this.liquidacion.fecha_creacion || '').split('-').map(Number);
+    return anio && mes ? new Date(anio, mes, 0).getDate() : 31;
+  }
+
   //EDITAR LIQUIDACION
   editarLiquidacion(valid) {
+    if (valid && this.liquidacion.dias_trabajados > this.diasDelMes()) {
+      this.alertaService.alertaErrorMsj('Días inválidos', 'Los días trabajados no pueden superar ' + this.diasDelMes() + ' (días del mes).');
+      return;
+    }
     // sin días trabajados el líquido queda en 0 y luego no se puede pagar (MONTO_INVALIDO)
     if (valid && !(this.liquidacion.dias_trabajados > 0 && this.liquidacion.liquido_pagar > 0)) {
       this.alertaService.alertaErrorMsj('Liquidación incompleta', 'Ingrese los días trabajados: el líquido a pagar debe ser mayor a 0.');

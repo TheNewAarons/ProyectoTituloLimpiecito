@@ -8,3 +8,8 @@ label{
     color: black;
     font-size: 19px;
 }
+/* punto amarillo junto al estado de una liquidación reabierta o modificada */
+.punto-modificada {
+  font-size: 12px;
+  vertical-align: middle;
+}

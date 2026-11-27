@@ -150,6 +150,7 @@
                       name="dias_trabajados"
                       #dias_trabajados="ngModel"
                       min="0"
+                      [max]="diasDelMes()"
                       [(ngModel)]="liquidacion.dias_trabajados"
                       type="number"
                       (change)="calcularMontoMes()"

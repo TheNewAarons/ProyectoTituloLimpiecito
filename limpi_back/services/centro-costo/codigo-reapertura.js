@@ -1,6 +1,6 @@
 /**
- * Código de confirmación por correo para reabrir un centro de costo.
- * 6 dígitos, 10 minutos, un solo uso, 5 intentos; ligado al usuario y al centro. Se guarda solo el hash.
+ * Código de confirmación por correo para reabrir un centro de costo o una liquidación.
+ * 6 dígitos, 10 minutos, un solo uso, 5 intentos; ligado al usuario y al objeto (centro o liquidación). Se guarda solo el hash.
  *
  * shortcut: vive en memoria del proceso (se pierde al reiniciar el backend y no se comparte entre procesos);
  * pasar a una tabla con migración si el backend corre en cluster o con más de una instancia.
@@ -28,7 +28,9 @@ const REENVIO_MS = 60 * 1000;
 const MAX_INTENTOS = 5;
 const codigos = new Map();
 
-const clave = (usuarioId, centroId) => usuarioId + ':' + centroId;
+// objetivo: un centro { id, numero_cc } o { clave, descripcion } (p. ej. clave 'liq:7' para una liquidación).
+const clave = (usuarioId, objetivoClave) => usuarioId + ':' + objetivoClave;
+const describir = (o) => o.descripcion || 'el centro de costo N° ' + o.numero_cc;
 const hash = (codigo) => crypto.createHash('sha256').update(String(codigo)).digest('hex');
 const iguales = (a, b) => crypto.timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
 
@@ -42,11 +44,12 @@ const enmascarar = (correo) => {
  * Genera el código, lo guarda junto al motivo y lo envía. Devuelve el correo enmascarado y la vigencia en segundos.
  * El motivo queda ligado al código: la auditoría usa el mismo texto que llegó por correo.
  */
-async function emitirCodigo(usuario, centro, motivo, ahora) {
+async function emitirCodigo(usuario, objetivo, motivo, ahora) {
   const t = ahora || Date.now();
   if (!usuario.correo) throw new AppError('SIN_CORREO', 'tu usuario no tiene correo registrado', 409);
   if (!smtpConfigurado()) throw new AppError('CORREO_NO_CONFIGURADO', 'el envío de correos no está configurado', 503);
-  const k = clave(usuario.id, centro.id);
+  const k = clave(usuario.id, objetivo.clave || objetivo.id);
+  const objeto = describir(objetivo);
   const previo = codigos.get(k);
   if (previo && t - previo.emitido < REENVIO_MS) {
     throw new AppError('CODIGO_RECIENTE', 'espera un minuto antes de pedir otro código', 429);
@@ -55,12 +58,12 @@ async function emitirCodigo(usuario, centro, motivo, ahora) {
   await crearTransporte().sendMail({
     from: process.env.SMTP_USER,
     to: usuario.correo,
-    subject: 'Código para reabrir el centro de costo N° ' + centro.numero_cc,
-    text: 'Tu código para reabrir el centro de costo N° ' + centro.numero_cc + ' es ' + codigo +
+    subject: 'Código para reabrir ' + objeto,
+    text: 'Tu código para reabrir ' + objeto + ' es ' + codigo +
       '. Vence en 10 minutos. Motivo: ' + motivo + '. Si no fuiste tú, cambia tu contraseña y avisa al administrador.',
     html: render({
       codigo: codigo,
-      numeroCc: centro.numero_cc,
+      objeto: objeto,
       motivo: motivo,
       nombre: usuario.nombre,
       minutos: VIGENCIA_MS / 60000,
@@ -74,9 +77,9 @@ async function emitirCodigo(usuario, centro, motivo, ahora) {
 }
 
 /** Valida y consume el código; devuelve el motivo guardado. Lanza 400 si no existe, venció, no coincide o se agotaron los intentos. */
-function consumirCodigo(usuarioId, centroId, codigo, ahora) {
+function consumirCodigo(usuarioId, objetivoClave, codigo, ahora) {
   const t = ahora || Date.now();
-  const k = clave(usuarioId, centroId);
+  const k = clave(usuarioId, objetivoClave);
   const registro = codigos.get(k);
   if (!registro || t > registro.expira) {
     codigos.delete(k);

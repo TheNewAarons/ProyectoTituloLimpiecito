@@ -10,6 +10,8 @@ const AppError = require('../../../libs/app-error');
 const fecha = require('../../../libs/fecha');
 const db = require('../../../database/database');
 const pagoService = require('../../../services/liquidaciones/pago');
+const codigoReapertura = require('../../../services/centro-costo/codigo-reapertura');
+const Usuario = require('../../../modelos/sistema_base/Usuario');
 
 const ESTADOS_PAGO_VALIDOS = ['EN_ESPERA', 'PAGADA', 'ANULADA'];
 const LIQUIDACION_CERRADA = 0;
@@ -177,7 +179,70 @@ const revertirPago = async (req, res) => {
   return res.json({ ok: true, data: resultado });
 };
 
+/**
+ * Reabrir una liquidación cerrada, en dos pasos como reabrir un centro de costo (solo Admin):
+ * POST /:id/reabrir/codigo { motivo } envía un código al correo del usuario; POST /:id/reabrir { codigo } reabre.
+ * Reglas en logica.cargarLiquidacionReabrible. El motivo auditado es el que llegó en el correo.
+ */
+const claveCodigo = (id) => 'liq:' + id;
+
+const pedirCodigoReapertura = async (req, res) => {
+  const id = parsearId(req.params.id);
+  const motivo = req.body && typeof req.body.motivo === 'string' ? req.body.motivo.trim() : '';
+  if (motivo.length < 5 || motivo.length > 500) {
+    throw new AppError('MOTIVO_REQUERIDO', 'motivo obligatorio (entre 5 y 500 caracteres)', 400);
+  }
+  // require diferido: logica.js declara relaciones de modelos al cargarse
+  const { descripcion } = await require('./logica').verificarLiquidacionReabrible(id);
+  const usuario = await Usuario.findById(req.usuario.id, { attributes: ['id', 'nombre', 'correo'] });
+  const envio = await codigoReapertura.emitirCodigo(
+    { id: req.usuario.id, nombre: usuario && usuario.nombre, correo: usuario && usuario.correo },
+    { clave: claveCodigo(id), descripcion: descripcion },
+    motivo
+  );
+  return res.json({ ok: true, data: envio, meta: {} });
+};
+
+const reabrir = async (req, res) => {
+  const id = parsearId(req.params.id);
+  const motivo = codigoReapertura.consumirCodigo(req.usuario.id, claveCodigo(id), req.body && req.body.codigo);
+  const liquidacion = await require('./logica').reabrirLiquidacionDB(id, {
+    usuario: usuarioDesdeRequest(req),
+    motivo: motivo + ' [confirmado con código por correo]',
+    ip: req.ip
+  });
+  return res.json({ ok: true, data: { liquidacion: liquidacion }, meta: {} });
+};
+
+/**
+ * GET /api/v1/liquidaciones/modificadas?ids=1,2,3 -> { data: { ids: [...] } }
+ * Cuáles de esas liquidaciones tienen en auditoría una REAPERTURA o una EDITAR real
+ * (el cierre legacy también se audita como EDITAR con motivo CIERRE_LIQUIDACION_LEGACY: no cuenta).
+ */
+const modificadas = async (req, res) => {
+  const ids = String(req.query.ids || '').split(',').map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 500);
+  if (ids.length === 0) return res.json({ ok: true, data: { ids: [] }, meta: {} });
+  const Op = require('sequelize').Op;
+  const filas = await require('../../../modelos/sistema_base/Auditoria').findAll({
+    attributes: ['entidad_id'],
+    where: {
+      entidad: 'liquidaciones',
+      entidad_id: { [Op.in]: ids },
+      [Op.or]: [
+        { accion: 'REAPERTURA' },
+        { accion: 'EDITAR', [Op.or]: [{ motivo: null }, { motivo: { [Op.notLike]: 'CIERRE_LIQUIDACION_LEGACY%' } }] }
+      ]
+    },
+    group: ['entidad_id'],
+    raw: true
+  });
+  return res.json({ ok: true, data: { ids: filas.map((f) => Number(f.entidad_id)) }, meta: {} });
+};
+
 module.exports = {
+  modificadas: modificadas,
+  reabrir: reabrir,
+  pedirCodigoReapertura: pedirCodigoReapertura,
   listar: listar,
   pendientesResumen: pendientesResumen,
   pagar: pagar,

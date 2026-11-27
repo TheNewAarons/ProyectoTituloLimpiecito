@@ -1,8 +1,20 @@
 const logicaDB = require('./logica')
 const { actorDeRequest } = require('../../../services/auditoria/actor')
 
+// tope de días trabajados = días del mes de la fecha de la liquidación (28-31)
+const diasInvalidos = (res, liquidacion) => {
+    const [anio, mes] = String(liquidacion.fecha_creacion || '').split('-').map(Number)
+    const maxDias = anio && mes ? new Date(anio, mes, 0).getDate() : 31
+    if (Number(liquidacion.dias_trabajados) > maxDias) {
+        res.status(400).json({ ok: false, error: { code: 'DIAS_INVALIDOS', message: 'Los días trabajados no pueden superar ' + maxDias + '.' } })
+        return true
+    }
+    return false
+}
+
 const crearLiquidacion = async (req, res) => {
     const liquidacion = JSON.parse(req.body.liquidacion);
+    if (diasInvalidos(res, liquidacion)) return
     const liquidacionData = {
         // id: liquidacion.id,
         sueldo_base: liquidacion.sueldo_base,
@@ -58,6 +70,7 @@ const crearLiquidacion = async (req, res) => {
 
 const editarLiquidacion = async (req, res) => {
     const liquidacion = JSON.parse(req.body.liquidacion);
+    if (diasInvalidos(res, liquidacion)) return
     const liquidacionData = {
         sueldo_base: liquidacion.sueldo_base,
         monto_mes: liquidacion.monto_mes,
