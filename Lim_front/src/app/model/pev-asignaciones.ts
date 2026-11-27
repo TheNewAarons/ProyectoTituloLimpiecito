@@ -11,6 +11,9 @@ export interface AsignacionPev {
   area?: { id: number; nombre: string };
   trabajador?: { id: number; nombre: string; apellido: string; n_empleado?: number };
   turno?: { id: number; nombre: string };
+  // Motivo al cerrar o anular (anular lo exige); fecha de esa decisión.
+  motivo?: string | null;
+  cerrada_at?: string | null;
 }
 
 export interface AsignacionCronograma {

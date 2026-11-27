@@ -82,6 +82,11 @@ const CAMPOS: { [entidad: string]: { [campo: string]: Campo } } = {
     anticipo: { etiqueta: 'Anticipo', tipo: 'monto' },
     egreso_id: { etiqueta: 'Egreso del pago', tipo: 'numero' }
   },
+  actividad_asignaciones: {
+    estado: { etiqueta: 'Estado', valores: { ACTIVA: 'Activa', CERRADA: 'Cerrada', ANULADA: 'Anulada' } },
+    fecha_desde: { etiqueta: 'Desde', tipo: 'fecha' },
+    fecha_hasta: { etiqueta: 'Hasta', tipo: 'fecha' }
+  },
   lista_insumos: {
     estado: { etiqueta: 'Estado', valores: { '0': 'En espera', '1': 'Aprobada' } },
     total: { etiqueta: 'Total', tipo: 'monto' },
@@ -169,6 +174,7 @@ const RESUMEN: { [entidad: string]: string[] } = {
   cc_egresos: ['monto', 'comentario', 'estado_pago'],
   cc_ingresos: ['monto', 'comentario', 'estado_pago'],
   liquidaciones: ['estado_pago', 'liquido_pagar', 'fecha_pago'],
+  actividad_asignaciones: ['estado', 'fecha_desde', 'fecha_hasta'],
   lista_insumos: ['estado', 'total']
 };
 
