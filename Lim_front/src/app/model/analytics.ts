@@ -270,3 +270,14 @@ export interface MetaProductividad {
   verificacion_pct?: number | null;
   observaciones?: number;
 }
+
+// Retroalimentación de la revisión: una observación PEV con su texto (GET /productividad/observaciones).
+export interface ObservacionPev {
+  fecha: string;
+  origen: 'TRABAJADOR' | 'SUPERVISOR';
+  autor: string;
+  area: string | null;
+  tarea: string | null;
+  texto: string;
+  lista_id: number;
+}

@@ -31,7 +31,7 @@ export class PaginarPipe implements PipeTransform {
   selector: 'app-paginacion',
   template: `
     <!-- Mismo pie de tabla que el resto del sistema (vista-documentos, liquidaciones, egresos…): solo ngb-pagination. -->
-    <ngb-pagination *ngIf="estado" [(page)]="estado.pagina" [pageSize]="estado.porPagina" [collectionSize]="total"
+    <ngb-pagination *ngIf="estado && total > 0" [(page)]="estado.pagina" [pageSize]="estado.porPagina" [collectionSize]="total"
       [maxSize]="5" [rotate]="true" [boundaryLinks]="true">
     </ngb-pagination>
   `

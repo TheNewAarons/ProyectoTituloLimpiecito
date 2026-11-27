@@ -142,6 +142,8 @@
                     <td class="text-right">{{ s.cumplimiento_pct === null ? '—' : (s.cumplimiento_pct | number:'1.0-1':'es-CL') + ' %' }}</td>
                     <td class="text-right">
                       <span [class.badge]="s.observaciones" [class.badge-warning]="s.observaciones">{{ s.observaciones }}</span>
+                      <app-ver-observaciones-pev *ngIf="s.observaciones" [sectorId]="s.sector_id" [sector]="s.sector" [cliente]="s.cliente"
+                        [filtros]="{ desde: desde, hasta: hasta, clienteId: clienteId, supervisor: supervisor }"></app-ver-observaciones-pev>
                     </td>
                   </tr>
                   <tr *ngIf="!cargando && sectores.length === 0">

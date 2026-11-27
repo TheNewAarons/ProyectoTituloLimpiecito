@@ -27,6 +27,11 @@ const productividadPev = require('./productividad'); // RF-BI-04
 productividad.get('/trabajadores', asyncHandler(productividadPev.trabajadores));
 productividad.get('/supervisores', asyncHandler(productividadPev.supervisores));
 productividad.get('/sectores', asyncHandler(productividadPev.sectores));
+// Retroalimentación de la revisión: el texto de las observaciones de un sector (antes solo se veía el número).
+productividad.get('/observaciones', asyncHandler(async (req, res) => {
+  const r = await require('../../../services/analytics/observaciones-pev').listar(req.query);
+  return res.json({ ok: true, data: r.data, meta: r.meta });
+}));
 
 // Solo meses límite (sin montos): visible para Admin y Operaciones.
 router.get('/periodos', ADMIN_Y_OPS, asyncHandler(require('./periodos').listar));
