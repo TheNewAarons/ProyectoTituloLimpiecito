@@ -92,7 +92,8 @@
                       >
                         <i class="material-icons">remove_red_eye</i>
                       </button>
-                      <app-acciones-reserva [reserva]="reserva" (cambio)="obtenerReservas(idCategoria)"></app-acciones-reserva>
+                      <!-- obtenerReservas alterna `loading`: se activa antes de recargar para que vuelva a mostrar la lista -->
+                      <app-acciones-reserva [reserva]="reserva" (cambio)="loading = true; obtenerReservas(idCategoria)"></app-acciones-reserva>
                       <!-- <button
                         mat-raised-button
                         type="button"
