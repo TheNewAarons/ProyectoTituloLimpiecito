@@ -59,7 +59,7 @@ const obtenerSaludInactivos = async (req, res) => {
 
 const desactivarSalud = async (req, res) => {
   try {
-    let filas = await logicaDB.desactivarSaludDB()
+    let filas = await logicaDB.desactivarSaludDB(req.params.id)
     return res.json({filas})
   } catch (error) {
     return res.send('error' + error);
@@ -68,7 +68,7 @@ const desactivarSalud = async (req, res) => {
 
 const activarSalud = async (req, res) => {
   try {
-    let filas = await logicaDB.activarSaludDB()
+    let filas = await logicaDB.activarSaludDB(req.params.id)
     return res.json({filas})
   } catch (error) {
     return res.send('error' + error);
