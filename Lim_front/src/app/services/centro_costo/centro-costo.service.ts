@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders} from '@angular/common/http'; 
 import { environment } from '../../../environments/environment'
 import { LoginService } from '../login/login.service';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -51,6 +52,13 @@ export class CentroCostoService {
   cerrarCentro(centro,id){
     let centro_json = JSON.stringify(centro);
     return this.http.put(this.url_backend+"/centro/cerrar/"+id,{centro_costo:centro_json});
+  }
+  //REABRIR CENTRO DE COSTO CERRADO POR ERROR (MOTIVO OBLIGATORIO, SOLO SI LA CAJA DE SU MES ESTA ABIERTA)
+  pedirCodigoReapertura(id: number, motivo: string): Observable<object> {
+    return this.http.post(this.url_backend + '/api/v1/centros-costo/' + id + '/reabrir/codigo', { motivo });
+  }
+  reabrirCentro(id: number, codigo: string): Observable<object> {
+    return this.http.post(this.url_backend + '/api/v1/centros-costo/' + id + '/reabrir', { codigo });
   }
   //OBTENER TODOS LOS CENTROS POR ID
   obtenerCentroCaja(id){

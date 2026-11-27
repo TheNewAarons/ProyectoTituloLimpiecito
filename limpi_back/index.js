@@ -324,6 +324,8 @@ app.use(process.env.PREFIJO + '/api/v1/bodega', BodegaV1);
 // RF-FAC-01: estado de pago de ingresos/egresos (facturas), SOLO bajo /api/v1 (solo Admin).
 const FacturasV1 = require('./api/v1/facturas/routes');
 app.use(process.env.PREFIJO + '/api/v1', FacturasV1);
+// Reabrir centro de costo cerrado por error (motivo + auditoría REAPERTURA), SOLO bajo /api/v1.
+app.use(process.env.PREFIJO + '/api/v1/centros-costo', require('./api/v1/centros-costo/routes'));
 
 // RNF-SEC-02: consulta de auditoría (solo lectura, solo Admin).
 const AuditoriaV1 = require('./api/v1/auditoria/routes');

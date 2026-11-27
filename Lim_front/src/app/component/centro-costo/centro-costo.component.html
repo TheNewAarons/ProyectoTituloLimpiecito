@@ -134,6 +134,7 @@
                       <tr>
                         <th>Cliente</th>
                         <th>Fecha Inicio</th>
+                        <th>Fecha Cierre</th>
                         <th>Valor CC</th>
                         <th>Total Costo</th>
                         <th>Utilidad</th>
@@ -144,6 +145,7 @@
                       <tr *ngFor="let centroInactivo of centrosInactivos | slice: (page1 - 1) * pageSize1:(page1 - 1) * pageSize1 + pageSize1">
                         <td>{{ centroInactivo.cliente.representante }}</td>
                         <td>{{ centroInactivo.fecha_inicio | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                        <td>{{ centroInactivo.fecha_cierre | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                         <td *ngIf="usuario.role.nombre != 'APOYO_LVL_1'">
                           {{ centroInactivo.precio_servicio | currency: 'USD':'symbol':'1.0' }}
                         </td>
@@ -171,6 +173,16 @@
                             [routerLink]="['/ver/', centroInactivo.id]"
                           >
                             <i class="material-icons">remove_red_eye</i>
+                          </button>
+                          <button
+                            *ngIf="esAdmin"
+                            mat-raised-button
+                            type="button"
+                            matTooltip="Reabrir CC (solo si la caja de su mes está abierta)"
+                            class="btn btn-warning btn-round"
+                            (click)="reabrirCentro(centroInactivo)"
+                          >
+                            <i class="material-icons">lock_open</i>
                           </button>
                         </td>
                       </tr>
