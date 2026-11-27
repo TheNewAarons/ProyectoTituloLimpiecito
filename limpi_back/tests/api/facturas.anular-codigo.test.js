@@ -25,7 +25,7 @@ beforeEach(() => jest.clearAllMocks());
 
 describe('pedir código', () => {
   it('egreso: describe el documento y monto, liga la clave al registro y no anula nada', async () => {
-    Egreso.findById.mockResolvedValue({ id: 12, estado_pago: 'PAGADA', tipo_documento: 'FACTURA', numero_documento: '4567', monto: 120000, cajaId: 3 });
+    Egreso.findById.mockResolvedValue({ id: 12, estado_pago: 'PAGADA', tipo_documento: 'FACTURA', numero_documento: '4567', monto: 120000, cajaId: 3, fecha_pago: '2026-11-10' });
     Caja.findById.mockResolvedValue({ id: 3, estado: 1, periodo: '2026-11' });
     Usuario.findById.mockResolvedValue({ nombre: 'Ana', correo: 'a@b.cl' });
     codigoSrv.emitirCodigo.mockResolvedValue({ correo: 'a***@b.cl', vigencia_segundos: 600 });
