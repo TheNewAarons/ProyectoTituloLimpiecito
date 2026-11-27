@@ -17,6 +17,9 @@ const ADMIN_Y_RRHH = ROL_ADMIN_NOMBRES.concat(ROL_RRHH_NOMBRES);
 // Antes de /:id/... para que no se confunda con un id de liquidación (requisito del requerimiento).
 router.get('/pendientes-resumen', autenticar, requerirRol.apply(null, ADMIN_Y_RRHH), asyncHandler(controlador.pendientesResumen));
 
+// Solo marca (ids), sin datos de auditoría: cualquier usuario autenticado que vea el CC.
+router.get('/modificadas', autenticar, asyncHandler(controlador.modificadas));
+
 router.get('/', autenticar, requerirRol.apply(null, ADMIN_Y_RRHH), asyncHandler(controlador.listar));
 
 router.post('/pagar-lote', autenticar, requerirRol.apply(null, ADMIN_Y_RRHH), asyncHandler(controlador.pagarLote));
@@ -25,5 +28,9 @@ router.patch('/:id/pagar', autenticar, requerirRol.apply(null, ADMIN_Y_RRHH), as
 
 // Solo Admin: la matriz de permisos (spec §2.3) no habilita a RRHH para revertir pagos.
 router.patch('/:id/revertir-pago', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), asyncHandler(controlador.revertirPago));
+
+// Solo Admin, igual que reabrir un centro de costo: motivo -> código por correo -> reabre.
+router.post('/:id/reabrir/codigo', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), asyncHandler(controlador.pedirCodigoReapertura));
+router.post('/:id/reabrir', autenticar, requerirRol.apply(null, ROL_ADMIN_NOMBRES), asyncHandler(controlador.reabrir));
 
 module.exports = router;

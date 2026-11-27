@@ -106,6 +106,67 @@ const cerrarLiquidacionDB = async (id, ctx) => {
   });
 };
 
+/**
+ * Reglas para reabrir una liquidación cerrada (estado 0 -> 1): su pago sigue EN_ESPERA (pagada: revertir
+ * el pago primero; anulada: no se reabre) y su centro de costo está abierto (un CC cerrado ya congeló sus costos).
+ * Devuelve la liquidación y una descripción legible para el correo del código.
+ */
+const cargarLiquidacionReabrible = async (id, opcionesConsulta) => {
+  const existente = await Liquidacion.findById(id, opcionesConsulta);
+  if (!existente) throw new AppError('LIQUIDACION_NO_EXISTE', 'la liquidación no existe', 404, { id: Number(id) });
+  if (Number(existente.estado) !== 0) {
+    throw new AppError('LIQUIDACION_NO_CERRADA', 'la liquidación no está cerrada', 409, { id: Number(id) });
+  }
+  if (existente.estado_pago === 'PAGADA') {
+    throw new AppError('LIQUIDACION_PAGADA', 'la liquidación ya está pagada, revierte el pago antes de reabrirla', 409, { id: Number(id) });
+  }
+  if (existente.estado_pago !== 'EN_ESPERA') {
+    throw new AppError('LIQUIDACION_ANULADA', 'la liquidación está anulada y no se puede reabrir', 409, { id: Number(id) });
+  }
+  const asociacion = await CentroCostoTrabajador.findOne({
+    where: { liquidacioneId: id },
+    include: [
+      { model: Centro, as: 'centro_costo', attributes: ['id', 'estado', 'numero_cc'] },
+      { model: Trabajador, attributes: ['id', 'nombre', 'apellido'] }
+    ],
+    transaction: opcionesConsulta.transaction
+  });
+  const centro = asociacion && asociacion.centro_costo;
+  if (centro && Number(centro.estado) !== 1) {
+    throw new AppError('CENTRO_CERRADO', 'el centro de costo está cerrado, reábrelo primero', 409, { id: Number(id) });
+  }
+  const trabajador = asociacion && asociacion.trabajadore;
+  const descripcion = 'la liquidación' +
+    (trabajador ? ' de ' + [trabajador.nombre, trabajador.apellido].filter(Boolean).join(' ') : ' N° ' + id) +
+    (centro ? ' (centro de costo N° ' + centro.numero_cc + ')' : '');
+  return { liquidacion: existente, descripcion: descripcion };
+};
+
+// Chequeo previo sin bloqueo (antes de enviar el código por correo); reabrirLiquidacionDB lo repite con bloqueo.
+const verificarLiquidacionReabrible = (id) => cargarLiquidacionReabrible(id, {});
+
+/** Reabre la liquidación (reglas en cargarLiquidacionReabrible). Auditado como REAPERTURA con motivo. */
+const reabrirLiquidacionDB = async (id, ctx) => {
+  const contexto = ctx || {};
+  return db.sequelize.transaction(async (t) => {
+    const { liquidacion } = await cargarLiquidacionReabrible(id, { transaction: t, lock: t.LOCK.UPDATE });
+    const antes = liquidacion.get({ plain: true });
+    await Liquidacion.update({ estado: 1 }, { where: { id }, transaction: t });
+    await auditar({
+      transaction: t,
+      usuario: contexto.usuario,
+      entidad: 'liquidaciones',
+      entidad_id: Number(id),
+      accion: 'REAPERTURA',
+      antes,
+      despues: Object.assign({}, antes, { estado: 1 }),
+      motivo: contexto.motivo,
+      ip: contexto.ip || null
+    });
+    return Object.assign({}, antes, { estado: 1 });
+  });
+};
+
 const obtenerLiquidacionIdDB = async (id_liquidacion) => {
   let respuesta = await CentroCostoTrabajador.findOne({
     include: [
@@ -153,6 +214,8 @@ module.exports = {
   editarCentroTrabajadorDB,
   editarLiquidacionDB,
   cerrarLiquidacionDB,
+  reabrirLiquidacionDB,
+  verificarLiquidacionReabrible,
   obtenerLiquidacionIdDB,
   obtenerTodasLiquidacionesDB,
   buscarLiquidacionesDB

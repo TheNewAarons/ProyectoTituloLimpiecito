@@ -1,14 +1,14 @@
-<!-- Código para reabrir un centro de costo (autoescape activo; nunca usar triple llaves: el motivo lo escribe el usuario).
+<!-- Código para reabrir un centro de costo o una liquidación (autoescape activo; nunca usar triple llaves: el motivo lo escribe el usuario).
      Correo HTML: tablas + estilos en línea. Colores del logotipo Limpiecito: azul #0072b4, verde #00a03a. -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Código para reabrir el centro de costo N° {{numeroCc}}</title>
+  <title>Código para reabrir {{objeto}}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#333333;">
-  <span style="display:none;max-height:0;overflow:hidden;">Tu código para reabrir el centro de costo N° {{numeroCc}} es {{codigo}}. Vence en {{minutos}} minutos.</span>
+  <span style="display:none;max-height:0;overflow:hidden;">Tu código para reabrir {{objeto}} es {{codigo}}. Vence en {{minutos}} minutos.</span>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6f8;">
     <tr>
       <td align="center" style="padding:24px 12px;">
@@ -25,7 +25,7 @@
           </tr>
           <tr>
             <td style="background-color:#0072b4;padding:18px 24px;color:#ffffff;">
-              <div style="font-size:19px;font-weight:bold;color:#ffffff;">Reabrir centro de costo N° {{numeroCc}}</div>
+              <div style="font-size:19px;font-weight:bold;color:#ffffff;">Reabrir {{objeto}}</div>
               <div style="padding-top:4px;font-size:13px;color:#d6e9f5;">Solicitado el {{fecha}}</div>
             </td>
           </tr>
@@ -33,7 +33,7 @@
           <!-- Saludo -->
           <tr>
             <td style="padding:24px 24px 8px 24px;font-size:14px;line-height:21px;">
-              <p style="margin:0;">Hola{{#if nombre}} {{nombre}}{{/if}}, se pidió reabrir un centro de costo cerrado con tu usuario. Para confirmar, ingresa este código en el sistema:</p>
+              <p style="margin:0;">Hola{{#if nombre}} {{nombre}}{{/if}}, se pidió reabrir {{objeto}} con tu usuario. Para confirmar, ingresa este código en el sistema:</p>
             </td>
           </tr>
 

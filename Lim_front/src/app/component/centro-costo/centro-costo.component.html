@@ -70,7 +70,8 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let centroActivo of centrosActivos | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize">
+                      <tr *ngFor="let centroActivo of centrosActivos | slice: (page - 1) * pageSize:(page - 1) * pageSize + pageSize"
+                        class="fila-clickeable" [routerLink]="['/ver/', centroActivo.id]">
                         <td>{{ centroActivo.cliente.representante }}</td>
                         <td>
                           {{ centroActivo.fecha_inicio | date: 'dd/MM/yyyy HH:mm:ss' }}
@@ -184,6 +185,7 @@
                           >
                             <i class="material-icons">lock_open</i>
                           </button>
+                          <app-historial [compacto]="true" entidad="centro_costos" [entidadId]="centroInactivo.id" [titulo]="'Centro de costo N° ' + (centroInactivo.numero_cc || centroInactivo.id) + ' · ' + centroInactivo.cliente?.representante"></app-historial>
                         </td>
                       </tr>
                     </tbody>

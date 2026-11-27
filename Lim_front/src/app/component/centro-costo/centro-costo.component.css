@@ -1,3 +1,8 @@
 table > thead > tr > th {
   font-weight: 1000;
 }
+
+/* fila de CC activo: click en toda la fila abre el detalle */
+.fila-clickeable {
+  cursor: pointer;
+}

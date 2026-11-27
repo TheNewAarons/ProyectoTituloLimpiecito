@@ -117,7 +117,9 @@
                     <td>{{ trabajador.trabajadore.apellido }}</td>
                     <td>{{ trabajador.trabajadore.telefono }}</td>
                     <td>{{ trabajador.trabajadore.telefono_emergencia }}</td>
-                    <td *ngIf="trabajador.liquidacione">{{ trabajador.liquidacione?.estado == 1 ? 'Abierta' : 'Cerrada' }}</td>
+                    <td *ngIf="trabajador.liquidacione">{{ trabajador.liquidacione?.estado == 1 ? 'Abierta' : 'Cerrada' }}
+                      <i *ngIf="liquidacionesModificadas.indexOf(trabajador.liquidacione.id) !== -1" class="material-icons text-warning punto-modificada" title="Reabierta o modificada" aria-label="Reabierta o modificada">fiber_manual_record</i>
+                    </td>
                     <td *ngIf="!trabajador.liquidacione">Sin Liquidación</td>
                     <td class="td-actions text-right">
                       <button
@@ -139,6 +141,16 @@
                         [routerLink]="['/liquidacion/ver/', trabajador.liquidacione.id]"
                       >
                         <i class="material-icons">remove_red_eye</i>
+                      </button>
+                      <button
+                        *ngIf="esAdmin() && centro?.estado == 1 && trabajador.liquidacione?.estado == 0 && trabajador.liquidacione?.estado_pago == 'EN_ESPERA'"
+                        mat-raised-button
+                        type="button"
+                        matTooltip="Reabrir Liquidación (solo si no está pagada)"
+                        class="btn btn-warning btn-round"
+                        (click)="reabrirLiquidacion(trabajador)"
+                      >
+                        <i class="material-icons">lock_open</i>
                       </button>
                       <button
                         *ngIf="centro?.estado == 1 && usuario.role.nombre != 'APOYO_LVL_1'"

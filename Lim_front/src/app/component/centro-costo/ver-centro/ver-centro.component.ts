@@ -11,6 +11,14 @@ import { ProductoService } from '../../../services/producto/producto.service';
 import { TrabajadorService } from '../../../services/trabajador/trabajador.service';
 import { CajaService } from '../../../services/caja/caja.service';
 import { LoginService } from './../../../services/login/login.service';
+import { LiquidacionService } from '../../../services/liquidacion/liquidacion.service';
+import { HttpErrorResponse } from '@angular/common/http';
+
+// Fila de trabajadores del CC con su liquidación (lo que usa el botón Reabrir).
+interface CentroTrabajadorConLiquidacion {
+  trabajadore: { nombre: string; apellido: string };
+  liquidacione: { id: number; estado: number; estado_pago?: string };
+}
 
 //MODELOS
 import { CentroTrabajador } from '../../../model/centroTrabajador';
@@ -38,6 +46,7 @@ export class VerCentroComponent implements OnInit {
   pagIngresos = nuevaPaginacion();
   public centro: any;
   public trabajadores;
+  public liquidacionesModificadas: number[] = [];
   public listaInsumos;
   public egresos;
   public ingresos;
@@ -76,8 +85,76 @@ export class VerCentroComponent implements OnInit {
     private centroCostoService: CentroCostoService, private trabajadorService: TrabajadorService,
     private productoService: ProductoService, private route: Router,
     private _route: ActivatedRoute, private cajaService: CajaService,
-    private loginService: LoginService , private alertaService:AlertasService
+    private loginService: LoginService , private alertaService:AlertasService,
+    private liquidacionService: LiquidacionService
   ) {}
+
+  esAdmin(): boolean {
+    return !!(this.usuario && this.usuario.role && String(this.usuario.role.nombre).toUpperCase() === 'ADMINISTRADOR');
+  }
+  //REABRIR LIQUIDACION CERRADA: PIDE MOTIVO (QUEDA EN LA AUDITORIA)
+  reabrirLiquidacion(trabajador: CentroTrabajadorConLiquidacion): void {
+    swal.fire({
+      title: 'Reabrir liquidación de ' + trabajador.trabajadore.nombre + ' ' + trabajador.trabajadore.apellido,
+      text: 'Ingresa el motivo de la reapertura.',
+      input: 'text',
+      inputPlaceholder: 'Motivo',
+      showCancelButton: true,
+      buttonsStyling: false,
+      customClass: { confirmButton: 'btn btn-warning', cancelButton: 'btn btn-default' },
+      confirmButtonText: 'Si, Reabrir!',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (valor: string) => {
+        const longitud = valor ? valor.trim().length : 0;
+        return longitud < 5 || longitud > 500 ? 'El motivo debe tener entre 5 y 500 caracteres' : null;
+      }
+    }).then(result => {
+      if (result.value) {
+        this.alertaService.loading();
+        this.liquidacionService.pedirCodigoReaperturaLiquidacion(trabajador.liquidacione.id, result.value.trim()).subscribe(
+          (respuesta: { data: { correo: string } }) => {
+            this.alertaService.cerrarAlerta();
+            this.confirmarReaperturaConCodigo(trabajador.liquidacione.id, respuesta.data.correo);
+          },
+          (error: HttpErrorResponse) => {
+            this.alertaService.cerrarAlerta();
+            this.alertaService.alertaErrorMsj('No se pudo reabrir la liquidación', this.mensajeError(error));
+          }
+        );
+      }
+    });
+  }
+  //PIDE EL CODIGO ENVIADO AL CORREO; SI ES INCORRECTO MUESTRA EL ERROR SIN CERRAR EL DIALOGO
+  private confirmarReaperturaConCodigo(idLiquidacion: number, correo: string): void {
+    swal.fire({
+      title: 'Código de confirmación',
+      text: 'Enviamos un código de 6 dígitos a ' + correo + '. Vence en 10 minutos.',
+      input: 'text',
+      inputPlaceholder: '000000',
+      inputAttributes: { maxlength: '6', inputmode: 'numeric', autocomplete: 'one-time-code' },
+      showCancelButton: true,
+      buttonsStyling: false,
+      customClass: { confirmButton: 'btn btn-warning', cancelButton: 'btn btn-default' },
+      confirmButtonText: 'Confirmar',
+      cancelButtonText: 'Cancelar',
+      showLoaderOnConfirm: true,
+      allowOutsideClick: () => !swal.isLoading(),
+      inputValidator: (valor: string) => /^\d{6}$/.test((valor || '').trim()) ? null : 'Ingresa los 6 dígitos del código',
+      preConfirm: (valor: string) =>
+        this.liquidacionService.reabrirLiquidacion(idLiquidacion, valor.trim()).toPromise().catch((error: HttpErrorResponse) => {
+          swal.showValidationMessage(this.mensajeError(error));
+        })
+    }).then(result => {
+      if (result.value) {
+        this.alertaService.loading();
+        this.obtenerDatosCentroCosto('Liquidación Reabierta Correctamente!');
+      }
+    });
+  }
+  private mensajeError(error: HttpErrorResponse): string {
+    const mensaje = error && error.error && error.error.error && error.error.error.message;
+    return mensaje || 'Ha ocurrido un problema al procesar la solicitud.';
+  }
 
   ngOnInit() {
     this.obtenerDatos();
@@ -109,6 +186,7 @@ export class VerCentroComponent implements OnInit {
         this.transformar()
         this.centro = response[3].centro;
         this.trabajadores = this.centro.centro_costo_trabajadores;
+        this.marcarLiquidacionesModificadas();
         this.listaInsumos = this.centro.lista_insumos;
         this.egresos = this.centro.cc_egresos;
         this.ingresos = this.centro.cc_ingresos;
@@ -131,6 +209,7 @@ export class VerCentroComponent implements OnInit {
         }
         this.centro = response.centro;
         this.trabajadores = this.centro.centro_costo_trabajadores;
+        this.marcarLiquidacionesModificadas();
         this.listaInsumos = this.centro.lista_insumos;
         this.egresos = this.centro.cc_egresos;
         this.ingresos = this.centro.cc_ingresos;
@@ -140,6 +219,20 @@ export class VerCentroComponent implements OnInit {
         this.alertaService.cerrarAlerta()
         console.log(error);
       }
+    );
+  }
+  //PUNTO AMARILLO: liquidaciones reabiertas o editadas (si falla, simplemente no se marcan)
+  marcarLiquidacionesModificadas(): void {
+    const ids = (this.trabajadores || [])
+      .filter((t: CentroTrabajadorConLiquidacion) => t.liquidacione)
+      .map((t: CentroTrabajadorConLiquidacion) => t.liquidacione.id);
+    this.liquidacionesModificadas = [];
+    if (ids.length === 0) {
+      return;
+    }
+    this.liquidacionService.obtenerLiquidacionesModificadas(ids).subscribe(
+      respuesta => this.liquidacionesModificadas = respuesta.data.ids,
+      () => this.liquidacionesModificadas = []
     );
   }
   //transformar array xd
