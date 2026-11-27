@@ -4,6 +4,8 @@
 jest.mock('../../../database/database', () => ({ sequelize: { query: jest.fn(), QueryTypes: { SELECT: 'SELECT' } } }));
 
 const db = require('../../../database/database');
+// Analytics ahora carga modelos al iniciarse (Configuracion en RF-BI-01): modelos de mentira, aquí no se usan.
+db.sequelize.define = () => new Proxy({}, { get: () => () => {} });
 const { listar, armar } = require('../../../services/analytics/observaciones-pev');
 
 const personas = {
