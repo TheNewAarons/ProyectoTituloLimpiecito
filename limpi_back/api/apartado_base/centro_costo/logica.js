@@ -80,7 +80,7 @@ const obtenerCentroCostoActivosCajaDB = async (id_caja) => {
 const obtenerCentroCostoInactivosCajaDB = async (id_caja) => {
   let respuesta = await Centro.findAll({
     include: [{ model: Cliente, as: 'cliente' }],
-    where: { estado: 0, cajaId: id_caja },
+    where: { estado: 0 }, // historial: cerrados de todas las cajas (id_caja se ignora, se mantiene la firma)
     order: [['id', 'DESC']]
   });
   return respuesta;
@@ -120,7 +120,7 @@ const buscarCentroCostoCajaActivosDB = async (id_caja, busca) => {
 const buscarCentroCostoCajaInactivosDB = async (id_caja, busca) => {
   let respuesta = await Centro.findAll({
     include: [{ model: Cliente, as: 'cliente' }],
-    where: { estado: 0, cajaId: id_caja, [Op.or]: [{ '$cliente.representante$': { [Op.like]: '%' + busca + '%' } }] },
+    where: { estado: 0, [Op.or]: [{ '$cliente.representante$': { [Op.like]: '%' + busca + '%' } }] },
     order: [['id', 'DESC']]
   });
   return respuesta;

@@ -1,0 +1,82 @@
+<!-- Código para reabrir un centro de costo (autoescape activo; nunca usar triple llaves: el motivo lo escribe el usuario).
+     Correo HTML: tablas + estilos en línea. Colores del logotipo Limpiecito: azul #0072b4, verde #00a03a. -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Código para reabrir el centro de costo N° {{numeroCc}}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#333333;">
+  <span style="display:none;max-height:0;overflow:hidden;">Tu código para reabrir el centro de costo N° {{numeroCc}} es {{codigo}}. Vence en {{minutos}} minutos.</span>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6f8;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:520px;background-color:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e3e7eb;">
+
+          <!-- Encabezado con logo -->
+          <tr>
+            <td align="center" style="padding:24px 24px 16px 24px;">
+              <img src="cid:logo-limpiecito" width="180" alt="Aseo Limpiecito" style="display:block;width:180px;max-width:100%;height:auto;border:0;">
+            </td>
+          </tr>
+          <tr>
+            <td style="height:4px;line-height:4px;font-size:0;background-color:#00a03a;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="background-color:#0072b4;padding:18px 24px;color:#ffffff;">
+              <div style="font-size:19px;font-weight:bold;color:#ffffff;">Reabrir centro de costo N° {{numeroCc}}</div>
+              <div style="padding-top:4px;font-size:13px;color:#d6e9f5;">Solicitado el {{fecha}}</div>
+            </td>
+          </tr>
+
+          <!-- Saludo -->
+          <tr>
+            <td style="padding:24px 24px 8px 24px;font-size:14px;line-height:21px;">
+              <p style="margin:0;">Hola{{#if nombre}} {{nombre}}{{/if}}, se pidió reabrir un centro de costo cerrado con tu usuario. Para confirmar, ingresa este código en el sistema:</p>
+            </td>
+          </tr>
+
+          <!-- Código -->
+          <tr>
+            <td align="center" style="padding:16px 24px;">
+              <div style="display:inline-block;padding:14px 28px;background-color:#f4f8fb;border:2px dashed #0072b4;border-radius:8px;font-size:32px;font-weight:bold;letter-spacing:8px;color:#0072b4;font-family:'Courier New',Courier,monospace;">{{codigo}}</div>
+              <div style="padding-top:8px;font-size:12px;color:#777777;">Vence en {{minutos}} minutos y sirve una sola vez.</div>
+            </td>
+          </tr>
+
+          <!-- Motivo -->
+          <tr>
+            <td style="padding:8px 24px 16px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;line-height:19px;">
+                <tr>
+                  <td style="padding:12px;background-color:#f4f8fb;border-left:3px solid #00a03a;">
+                    <div style="font-size:11px;font-weight:bold;color:#00a03a;text-transform:uppercase;letter-spacing:0.5px;">Motivo de la reapertura</div>
+                    <div style="padding-top:4px;">{{motivo}}</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Aviso -->
+          <tr>
+            <td style="padding:0 24px 24px 24px;font-size:13px;line-height:19px;">
+              <p style="margin:0;padding:12px;background-color:#fff4e5;border-left:3px solid #f0a020;">
+                <strong>¿No fuiste tú?</strong> No compartas este código, cambia tu contraseña y avisa al administrador.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Pie -->
+          <tr>
+            <td align="center" style="background-color:#f4f6f8;padding:14px 24px;font-size:11px;line-height:16px;color:#999999;border-top:1px solid #e3e7eb;">
+              Correo generado automáticamente por el sistema de Aseo Limpiecito. No respondas a este correo.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
