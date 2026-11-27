@@ -75,10 +75,75 @@ export class ProveedoresListaComponent implements OnInit {
     this.formulario = null;
   }
 
+  // AUT-023 (revisión): mismas reglas que services/bodega/proveedores-formato.js. Campos opcionales: vacío es válido.
+  errorRut(): string {
+    const r = String(this.formulario && this.formulario.datos.rut || '').trim();
+    if (!r) { return ''; }
+    const limpio = r.replace(/[.\s-]/g, '').toUpperCase();
+    if (!/^\d{7,8}[\dK]$/.test(limpio)) { return 'Formato de RUT no válido (ej. 76.086.428-5).'; }
+    let suma = 0;
+    let factor = 2;
+    for (let i = limpio.length - 2; i >= 0; i--) {
+      suma += Number(limpio[i]) * factor;
+      factor = factor === 7 ? 2 : factor + 1;
+    }
+    const resto = 11 - (suma % 11);
+    const dv = resto === 11 ? '0' : resto === 10 ? 'K' : String(resto);
+    return dv === limpio.slice(-1) ? '' : 'El dígito verificador no corresponde.';
+  }
+
+  errorTelefono(): string {
+    const t = String(this.formulario && this.formulario.datos.telefono || '').trim();
+    if (!t) { return ''; }
+    if (!/^\+?[\d ]+$/.test(t)) { return 'Solo números, con + y espacios opcionales.'; }
+    const digitos = t.replace(/\D/g, '').length;
+    return digitos >= 8 && digitos <= 15 ? '' : 'Debe tener entre 8 y 15 dígitos (ej. +56 9 1234 5678).';
+  }
+
+  errorContacto(): string {
+    const c = String(this.formulario && this.formulario.datos.contacto || '').trim();
+    if (!c) { return ''; }
+    const letras = (c.match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g) || []).length;
+    return /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ.' -]+$/.test(c) && letras >= 2 ? '' : 'Escriba el nombre de la persona (solo letras y espacios).';
+  }
+
+  // Formato para mostrar (lista) y para dejar el campo ordenado al salir de él (formulario).
+  // RUT: 76086428-5 / 760864285 → 76.086.428-5. Si no parece un RUT, se deja tal cual.
+  formatoRut(rut: string): string {
+    const limpio = String(rut || '').replace(/[.\s-]/g, '').toUpperCase();
+    if (!/^\d{7,8}[\dK]$/.test(limpio)) { return rut || ''; }
+    const cuerpo = limpio.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return cuerpo + '-' + limpio.slice(-1);
+  }
+
+  // Teléfono chileno: celular +56 9 1234 5678, fijo Santiago +56 2 1234 5678, otros +56 XX XXX XXXX.
+  formatoTelefono(telefono: string): string {
+    const original = String(telefono || '').trim();
+    let d = original.replace(/\D/g, '');
+    if (d.length === 11 && d.indexOf('56') === 0) { d = d.slice(2); }
+    if (d.length !== 9) { return original; }
+    if (d[0] === '9' || d[0] === '2') { return '+56 ' + d[0] + ' ' + d.slice(1, 5) + ' ' + d.slice(5); }
+    return '+56 ' + d.slice(0, 2) + ' ' + d.slice(2, 5) + ' ' + d.slice(5);
+  }
+
+  ordenarCampo(campo: 'rut' | 'telefono'): void {
+    if (!this.formulario) { return; }
+    const v = this.formulario.datos[campo];
+    this.formulario.datos[campo] = campo === 'rut' ? this.formatoRut(v) : this.formatoTelefono(v);
+  }
+
+  hayErroresFormulario(): boolean {
+    return !!(this.errorRut() || this.errorTelefono() || this.errorContacto());
+  }
+
   guardar(): void {
     const f = this.formulario;
     if (!f.datos.nombre || !f.datos.nombre.trim()) {
       this.alertas.alertaErrorMsj('Falta el nombre', 'El nombre del proveedor es obligatorio.');
+      return;
+    }
+    if (this.hayErroresFormulario()) {
+      this.alertas.alertaErrorMsj('Revise los datos', 'Corrija los campos marcados en rojo antes de guardar.');
       return;
     }
     this.guardando = true;
