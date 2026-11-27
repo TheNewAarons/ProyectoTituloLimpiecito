@@ -10,6 +10,9 @@ import { LoadingModule } from 'src/app/loading/loading.module';
 import { AnalyticsRoutes } from './analytics.routing';
 import { AnalyticsBodegaRoutes } from './analytics.routing';
 import { AnalyticsProductividadRoutes } from './analytics.routing';
+import { AnalyticsDemandaRoutes } from './analytics.routing';
+import { DemandaReservasComponent } from './demanda/demanda-reservas.component';
+import { AccionesReservaModule } from '../app_servicio/reserva/acciones-reserva';
 import { ProductividadPevComponent } from './productividad/productividad-pev.component';
 import { AnalyticsInicioComponent } from './inicio/analytics-inicio.component';
 import { DashboardFinancieroComponent } from './financiero/dashboard-financiero.component';
@@ -33,6 +36,8 @@ import { ObservacionesPevDialogoModule } from './productividad/observaciones-pev
     RouterModule.forChild(AnalyticsRoutes),
     RouterModule.forChild(AnalyticsBodegaRoutes),
     RouterModule.forChild(AnalyticsProductividadRoutes),
+    RouterModule.forChild(AnalyticsDemandaRoutes), // RF-BI-05
+    AccionesReservaModule, // RF-BI-05: aprobar/rechazar/finalizar desde la Agenda del día
     MaterialModule,
     LoadingModule,
     ChartsModule
@@ -43,6 +48,7 @@ import { ObservacionesPevDialogoModule } from './productividad/observaciones-pev
     RentabilidadComponent,
     ConsumoBodegaComponent,
     ProductividadPevComponent,
+    DemandaReservasComponent, // RF-BI-05
     KpiCardComponent,
     GraficoComponent,
     FiltroPeriodoComponent,

@@ -47,5 +47,15 @@ router.get('/financiero/tendencia', asyncHandler(financiero.tendencia));
 router.get('/financiero/proyeccion', asyncHandler(financiero.proyeccion));
 router.get('/rentabilidad', asyncHandler(rentabilidad.listar));
 router.get('/rentabilidad/:centroCostoId/detalle', asyncHandler(rentabilidad.detalle));
+// RF-BI-05: agenda de un día (ocupación por bloque y reservas). Antes de '/demanda' por claridad; son rutas distintas.
+router.get('/demanda/dia', asyncHandler(async (req, res) => {
+  const r = await require('../../../services/analytics/demanda').delDia(req.query);
+  return res.json({ ok: true, data: r.data, meta: r.meta });
+}));
+// RF-BI-05: demanda de reservas (mapa de calor, ranking, temporada, proyección 4 semanas y alerta de cupos).
+router.get('/demanda', asyncHandler(async (req, res) => {
+  const r = await require('../../../services/analytics/demanda').demanda(req.query);
+  return res.json({ ok: true, data: r.data, meta: r.meta });
+}));
 
 module.exports = router;

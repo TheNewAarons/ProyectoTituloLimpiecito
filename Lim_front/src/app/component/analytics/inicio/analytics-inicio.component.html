@@ -126,6 +126,21 @@
           </div>
         </div>
       </div>
+      <!-- RF-BI-05: demanda de la app de reservas (solo Admin, como el resto de los datos con montos) -->
+      <div class="col-12 col-md-6" *ngIf="esAdmin">
+        <div class="card">
+          <div class="card-header card-header-info card-header-icon">
+            <div class="card-icon"><i class="material-icons">event_available</i></div>
+            <h4 class="card-title">Demanda de reservas</h4>
+          </div>
+          <div class="card-body">
+            <p>Horarios pico, servicios más pedidos por temporada y proyección de las próximas 4 semanas frente a los cupos.</p>
+          </div>
+          <div class="card-footer justify-content-end">
+            <a mat-raised-button routerLink="../demanda" class="btn btn-info btn-sm">Ver</a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

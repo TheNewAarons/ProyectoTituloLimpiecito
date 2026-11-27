@@ -1,0 +1,235 @@
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header card-header-rose card-header-icon">
+            <div class="card-icon"><i class="material-icons">event_available</i></div>
+            <h4 class="card-title">Demanda de reservas <small>{{ nombreCategoria() }}</small></h4>
+            <br />
+            <button mat-raised-button type="button" matTooltip="Volver a Analytics" class="btn btn-rose btn-sm" routerLink="/analytics/inicio">
+              <span class="btn-label"><i class="material-icons">arrow_back</i></span>
+              Volver
+            </button>
+          </div>
+          <div class="card-body">
+            <!-- Filtro común a las 3 pestañas -->
+            <div class="row">
+              <div class="col-12 col-sm-6 col-lg-3">
+                <mat-form-field class="w-100">
+                  <mat-select placeholder="Categoría de servicio" [(ngModel)]="categoriaId" (selectionChange)="cambiarCategoria()">
+                    <mat-option [value]="null">Todas</mat-option>
+                    <mat-option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+            <p class="text-danger" *ngIf="error">{{ error }}</p>
+
+            <mat-tab-group [selectedIndex]="pestana" (selectedIndexChange)="cambiarPestana($event)" animationDuration="0ms">
+
+              <!-- 1. PATRONES: período en meses -->
+              <mat-tab label="Patrones">
+                <div class="pt-3">
+                  <div class="row">
+                    <div class="col-12 col-lg-6">
+                      <app-filtro-periodo [desde]="desde" [hasta]="hasta" (cambio)="cambiarPeriodo($event)"></app-filtro-periodo>
+                    </div>
+                  </div>
+                  <p class="text-muted">¿Cuándo y qué se pide más? Suma las reservas cuyo servicio cae entre <b>{{ desde }}</b> y <b>{{ hasta }}</b>. Las rechazadas no cuentan como demanda.</p>
+                  <div class="text-center" *ngIf="cargando && !datos"><app-loading></app-loading></div>
+
+                  <ng-container *ngIf="datos">
+                    <div class="row">
+                      <div class="col-12 col-sm-6 col-lg-3">
+                        <app-kpi-card titulo="Reservas" icono="event" color="info" formato="numero" [cargando]="cargando"
+                          [valor]="datos.resumen.reservas" [detalle]="'Día con más reservas: ' + (datos.resumen.dia_pico || '—')"></app-kpi-card>
+                      </div>
+                      <div class="col-12 col-sm-6 col-lg-3">
+                        <app-kpi-card titulo="Monto reservado" icono="payments" color="success" formato="clp" [cargando]="cargando"
+                          [valor]="datos.resumen.monto" detalle="Precio total de las reservas"></app-kpi-card>
+                      </div>
+                      <div class="col-12 col-sm-6 col-lg-3">
+                        <app-kpi-card titulo="Rechazo" icono="block" color="warning" formato="porcentaje" [cargando]="cargando"
+                          [valor]="datos.resumen.tasa_rechazo" [detalle]="datos.resumen.rechazadas + ' rechazada(s) en el período'"></app-kpi-card>
+                      </div>
+                      <div class="col-12 col-sm-6 col-lg-3">
+                        <app-kpi-card titulo="Servicios distintos" icono="cleaning_services" color="rose" formato="numero" [cargando]="cargando"
+                          [valor]="datos.ranking.length" [detalle]="'Más pedido: ' + (datos.resumen.servicio_top || '—')"></app-kpi-card>
+                      </div>
+                    </div>
+
+                    <div class="row">
+                      <div class="col-12 col-xl-6">
+                        <h5 class="mt-3 mb-1">Total de reservas por día de la semana y horario</h5>
+                        <small class="text-muted d-block mb-2">Patrón del período ({{ desde }} a {{ hasta }}): cada celda suma todas las semanas. Más intenso = más reservas.</small>
+                        <div class="table-responsive">
+                          <table class="table table-sm text-center mb-0">
+                            <thead>
+                              <tr><th class="text-left">Día</th><th *ngFor="let h of datos.mapa_calor.horas">{{ h }} hrs</th></tr>
+                            </thead>
+                            <tbody>
+                              <tr *ngFor="let d of datos.mapa_calor.dias">
+                                <td class="text-left">{{ d.dia }}</td>
+                                <td *ngFor="let v of d.valores" [style.background]="fondo(v)" [style.color]="colorTexto(v)">{{ v || '' }}</td>
+                              </tr>
+                              <tr *ngIf="datos.mapa_calor.horas.length === 0"><td class="text-muted">Sin reservas en el período.</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      <div class="col-12 col-xl-6">
+                        <h5 class="mt-3 mb-1">Servicios más solicitados</h5>
+                        <small class="text-muted d-block mb-2">Ranking del período; empate por monto.</small>
+                        <div class="table-responsive">
+                          <table class="table table-sm mb-0">
+                            <thead><tr><th>#</th><th>Servicio</th><th>Categoría</th><th class="text-right">Reservas</th><th class="text-right">Monto</th></tr></thead>
+                            <tbody>
+                              <tr *ngFor="let r of datos.ranking | slice:0:10; let i = index">
+                                <td>{{ i + 1 }}</td><td>{{ r.servicio }}</td><td>{{ r.categoria }}</td>
+                                <td class="text-right">{{ r.reservas }}</td>
+                                <td class="text-right">{{ r.monto | currency:'CLP':'symbol-narrow':'1.0-0':'es-CL' }}</td>
+                              </tr>
+                              <tr *ngIf="datos.ranking.length === 0"><td colspan="5" class="text-center text-muted">Sin reservas en el período.</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-1">Reservas por mes y categoría (temporada)</h5>
+                    <small class="text-muted d-block mb-2">Para ver en qué meses sube o baja cada tipo de servicio.</small>
+                    <app-grafico tipo="bar" [etiquetas]="etiquetasTemporada" [series]="seriesTemporada" [enteros]="true"></app-grafico>
+                  </ng-container>
+                </div>
+              </mat-tab>
+
+              <!-- 2. AGENDA DEL DÍA: un día concreto -->
+              <mat-tab label="Agenda del día">
+                <div class="pt-3">
+                  <div class="d-flex flex-wrap align-items-end">
+                    <button mat-raised-button type="button" class="btn btn-default btn-sm mr-2 mb-2" matTooltip="Día anterior" (click)="moverDia(-1)" aria-label="Día anterior">
+                      <i class="material-icons">chevron_left</i>
+                    </button>
+                    <mat-form-field class="mr-2" style="width: 170px;">
+                      <input matInput type="date" placeholder="Día" [(ngModel)]="fechaAgenda" (change)="irADia(fechaAgenda)">
+                    </mat-form-field>
+                    <button mat-raised-button type="button" class="btn btn-default btn-sm mr-2 mb-2" matTooltip="Día siguiente" (click)="moverDia(1)" aria-label="Día siguiente">
+                      <i class="material-icons">chevron_right</i>
+                    </button>
+                    <button mat-raised-button type="button" class="btn btn-info btn-sm mr-2 mb-2" (click)="irADia(hoy)">Hoy</button>
+                    <button mat-raised-button type="button" class="btn btn-info btn-sm mb-2" (click)="irADia(sumarDias(hoy, 1))">Mañana</button>
+                  </div>
+                  <p class="text-muted">¿Qué hay el día elegido? Ocupación de cada horario (aprobadas + en proceso sobre los cupos) y las reservas de ese día.</p>
+
+                  <div class="text-center" *ngIf="cargandoAgenda"><app-loading></app-loading></div>
+                  <p class="text-danger" *ngIf="errorAgenda">{{ errorAgenda }}</p>
+
+                  <ng-container *ngIf="agenda && !cargandoAgenda">
+                    <h5 class="mb-1">{{ textoFecha(agenda.fecha).charAt(0).toUpperCase() + textoFecha(agenda.fecha).slice(1) }}</h5>
+                    <p class="mb-3">
+                      <b>{{ agenda.resumen.ocupan_cupo }}</b> de <b>{{ agenda.resumen.cupos }}</b> cupos ocupados ·
+                      {{ agenda.resumen.reservas }} reserva(s) en total
+                      <span class="badge badge-default ml-1" *ngIf="!agenda.atiende">Sin horario de atención este día</span>
+                    </p>
+
+                    <div class="row">
+                      <div class="col-12 col-md-6 col-xl-4" *ngFor="let c of agenda.categorias">
+                        <div class="border rounded p-3 mb-3">
+                          <div class="d-flex justify-content-between"><b>{{ c.nombre }}</b><span class="text-muted">{{ c.ocupados }}/{{ c.cupos }}</span></div>
+                          <div class="mt-2" *ngFor="let b of c.bloques">
+                            <div class="d-flex justify-content-between small">
+                              <span>{{ b.inicio }} – {{ b.fin }} <span class="badge badge-warning" *ngIf="b.fuera_de_horario">fuera de horario</span></span>
+                              <span>{{ b.ocupados }} de {{ b.cupos }}<span class="text-muted" *ngIf="b.en_proceso"> ({{ b.en_proceso }} en proceso)</span></span>
+                            </div>
+                            <div class="progress" style="height: 8px;" role="progressbar" [attr.aria-valuenow]="porcentaje(b.ocupados, b.cupos)" aria-valuemin="0" aria-valuemax="100"
+                                 [attr.aria-label]="c.nombre + ' ' + b.inicio + ': ' + b.ocupados + ' de ' + b.cupos + ' cupos'">
+                              <div class="progress-bar" [ngClass]="colorBarra(b.ocupados, b.cupos)" [style.width.%]="porcentaje(b.ocupados, b.cupos)"></div>
+                            </div>
+                          </div>
+                          <p class="text-muted small mb-0 mt-2" *ngIf="c.bloques.length === 0">Sin horario este día.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <h5 class="mt-2 mb-2">Reservas del día</h5>
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0">
+                        <thead>
+                          <tr><th>Horario</th><th>N°</th><th>Servicio</th><th>Cliente</th><th>Estado</th><th>Origen</th><th class="text-right">Total</th><th class="text-right">Acciones</th></tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let r of agenda.reservas">
+                            <td class="text-nowrap">{{ r.hora }} – {{ r.hora_fin }}</td>
+                            <td>{{ r.orden }}</td>
+                            <td>{{ r.servicio }}<br><small class="text-muted">{{ r.categoria }}<span *ngIf="r.cantidad > 1"> · cantidad {{ r.cantidad }}</span></small></td>
+                            <td>{{ r.cliente || '—' }}<br><small class="text-muted">{{ r.celular }}</small></td>
+                            <td><span class="badge" [ngClass]="badge[r.estado]">{{ r.estado_texto }}</span></td>
+                            <td><span class="badge" [ngClass]="r.origen === 'App' ? 'badge-info' : 'badge-primary'" [matTooltip]="'Creada el ' + r.fecha_creacion">{{ r.origen }}</span></td>
+                            <td class="text-right">{{ r.precio_total | currency:'CLP':'symbol-narrow':'1.0-0':'es-CL' }}</td>
+                            <td class="td-actions text-right text-nowrap">
+                              <a mat-raised-button class="btn btn-info btn-round" matTooltip="Ver el detalle de la reserva" [routerLink]="['/adm_servicio/ver-reserva', r.id]">
+                                <i class="material-icons">visibility</i>
+                              </a>
+                              <app-acciones-reserva [reserva]="r.paraAcciones" (cambio)="alCambiarReserva()"></app-acciones-reserva>
+                            </td>
+                          </tr>
+                          <tr *ngIf="agenda.reservas.length === 0"><td colspan="8" class="text-center text-muted">No hay reservas para este día.</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </ng-container>
+                </div>
+              </mat-tab>
+
+              <!-- 3. PRÓXIMAS 4 SEMANAS: proyección vs cupos -->
+              <mat-tab label="Próximas 4 semanas">
+                <div class="pt-3" *ngIf="datos">
+                  <div class="alert alert-info" *ngIf="!datos.proyeccion.disponible">
+                    <i class="material-icons align-middle">info</i> {{ datos.proyeccion.mensaje }}
+                  </div>
+                  <ng-container *ngIf="datos.proyeccion.disponible">
+                    <p class="text-muted">¿Alcanzan los cupos? {{ datos.proyeccion.base }} Se compara con las reservas ya agendadas y con los cupos del horario. Pulse un día para ver su agenda.</p>
+
+                    <div class="alert alert-warning" *ngFor="let a of datos.proyeccion.alertas" role="button" tabindex="0" (click)="irADia(a.fecha)" (keyup.enter)="irADia(a.fecha)" style="cursor: pointer;">
+                      <i class="material-icons align-middle">warning</i>
+                      <b>{{ a.dia }} {{ dm(a.fecha) }}:</b> se esperan {{ a.demanda }} reserva(s) y hay {{ a.capacidad }} cupo(s). {{ a.mensaje }}. <u>Ver agenda</u>
+                    </div>
+                    <p class="text-success" *ngIf="datos.proyeccion.alertas.length === 0">
+                      <i class="material-icons align-middle">check_circle</i> Los cupos alcanzan para la demanda esperada de las próximas 4 semanas.
+                    </p>
+
+                    <app-grafico tipo="bar" [etiquetas]="etiquetasProyeccion" [series]="seriesProyeccion"></app-grafico>
+
+                    <h5 class="mt-3 mb-2">Detalle por día</h5>
+                    <div class="table-responsive">
+                      <table class="table table-sm table-hover mb-0">
+                        <thead>
+                          <tr><th>Día</th><th class="text-right">Proyectadas</th><th class="text-right">Ya agendadas</th><th class="text-right">Cupos</th><th style="width: 30%;">Ocupación esperada</th></tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let d of datos.proyeccion.dias" (click)="irADia(d.fecha)" style="cursor: pointer;" [class.table-warning]="d.excede" matTooltip="Ver la agenda de este día">
+                            <td>{{ d.dia }} {{ dm(d.fecha) }}</td>
+                            <td class="text-right">{{ d.proyectado | number:'1.0-1':'es-CL' }}</td>
+                            <td class="text-right">{{ d.agendadas }}</td>
+                            <td class="text-right">{{ d.capacidad || 'Sin horario' }}</td>
+                            <td>
+                              <div class="progress" style="height: 8px;" *ngIf="d.capacidad">
+                                <div class="progress-bar" [ngClass]="colorBarra(d.ocupacion, 100)" [style.width.%]="d.ocupacion > 100 ? 100 : d.ocupacion"></div>
+                              </div>
+                              <small class="text-muted" *ngIf="d.capacidad">{{ d.ocupacion }} %</small>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </ng-container>
+                </div>
+              </mat-tab>
+            </mat-tab-group>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
