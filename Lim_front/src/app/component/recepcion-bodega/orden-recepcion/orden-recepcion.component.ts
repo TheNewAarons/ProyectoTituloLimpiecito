@@ -176,8 +176,7 @@ export class OrdenRecepcionComponent implements OnInit {
         (r) => {
           this.enviando = false;
           this.resultado = r.data;
-          this.alertas.alertaExitoMsj('Recepción N° ' + r.data.recepcion_id + ' registrada',
-            'La orden quedó ' + this.etiqueta[r.data.estado] + '.');
+          this.mostrarResumenRecepcion(r.data); // AUT-027: detalle de lo que entró, se asignó y quedó en stock
           this.cargar();
         },
         (error: HttpErrorResponse) => {
@@ -185,6 +184,38 @@ export class OrdenRecepcionComponent implements OnInit {
           mostrarErrorBodega(error, this.alertas, this.loginService);
         }
       );
+    });
+  }
+
+  // Retroalimentación: por producto, cuánto entró, cuánto se fue a solicitudes pendientes (FIFO) y cuánto queda libre.
+  // Antes solo decía "registrada" y parecía que el stock no subía cuando todo se asignaba a solicitudes.
+  private mostrarResumenRecepcion(d: ResultadoRecepcion): void {
+    const esc = (s: string) => String(s).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
+    const nombre = (id: number) => {
+      const l = (this.orden && this.orden.items || []).find((x) => x.producto_id === id);
+      return esc(l ? l.producto : 'Producto #' + id);
+    };
+    const filas = (d.recibidos || []).map((r) => {
+      const asignadas = (d.asignaciones || []).filter((a) => a.producto_id === r.producto_id);
+      const aSolicitudes = asignadas.reduce((s, a) => s + Number(a.cantidad), 0);
+      const libre = Math.max(Number(r.cantidad) - aSolicitudes, 0);
+      return '<li><b>' + nombre(r.producto_id) + '</b>: entraron ' + r.cantidad +
+        (aSolicitudes ? ', ' + aSolicitudes + ' se asignaron a ' + asignadas.map((a) => 'la solicitud #' + a.solicitud_id + ' (' + a.cantidad + ')').join(', ') : '') +
+        (aSolicitudes > Number(r.cantidad) ? ' (se usó también stock que ya había)' : '') +
+        ' y <b>' + libre + ' de esta recepción quedan en stock</b>.</li>';
+    });
+    const rechazadas = (d.rechazos || []).reduce((s, x) => s + Number(x.cantidad), 0);
+    const listas = (d.solicitudes_listas || []).length;
+    swal.fire({
+      title: 'Recepción N° ' + d.recepcion_id + ' registrada',
+      html: 'La orden quedó <b>' + this.etiqueta[d.estado] + '</b>.' +
+        (filas.length ? '<ul class="text-left mt-3 mb-0">' + filas.join('') + '</ul>' : '') +
+        (rechazadas ? '<p class="mt-2 mb-0">' + rechazadas + ' unidad(es) rechazada(s): no entran al stock.</p>' : '') +
+        (listas ? '<p class="mt-2 mb-0">' + listas + ' solicitud(es) quedaron listas para entrega.</p>' : ''),
+      icon: 'success',
+      buttonsStyling: false,
+      customClass: { confirmButton: 'btn btn-success' },
+      confirmButtonText: 'Ok'
     });
   }
 
