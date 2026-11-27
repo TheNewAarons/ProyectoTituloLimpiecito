@@ -81,6 +81,14 @@ describe('liquidacion: L2 editarLiquidacion', () => {
     }));
   });
 
+  it('liquidacion cerrada (estado 0) rechaza con LIQUIDACION_CERRADA y no actualiza', async () => {
+    Liquidacion.findById.mockResolvedValue(liqInst({ id: 61, estado: 0 }));
+    await expect(logica.editarLiquidacionDB(61, { sueldo_base: 120, estado: 1 }, ctxToken))
+      .rejects.toMatchObject({ code: 'LIQUIDACION_CERRADA', httpStatus: 409 });
+    expect(Liquidacion.update).not.toHaveBeenCalled();
+    expect(auditar).not.toHaveBeenCalled();
+  });
+
   it('fila inexistente no audita', async () => {
     Liquidacion.findById.mockResolvedValue(null);
     Liquidacion.update.mockResolvedValue([0]);

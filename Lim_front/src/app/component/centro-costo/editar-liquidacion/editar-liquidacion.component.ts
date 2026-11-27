@@ -42,6 +42,12 @@ export class EditarLiquidacionComponent implements OnInit {
       (response:any) => {
         this.centroTrabajador = response.centroTrabajador;
         this.liquidacion = this.centroTrabajador.liquidacione;
+        // URL escrita a mano: una liquidación cerrada no se edita (el backend también lo rechaza).
+        if (this.liquidacion && this.liquidacion.estado != 1) {
+          this.alertaService.alertaErrorMsj('Liquidación cerrada', 'Una liquidación cerrada no se puede editar.');
+          this.volver();
+          return;
+        }
 
         this.obtenerTrabajador();
       },
@@ -89,7 +95,10 @@ export class EditarLiquidacionComponent implements OnInit {
           },
           (error) => {
             this.alertaService.cerrarAlerta()
-            console.log(error);
+            if (error.error && error.error.error && error.error.error.code === 'LIQUIDACION_CERRADA') {
+              this.alertaService.alertaErrorMsj('Liquidación cerrada', 'Una liquidación cerrada no se puede editar.');
+              this.volver();
+            }
           }
         );
     }
