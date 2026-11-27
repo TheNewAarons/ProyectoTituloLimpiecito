@@ -112,7 +112,7 @@ export class ProductosProveedorDialogoComponent implements OnInit {
 
   quitar(p: ProductoOc) {
     swal.fire({
-      title: '¿Quitar "' + p.nombre + '"?',
+      titleText: '¿Quitar "' + p.nombre + '"?', // titleText: el nombre se muestra como texto, no como HTML
       text: 'Quedará sin proveedor y "Generar Órdenes" no lo pedirá hasta asignarle otro.',
       icon: 'warning', showCancelButton: true, confirmButtonText: 'Quitar', cancelButtonText: 'Cancelar'
     }).then((r) => { if (r.value) this.asignar(p, null); });
