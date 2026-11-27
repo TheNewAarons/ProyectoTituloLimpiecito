@@ -39,12 +39,12 @@ const obtenerSaludInactivosDB = async() => {
 }
 
 const activarSaludDB = async(id) => {
-    let respuesta = await Salude.update({ estado: 0 }, { where: { id } })
+    let respuesta = await Salude.update({ estado: 1 }, { where: { id } })
     return respuesta
 }
 
-const desactivarSaludDB = async() => {
-    let respuesta = await Salude.update({ estado: 1 }, { where: { id } })
+const desactivarSaludDB = async(id) => {
+    let respuesta = await Salude.update({ estado: 0 }, { where: { id } })
     return respuesta
 }
 
