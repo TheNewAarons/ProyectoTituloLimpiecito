@@ -2,6 +2,7 @@ const logicaDB = require('./logica')
 
 const crearCliente = async (req, res) => {
     const cliente = JSON.parse(req.body.cliente);
+    if (require('../../../services/validacion/fechas-rango').responderSiInvalidas(res, 'cliente', cliente)) return // AUT-026
     const clienteData = {
         representante: cliente.representante,
         encargado_contrato: cliente.encargado_contrato,
@@ -34,6 +35,7 @@ const crearCliente = async (req, res) => {
 
 const editarCliente = async (req, res) => {
     const cliente = JSON.parse(req.body.cliente);
+    if (require('../../../services/validacion/fechas-rango').responderSiInvalidas(res, 'cliente', cliente)) return // AUT-026
     const clienteData = {
         representante: cliente.representante,
         encargado_contrato: cliente.encargado_contrato,
