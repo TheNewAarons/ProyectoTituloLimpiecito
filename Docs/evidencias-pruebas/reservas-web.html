@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reservas Limpiecito</title>
+<!--
+  RF-BI-05 (SCRUM-22) — Web de reservas que EMULA la app móvil (no operativa) para alimentar la analítica de demanda.
+  Página de prueba local, como pagina-prueba-web.html: se abre como archivo y consume la API pública
+  (/api/v1/public/reservas). Las reservas quedan "en proceso" con pago SIMULADO para que el Admin las apruebe
+  en App servicio > Reservas. Esta es la URL que puede ir en APP_RESERVAS_URL (botón "reservar" del catálogo).
+-->
+<style>
+  :root { --azul: #1e88e5; --azul-claro: #e3f2fd; --rosa: #e91e63; --texto: #263238; --gris: #78909c; --fondo: #f4f7fb; --borde: #dbe3ec; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Roboto", system-ui, sans-serif; color: var(--texto); background: var(--fondo); }
+  header { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .barra { max-width: 1000px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .marca { font-weight: 700; font-size: 20px; color: var(--azul); letter-spacing: .5px; }
+  .marca small { display: block; font-size: 11px; color: var(--gris); font-weight: 400; letter-spacing: 0; }
+  .hero { background: linear-gradient(120deg, #1565c0, #42a5f5); color: #fff; padding: 36px 16px; }
+  .hero div { max-width: 1000px; margin: 0 auto; }
+  .hero h1 { margin: 0 0 6px; font-size: 30px; } .hero p { margin: 0; opacity: .92; }
+  main { max-width: 1000px; margin: -20px auto 40px; padding: 0 16px; }
+  .panel { background: #fff; border-radius: 12px; box-shadow: 0 4px 18px rgba(0,0,0,.08); padding: 20px; }
+  .pasos { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+  .paso { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: #eceff1; color: var(--gris); }
+  .paso.activo { background: var(--azul); color: #fff; } .paso.hecho { background: var(--azul-claro); color: var(--azul); }
+  h2 { font-size: 18px; margin: 0 0 12px; }
+  .grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  .opcion { border: 2px solid var(--borde); border-radius: 10px; padding: 14px; background: #fff; text-align: left; cursor: pointer; font: inherit; color: inherit; min-height: 44px; }
+  .opcion:hover, .opcion:focus { border-color: var(--azul); outline: none; }
+  .opcion.sel { border-color: var(--azul); background: var(--azul-claro); }
+  .opcion[disabled] { opacity: .45; cursor: not-allowed; }
+  .opcion b { display: block; margin-bottom: 4px; } .opcion small { color: var(--gris); }
+  .precio { color: var(--azul); font-weight: 700; margin-top: 6px; }
+  label { display: block; font-size: 13px; color: var(--gris); margin: 10px 0 4px; }
+  input, select { width: 100%; padding: 10px; border: 1px solid var(--borde); border-radius: 8px; font: inherit; }
+  .fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 14px; }
+  .acciones { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  button.btn { border: 0; border-radius: 8px; padding: 11px 20px; font: inherit; font-weight: 600; cursor: pointer; min-height: 44px; }
+  .btn-primario { background: var(--azul); color: #fff; } .btn-secundario { background: #eceff1; color: var(--texto); }
+  .btn-primario[disabled] { opacity: .5; cursor: not-allowed; }
+  .aviso { padding: 10px 12px; border-radius: 8px; margin: 12px 0; font-size: 14px; }
+  .aviso.error { background: #ffebee; color: #b71c1c; } .aviso.info { background: var(--azul-claro); color: #0d47a1; }
+  .resumen { background: var(--fondo); border-radius: 8px; padding: 12px; line-height: 1.7; }
+  .ok { text-align: center; padding: 20px 0; } .ok .num { font-size: 32px; color: var(--azul); font-weight: 700; }
+  .config { margin-top: 18px; font-size: 12px; color: var(--gris); } .config input { width: 320px; max-width: 100%; padding: 4px 6px; font-size: 12px; }
+  .oculto { display: none; }
+  input.invalido, select.invalido { border-color: #e53935; background: #fff8f8; }
+  .msg-campo { display: block; min-height: 16px; font-size: 12px; color: #c62828; margin-top: 3px; }
+</style>
+</head>
+<body>
+<header><div class="barra">
+  <div class="marca">LIMPIECITO<small>Aseo y mantención · Arica</small></div>
+  <span style="color: var(--gris); font-size: 14px;">Reserva en línea</span>
+</div></header>
+<section class="hero"><div>
+  <h1>Agenda tu limpieza</h1>
+  <p>Elige el servicio, el día y el horario disponible. Te confirmamos por correo.</p>
+</div></section>
+
+<main><div class="panel">
+  <div class="pasos" id="pasos"></div>
+  <div id="error" class="aviso error oculto" role="alert"></div>
+
+  <section id="p1"><h2>1. ¿Qué necesitas?</h2><div class="grilla" id="categorias"></div></section>
+  <section id="p2" class="oculto"><h2>2. Elige el servicio</h2><div class="grilla" id="servicios"></div></section>
+  <section id="p3" class="oculto">
+    <h2>3. Día y horario</h2>
+    <div class="fila"><div><label for="fecha">Día del servicio</label><input type="date" id="fecha"></div></div>
+    <div id="sin-bloques" class="aviso info oculto"></div>
+    <div class="grilla" id="bloques" style="margin-top: 12px;"></div>
+  </section>
+  <section id="p4" class="oculto">
+    <h2>4. Tus datos</h2>
+    <form id="form" novalidate>
+      <div class="fila">
+        <div><label for="nombre">Nombre completo *</label><input id="nombre" maxlength="100" autocomplete="name" required></div>
+        <div><label for="correo">Correo electrónico *</label><input id="correo" type="email" maxlength="150" autocomplete="email" required></div>
+        <div><label for="celular">Celular *</label><input id="celular" inputmode="tel" maxlength="20" placeholder="+56 9 1234 5678" autocomplete="tel" required></div>
+        <div><label for="direccion">Dirección del servicio *</label><input id="direccion" maxlength="200" autocomplete="street-address" required></div>
+        <div><label for="recibe">¿Quién recibe? (opcional)</label><input id="recibe" maxlength="100"></div>
+        <div id="campo-cantidad" class="oculto"><label for="cantidad">Cantidad</label><input id="cantidad" type="number" min="1" max="10" value="1" inputmode="numeric"></div>
+      </div>
+      <div id="campos-vehiculo" class="oculto">
+        <h2 style="margin-top: 16px;">Datos del vehículo</h2>
+        <div class="fila">
+          <div><label for="v-tipo">Tipo *</label><select id="v-tipo"><option>Automóvil</option><option>Camioneta</option><option>SUV</option><option>Furgón</option></select></div>
+          <div><label for="v-marca">Marca *</label><input id="v-marca" maxlength="50"></div>
+          <div><label for="v-modelo">Modelo *</label><input id="v-modelo" maxlength="50"></div>
+          <div><label for="v-patente">Patente *</label><input id="v-patente" maxlength="6" placeholder="BCDF12" autocapitalize="characters" spellcheck="false"></div>
+        </div>
+      </div>
+    </form>
+  </section>
+  <section id="p5" class="oculto"><h2>5. Confirma tu reserva</h2><div class="resumen" id="resumen"></div>
+    <div class="aviso info">No se cobra en línea: es una reserva de prueba (pago simulado). Quedará <b>en proceso</b> hasta que la empresa la confirme.</div>
+  </section>
+  <section id="p6" class="oculto"><div class="ok"><div>¡Reserva recibida!</div><div class="num" id="orden"></div><p id="detalle-ok"></p>
+    <button class="btn btn-primario" type="button" onclick="location.reload()">Hacer otra reserva</button></div></section>
+
+  <div class="acciones" id="acciones">
+    <button class="btn btn-secundario" type="button" id="atras">Atrás</button>
+    <button class="btn btn-primario" type="button" id="siguiente">Siguiente</button>
+  </div>
+  <div class="config"><label>Servidor (API): <input id="base" value="http://localhost:3000/web-limpiecito"></label></div>
+</div></main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
+const clp = (n) => n == null ? 'Consultar' : '$' + Number(n).toLocaleString('es-CL');
+const PASOS = ['Servicio', 'Detalle', 'Horario', 'Datos', 'Confirmar'];
+const ymd = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const estado = { paso: 1, categorias: [], categoria: null, servicio: null, fecha: null, bloque: null };
+
+async function api(ruta, opciones) {
+  const r = await fetch($('base').value + '/api/v1/public/reservas' + ruta, Object.assign({ cache: 'no-store' }, opciones));
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.ok) {
+    const e = (j && j.error) || {};
+    const campos = e.details && typeof e.details === 'object' ? Object.keys(e.details).map((k) => k + ': ' + e.details[k]).join(' · ') : '';
+    throw new Error((e.message || 'No se pudo completar la solicitud (' + r.status + ').') + (campos && e.code === 'CAMPO_INVALIDO' ? ' — ' + campos : ''));
+  }
+  return j.data;
+}
+function error(msg) { $('error').textContent = msg || ''; $('error').classList.toggle('oculto', !msg); }
+
+function pintarPasos() {
+  $('pasos').innerHTML = PASOS.map((p, i) => `<span class="paso ${i + 1 === estado.paso ? 'activo' : i + 1 < estado.paso ? 'hecho' : ''}">${i + 1}. ${p}</span>`).join('');
+  for (let i = 1; i <= 6; i++) $('p' + i).classList.toggle('oculto', i !== estado.paso);
+  $('acciones').classList.toggle('oculto', estado.paso === 6);
+  $('atras').style.visibility = estado.paso > 1 ? 'visible' : 'hidden';
+  $('siguiente').textContent = estado.paso === 5 ? 'Confirmar reserva' : 'Siguiente';
+  $('siguiente').disabled = !puedeAvanzar();
+}
+function puedeAvanzar() {
+  return (estado.paso === 1 && estado.categoria) || (estado.paso === 2 && estado.servicio) || (estado.paso === 3 && estado.bloque) || estado.paso === 4 || estado.paso === 5;
+}
+function opciones(el, items, actual, plantilla, elegir) {
+  el.innerHTML = items.map((x, i) => `<button type="button" class="opcion ${actual === x ? 'sel' : ''}" data-i="${i}" ${x.libres === 0 ? 'disabled' : ''}>${plantilla(x)}</button>`).join('');
+  el.querySelectorAll('button').forEach((b) => b.onclick = () => { elegir(items[Number(b.dataset.i)]); pintarPasos(); });
+}
+
+async function cargarCatalogo() {
+  try {
+    estado.categorias = await api('/catalogo');
+    cargarCatalogoRender();
+    if (!estado.categorias.length) error('Por ahora no hay servicios disponibles para reservar.');
+  } catch (e) { error(e.message + ' ¿Está encendido el backend?'); }
+  pintarPasos();
+}
+function cargarCatalogoRender() {
+  opciones($('categorias'), estado.categorias, estado.categoria, (c) => `<b>${esc(c.nombre)}</b><small>${c.servicios.length} servicio(s)</small>`, (c) => {
+    estado.categoria = c; estado.servicio = null; estado.bloque = null; cargarCatalogoRender();
+  });
+  if (!estado.categoria) return;
+  opciones($('servicios'), estado.categoria.servicios, estado.servicio, (s) => `<b>${esc(s.nombre)}</b><small>${esc(s.descripcion || '')}</small><div class="precio">${clp(s.precio)}</div>`, (s) => {
+    estado.servicio = s; cargarCatalogoRender();
+  });
+}
+
+async function cargarBloques() {
+  estado.bloque = null; $('bloques').innerHTML = ''; $('sin-bloques').classList.add('oculto'); error('');
+  if (!estado.fecha) { pintarPasos(); return; }
+  try {
+    const d = await api('/disponibilidad?categoria_id=' + estado.categoria.id + '&fecha=' + estado.fecha);
+    if (!d.bloques.length) { $('sin-bloques').textContent = 'No atendemos ese día. Prueba con otra fecha.'; $('sin-bloques').classList.remove('oculto'); }
+    const pintar = () => opciones($('bloques'), d.bloques, estado.bloque, (b) => `<b>${esc(b.inicio)} – ${esc(b.fin)} hrs</b><small>${b.libres ? b.libres + ' cupo(s) disponible(s)' : 'Sin cupos'}</small>`, (b) => { estado.bloque = b; pintar(); });
+    pintar();
+  } catch (e) { error(e.message); }
+  pintarPasos();
+}
+
+function datosFormulario() {
+  const v = (id) => $(id).value.trim();
+  const cuerpo = {
+    servicio_id: estado.servicio.id, fecha: estado.fecha, bloque_id: estado.bloque.id,
+    cliente: { nombre: v('nombre'), correo: v('correo'), celular: v('celular'), direccion: v('direccion'), recibe: v('recibe') || undefined }
+  };
+  if (estado.categoria.pide_cantidad) cuerpo.cantidad = Number($('cantidad').value);
+  if (estado.categoria.pide_vehiculo) cuerpo.vehiculo = { tipo: v('v-tipo'), marca: v('v-marca'), modelo: v('v-modelo'), patente: v('v-patente').toUpperCase() };
+  return cuerpo;
+}
+// Validación al escribir (misma estrategia que el ERP: se borra lo que no corresponde y el error se ve bajo el campo).
+// El backend valida las mismas reglas: esto es ayuda al usuario, no la protección.
+const LETRAS = 'A-Za-zÁÉÍÓÚÜÑáéíóúüñ';
+const REGLAS = {
+  nombre:    { quitar: new RegExp("[^" + LETRAS + " '-]", 'g'), validar: (v) => !v ? 'Ingresa tu nombre.' : v.replace(new RegExp('[^' + LETRAS + ']', 'g'), '').length < 2 ? 'Escribe tu nombre (solo letras).' : '' },
+  correo:    { validar: (v) => !v ? 'Ingresa tu correo.' : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? 'El correo no tiene un formato válido (ej. nombre@correo.cl).' : '' },
+  celular:   { quitar: /[^\d+\s-]/g, validar: (v) => !v ? 'Ingresa tu celular.' : !/^\+?\d{8,15}$/.test(v.replace(/[\s-]/g, '')) ? 'Debe tener entre 8 y 15 dígitos.' : '' },
+  direccion: { validar: (v) => !v ? 'Ingresa la dirección del servicio.' : (v.length < 5 || !new RegExp('[' + LETRAS + ']{2}').test(v)) ? 'Incluye la calle y el número (ej. Los Rosales 2097).' : '' },
+  recibe:    { quitar: new RegExp("[^" + LETRAS + " '-]", 'g'), validar: (v) => v && v.replace(new RegExp('[^' + LETRAS + ']', 'g'), '').length < 2 ? 'Solo letras.' : '' },
+  cantidad:  { quitar: /\D/g, validar: (v) => (Number(v) >= 1 && Number(v) <= 10) ? '' : 'Entre 1 y 10.', solo: () => estado.categoria && estado.categoria.pide_cantidad },
+  'v-marca': { quitar: /[^A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ -]/g, validar: (v) => v ? '' : 'Ingresa la marca.', solo: () => estado.categoria && estado.categoria.pide_vehiculo },
+  'v-modelo': { quitar: /[^A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ -]/g, validar: (v) => v ? '' : 'Ingresa el modelo.', solo: () => estado.categoria && estado.categoria.pide_vehiculo },
+  // Patente chilena de auto: 6 caracteres, BCDF12 (actual) o AB1234 (antigua). Los separadores se quitan al escribir.
+  'v-patente': { quitar: /[^A-Za-z0-9]/g, mayus: true, validar: (v) => !v ? 'Ingresa la patente.' : v.length !== 6 ? 'La patente tiene 6 caracteres (ej. BCDF12 o AB1234).' : !/^([A-Z]{4}\d{2}|[A-Z]{2}\d{4})$/.test(v) ? 'Formato no válido: 4 letras y 2 números (BCDF12) o 2 letras y 4 números (AB1234).' : '', solo: () => estado.categoria && estado.categoria.pide_vehiculo }
+};
+function mensajeCampo(id) {
+  let m = $(id).parentNode.querySelector('.msg-campo');
+  if (!m) { m = document.createElement('small'); m.className = 'msg-campo'; m.id = 'msg-' + id; $(id).parentNode.appendChild(m); $(id).setAttribute('aria-describedby', m.id); }
+  return m;
+}
+function revisarCampo(id) {
+  const r = REGLAS[id];
+  if (r.solo && !r.solo()) return '';
+  const msg = r.validar($(id).value.trim());
+  mensajeCampo(id).textContent = msg;
+  $(id).classList.toggle('invalido', !!msg);
+  $(id).setAttribute('aria-invalid', msg ? 'true' : 'false');
+  return msg;
+}
+Object.keys(REGLAS).forEach((id) => {
+  const el = $(id); const r = REGLAS[id];
+  el.addEventListener('input', () => {
+    if (r.quitar) { const limpio = el.value.replace(r.quitar, ''); if (limpio !== el.value) el.value = limpio; }
+    if (r.mayus) el.value = el.value.toUpperCase();
+    if (el.dataset.tocado) revisarCampo(id); // no regaña antes de que termine de escribir por primera vez
+  });
+  el.addEventListener('blur', () => { el.dataset.tocado = '1'; revisarCampo(id); });
+});
+function validarDatos() {
+  const errores = Object.keys(REGLAS).map((id) => { $(id).dataset.tocado = '1'; return revisarCampo(id); }).filter((m) => m);
+  return errores.length ? ['los campos marcados en rojo'] : [];
+}
+function pintarResumen(c) {
+  const total = (estado.servicio.precio || 0) * (c.cantidad || 1);
+  $('resumen').innerHTML = `<b>${esc(estado.servicio.nombre)}</b> (${esc(estado.categoria.nombre)})<br>
+    ${esc(estado.fecha.split('-').reverse().join('/'))}, ${esc(estado.bloque.inicio)} – ${esc(estado.bloque.fin)} hrs<br>
+    ${c.cantidad ? 'Cantidad: ' + esc(c.cantidad) + '<br>' : ''}Total referencial: <b>${clp(total)}</b><br>
+    ${esc(c.cliente.nombre)} · ${esc(c.cliente.correo)} · ${esc(c.cliente.celular)}<br>${esc(c.cliente.direccion)}
+    ${c.vehiculo ? '<br>Vehículo: ' + esc(c.vehiculo.tipo + ' ' + c.vehiculo.marca + ' ' + c.vehiculo.modelo + ' · ' + c.vehiculo.patente) : ''}`;
+}
+
+$('siguiente').onclick = async () => {
+  error('');
+  if (estado.paso === 2) {
+    $('campo-cantidad').classList.toggle('oculto', !estado.categoria.pide_cantidad);
+    $('campos-vehiculo').classList.toggle('oculto', !estado.categoria.pide_vehiculo);
+  }
+  if (estado.paso === 4) {
+    const faltan = validarDatos();
+    if (faltan.length) { error('Revisa: ' + faltan.join(', ') + '.'); return; }
+    pintarResumen(datosFormulario());
+  }
+  if (estado.paso === 5) {
+    $('siguiente').disabled = true;
+    try {
+      const r = await api('', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datosFormulario()) });
+      $('orden').textContent = 'N° ' + r.orden;
+      $('detalle-ok').textContent = r.servicio + ' · ' + r.fecha.split('-').reverse().join('/') + ' · ' + r.bloque + ' hrs. Te enviamos un correo con el detalle.';
+      estado.paso = 6; pintarPasos();
+    } catch (e) {
+      error(e.message);
+      if (/cupo/i.test(e.message)) { estado.paso = 3; await cargarBloques(); }
+      pintarPasos();
+    }
+    return;
+  }
+  estado.paso += 1;
+  pintarPasos();
+};
+$('atras').onclick = () => { error(''); estado.paso = Math.max(1, estado.paso - 1); pintarPasos(); };
+$('fecha').onchange = () => { estado.fecha = $('fecha').value || null; cargarBloques(); };
+
+const manana = new Date(); manana.setDate(manana.getDate() + 1);
+const limite = new Date(); limite.setDate(limite.getDate() + 60);
+$('fecha').min = ymd(manana); $('fecha').max = ymd(limite);
+cargarCatalogo();
+</script>
+</body>
+</html>

@@ -9,6 +9,9 @@ import { formatDate } from '@angular/common';
 
 declare const $: any;
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
+import { HttpClient } from '@angular/common/http';
+import { LoginService } from 'src/app/services/login/login.service';
+import { ejecutarAccionReserva } from '../acciones-reserva';
 
 @Component({
   selector: 'app-ver-reserva',
@@ -24,7 +27,8 @@ export class VerReservaComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,private reservaService: ReservaService,
     private observacionService: ObservacionService,private location: Location,
-    private alertaService:AlertasService
+    private alertaService:AlertasService,
+    private http: HttpClient, private loginService: LoginService // AUT-032
   ) {}
 
   ngOnInit() {
@@ -56,52 +60,27 @@ export class VerReservaComponent implements OnInit {
     this.location.back();
   }
 
+  // AUT-032 (RF-BI-05): aprobar / rechazar (con motivo) / finalizar con confirmación y resumen, errores en pantalla y
+  // /api/v1/reservas (solo Admin, valida el estado, auditado, correo al cliente). Mismo flujo que los botones de las listas.
   //APROBAR RESERVA
   aprobar(id) {
-    this.reservaService.aprobarReserva(id).subscribe(
-      (response: any) => {
-        if (response.filas > 0) {
-          this.loading = !this.loading;
-          this.alertaService.alertaExitoMsj('Reserva Aprobado Correctamante')
-          this.obtenerReserva(this.idReserva);
-        }
-      },
-      (error) => {
-        console.log(error);
-      }
-    );
+    ejecutarAccionReserva(this.http, this.loginService, this.alertaService, 'aprobar', this.reserva, () => this.recargarTrasAccion());
   }
 
   //RECHAZAR RESERVA
   rechazar(id) {
-    this.reservaService.rechazarReserva(id).subscribe(
-      (response: any) => {
-        if (response.filas > 0) {
-          this.loading = !this.loading;
-          this.alertaService.alertaExitoMsj('Reserva Rechazada Correctamante')
-          this.obtenerReserva(this.idReserva);
-        }
-      },
-      (error) => {
-        console.log(error);
-      }
-    );
+    ejecutarAccionReserva(this.http, this.loginService, this.alertaService, 'rechazar', this.reserva, () => this.recargarTrasAccion());
   }
 
   //FINALIZAR RESERVA
   finalizar(id) {
-    this.reservaService.finalizarReserva(id).subscribe(
-      (response: any) => {
-        if (response.filas > 0) {
-          this.loading = !this.loading;
-          this.alertaService.alertaExitoMsj('Reserva Finalizada Correctamante')
-          this.obtenerReserva(this.idReserva);
-        }
-      },
-      (error) => {
-        console.log(error);
-      }
-    );
+    ejecutarAccionReserva(this.http, this.loginService, this.alertaService, 'finalizar', this.reserva, () => this.recargarTrasAccion());
+  }
+
+  // obtenerReserva alterna `loading`: se activa antes de recargar, igual que hacía el flujo anterior.
+  private recargarTrasAccion() {
+    this.loading = true;
+    this.obtenerReserva(this.idReserva);
   }
 
   //CREAR OBSERVACION

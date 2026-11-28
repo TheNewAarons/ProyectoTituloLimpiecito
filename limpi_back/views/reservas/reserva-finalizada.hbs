@@ -1,0 +1,130 @@
+<!-- RF-BI-05 — Reserva FINALIZADA (servicio realizado). Cierra el ciclo con el cliente y sirve de comprobante.
+     Mismo diseño que reserva-cliente.hbs. Autoescape: nunca usar triple llaves. -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>¡Servicio realizado! Reserva N° {{orden}}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#eef3f8;font-family:Arial,Helvetica,sans-serif;color:#2f3a45;">
+  <span style="display:none;max-height:0;overflow:hidden;">¡Gracias, {{nombre}}! Tu servicio de {{servicio}} quedó realizado. Reserva N° {{orden}}.</span>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef3f8;">
+    <tr>
+      <td align="center" style="padding:28px 12px;">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #dfe6ee;">
+
+          <tr>
+            <td align="center" style="padding:26px 24px 18px 24px;">
+              <img src="cid:logo-limpiecito" width="170" alt="Aseo Limpiecito" style="display:block;width:170px;max-width:100%;height:auto;border:0;">
+            </td>
+          </tr>
+          <tr>
+            <td style="height:4px;line-height:4px;font-size:0;background-color:#00a03a;">&nbsp;</td>
+          </tr>
+
+          <!-- Encabezado -->
+          <tr>
+            <td align="center" style="background-color:#0072b4;padding:28px 24px 26px 24px;color:#ffffff;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                <tr>
+                  <td align="center" valign="middle" width="56" height="56" style="width:56px;height:56px;border-radius:28px;background-color:#ffffff;color:#0072b4;font-size:30px;font-weight:bold;line-height:56px;">&#9733;</td>
+                </tr>
+              </table>
+              <div style="padding-top:14px;font-size:22px;font-weight:bold;color:#ffffff;">¡Servicio realizado!</div>
+              <div style="padding-top:6px;font-size:14px;color:#d6e9f5;">Gracias {{nombre}} por preferir Aseo Limpiecito.</div>
+              <div style="padding-top:14px;">
+                <span style="display:inline-block;padding:6px 14px;border-radius:999px;background-color:#ffffff;color:#0072b4;font-size:13px;font-weight:bold;letter-spacing:0.5px;">RESERVA N° {{orden}}</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Servicio, día y hora -->
+          <tr>
+            <td style="padding:26px 24px 6px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #dfe6ee;border-radius:10px;">
+                <tr>
+                  <td style="padding:16px 18px;border-bottom:1px solid #eef2f6;">
+                    <div style="font-size:11px;font-weight:bold;color:#00a03a;text-transform:uppercase;letter-spacing:0.6px;">Servicio</div>
+                    <div style="padding-top:4px;font-size:17px;font-weight:bold;color:#2f3a45;">{{servicio}}</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="60%" valign="top" style="padding:14px 18px;border-right:1px solid #eef2f6;">
+                          <div style="font-size:11px;font-weight:bold;color:#7b8794;text-transform:uppercase;letter-spacing:0.6px;">&#128197; Día</div>
+                          <div style="padding-top:4px;font-size:15px;color:#2f3a45;">{{fechaTexto}}</div>
+                        </td>
+                        <td width="40%" valign="top" style="padding:14px 18px;">
+                          <div style="font-size:11px;font-weight:bold;color:#7b8794;text-transform:uppercase;letter-spacing:0.6px;">&#128337; Horario</div>
+                          <div style="padding-top:4px;font-size:15px;color:#2f3a45;">{{horario}} hrs</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Detalle -->
+          <tr>
+            <td style="padding:14px 24px 6px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px;line-height:20px;">
+                {{#if direccion}}
+                <tr>
+                  <td style="padding:7px 0;color:#7b8794;width:40%;">Dirección</td>
+                  <td style="padding:7px 0;color:#2f3a45;text-align:right;">{{direccion}}</td>
+                </tr>
+                {{/if}}
+                {{#if vehiculo}}
+                <tr>
+                  <td style="padding:7px 0;color:#7b8794;border-top:1px solid #eef2f6;">Vehículo</td>
+                  <td style="padding:7px 0;color:#2f3a45;text-align:right;border-top:1px solid #eef2f6;">{{vehiculo}}</td>
+                </tr>
+                {{/if}}
+                <tr>
+                  <td style="padding:7px 0;color:#7b8794;border-top:1px solid #eef2f6;">Forma de pago</td>
+                  <td style="padding:7px 0;color:#2f3a45;text-align:right;border-top:1px solid #eef2f6;">{{pago}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;color:#2f3a45;font-weight:bold;border-top:2px solid #dfe6ee;">{{#if pagado}}Total pagado{{else}}Total a pagar{{/if}}</td>
+                  <td style="padding:10px 0;color:#0072b4;font-weight:bold;font-size:17px;text-align:right;border-top:2px solid #dfe6ee;">{{total}}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Gracias -->
+          <tr>
+            <td style="padding:18px 24px 6px 24px;font-size:14px;line-height:21px;">
+              <p style="margin:0;">Esperamos que todo haya quedado <strong>limpiecito</strong>. Si algo no quedó como esperabas, cuéntanos y lo revisamos.</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:14px 24px 26px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;line-height:19px;">
+                <tr>
+                  <td style="padding:12px 14px;background-color:#f4f8fb;border-left:3px solid #0072b4;border-radius:4px;">
+                    <strong>¿Algún comentario?</strong> Escríbenos a <span style="color:#0072b4;">contacto@aseolimpiecito.cl</span> indicando tu número de reserva ({{orden}}).
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="background-color:#f4f6f8;padding:16px 24px;font-size:11px;line-height:16px;color:#9aa5b1;border-top:1px solid #e3e7eb;">
+              Aseo Limpiecito · Arica<br>
+              Correo generado automáticamente. No respondas a este correo.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

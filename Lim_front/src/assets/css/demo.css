@@ -96,6 +96,19 @@
 .table .td-actions app-historial + .btn {
     margin-left: 6px;
 }
+/* RF-BI-05: botones Aprobar / Rechazar / Finalizar de las reservas (van dentro de su componente) */
+.table .td-actions .btn + app-acciones-reserva .btn:first-child,
+.table .td-actions app-acciones-reserva .btn + .btn {
+    margin-left: 6px;
+}
+/* RF-BI-05: el enlace "Entrar" de las tarjetas de Reservas usaba el violeta por defecto del tema; rosa del sistema. */
+app-reservas .card-stats .card-footer a {
+    color: #e91e63;
+    font-weight: 500;
+}
+app-reservas .card-stats .card-footer a:hover {
+    color: #c2185b;
+}
 /* Retroalimentación: los enlaces del pie de los indicadores de Inicio Bodega usaban el violeta por defecto del tema;
    se usa el rosa del sistema (mismo que los encabezados y el paginador). */
 app-dashboard-bodega .card-footer a {

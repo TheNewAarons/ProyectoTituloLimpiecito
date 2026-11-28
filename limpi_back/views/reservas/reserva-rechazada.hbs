@@ -1,0 +1,116 @@
+<!-- RF-BI-05 — Reserva RECHAZADA (con el motivo del Admin). Antes el cliente nunca se enteraba.
+     Mismo diseño que reserva-cliente.hbs. Autoescape: nunca usar triple llaves. -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>No pudimos confirmar tu reserva N° {{orden}}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#eef3f8;font-family:Arial,Helvetica,sans-serif;color:#2f3a45;">
+  <span style="display:none;max-height:0;overflow:hidden;">{{nombre}}, no pudimos confirmar tu reserva de {{servicio}} del {{fechaTexto}}. Reserva N° {{orden}}.</span>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef3f8;">
+    <tr>
+      <td align="center" style="padding:28px 12px;">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #dfe6ee;">
+
+          <tr>
+            <td align="center" style="padding:26px 24px 18px 24px;">
+              <img src="cid:logo-limpiecito" width="170" alt="Aseo Limpiecito" style="display:block;width:170px;max-width:100%;height:auto;border:0;">
+            </td>
+          </tr>
+          <tr>
+            <td style="height:4px;line-height:4px;font-size:0;background-color:#00a03a;">&nbsp;</td>
+          </tr>
+
+          <!-- Encabezado -->
+          <tr>
+            <td align="center" style="background-color:#5f6b7a;padding:28px 24px 26px 24px;color:#ffffff;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                <tr>
+                  <td align="center" valign="middle" width="56" height="56" style="width:56px;height:56px;border-radius:28px;background-color:#ffffff;color:#5f6b7a;font-size:30px;font-weight:bold;line-height:56px;">!</td>
+                </tr>
+              </table>
+              <div style="padding-top:14px;font-size:22px;font-weight:bold;color:#ffffff;">No pudimos confirmar tu reserva</div>
+              <div style="padding-top:6px;font-size:14px;color:#e4e8ec;">Hola {{nombre}}, lamentamos no poder atenderte en ese horario.</div>
+              <div style="padding-top:14px;">
+                <span style="display:inline-block;padding:6px 14px;border-radius:999px;background-color:#ffffff;color:#5f6b7a;font-size:13px;font-weight:bold;letter-spacing:0.5px;">RESERVA N° {{orden}}</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Servicio, día y hora -->
+          <tr>
+            <td style="padding:26px 24px 6px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #dfe6ee;border-radius:10px;">
+                <tr>
+                  <td style="padding:16px 18px;border-bottom:1px solid #eef2f6;">
+                    <div style="font-size:11px;font-weight:bold;color:#00a03a;text-transform:uppercase;letter-spacing:0.6px;">Servicio</div>
+                    <div style="padding-top:4px;font-size:17px;font-weight:bold;color:#2f3a45;">{{servicio}}</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="60%" valign="top" style="padding:14px 18px;border-right:1px solid #eef2f6;">
+                          <div style="font-size:11px;font-weight:bold;color:#7b8794;text-transform:uppercase;letter-spacing:0.6px;">&#128197; Día</div>
+                          <div style="padding-top:4px;font-size:15px;color:#2f3a45;">{{fechaTexto}}</div>
+                        </td>
+                        <td width="40%" valign="top" style="padding:14px 18px;">
+                          <div style="font-size:11px;font-weight:bold;color:#7b8794;text-transform:uppercase;letter-spacing:0.6px;">&#128337; Horario</div>
+                          <div style="padding-top:4px;font-size:15px;color:#2f3a45;">{{horario}} hrs</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Motivo -->
+          <tr>
+            <td style="padding:18px 24px 6px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px;line-height:20px;">
+                <tr>
+                  <td style="padding:12px 14px;background-color:#fff4e5;border-left:3px solid #f0a020;border-radius:4px;">
+                    <div style="font-size:11px;font-weight:bold;color:#b26a00;text-transform:uppercase;letter-spacing:0.6px;">Motivo</div>
+                    <div style="padding-top:4px;">{{motivo}}</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Siguiente paso -->
+          <tr>
+            <td style="padding:18px 24px 6px 24px;font-size:14px;line-height:21px;">
+              <p style="margin:0;">No se realizó ningún cobro. Puedes <strong>reservar otro día u horario</strong> cuando quieras; con gusto te atenderemos.</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:14px 24px 26px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;line-height:19px;">
+                <tr>
+                  <td style="padding:12px 14px;background-color:#f4f8fb;border-left:3px solid #0072b4;border-radius:4px;">
+                    <strong>¿Tienes dudas?</strong> Escríbenos a <span style="color:#0072b4;">contacto@aseolimpiecito.cl</span> indicando tu número de reserva ({{orden}}).
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="background-color:#f4f6f8;padding:16px 24px;font-size:11px;line-height:16px;color:#9aa5b1;border-top:1px solid #e3e7eb;">
+              Aseo Limpiecito · Arica<br>
+              Correo generado automáticamente. No respondas a este correo.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
