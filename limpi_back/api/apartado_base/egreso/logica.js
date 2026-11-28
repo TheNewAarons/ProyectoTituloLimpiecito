@@ -59,7 +59,7 @@ const eliminarEgresoDB = async(id, contexto) => {
             accion: 'ANULAR',
             antes,
             despues: egreso,
-            motivo: 'ANULACION_EGRESO_LEGACY',
+            motivo: ctx.motivo || 'ANULACION_EGRESO_LEGACY', // AUT-030: el motivo del usuario (anular con código)
             ip: ctx.ip
         })
         return 1

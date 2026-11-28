@@ -17,12 +17,21 @@ router.get('/facturas/resumen', soloAdmin, asyncHandler(controlador.resumen));
 
 router.get('/ingresos', soloAdmin, asyncHandler(controlador.listarIngresos));
 router.patch('/ingresos/:id/pagar', soloAdmin, asyncHandler(controlador.pagarIngreso));
-router.patch('/ingresos/:id/anular', soloAdmin, asyncHandler(controlador.anularIngreso));
+router.patch('/ingresos/:id/anular', soloAdmin, require('./anular-codigo').rutaReemplazada('ingresos')); // AUT-029: anular pide código
 router.patch('/ingresos/:id/revertir', soloAdmin, asyncHandler(controlador.revertirIngreso));
 
 router.get('/egresos', soloAdmin, asyncHandler(controlador.listarEgresos));
 router.patch('/egresos/:id/pagar', soloAdmin, asyncHandler(controlador.pagarEgreso));
-router.patch('/egresos/:id/anular', soloAdmin, asyncHandler(controlador.anularEgreso));
+router.patch('/egresos/:id/anular', soloAdmin, require('./anular-codigo').rutaReemplazada('egresos')); // AUT-029: anular pide código
 router.patch('/egresos/:id/revertir', soloAdmin, asyncHandler(controlador.revertirEgreso));
+
+// RNF-SEC-02 (retroalimentación): anular pide motivo y código por correo (ver anular-codigo.js).
+const anularCodigo = require('./anular-codigo');
+router.get('/ingresos/:id/anulable', soloAdmin, asyncHandler(anularCodigo.verificar('ingresos')));
+router.get('/egresos/:id/anulable', soloAdmin, asyncHandler(anularCodigo.verificar('egresos')));
+router.post('/ingresos/:id/anular/codigo', soloAdmin, asyncHandler(anularCodigo.pedirCodigo('ingresos')));
+router.post('/ingresos/:id/anular', soloAdmin, asyncHandler(anularCodigo.anular('ingresos')));
+router.post('/egresos/:id/anular/codigo', soloAdmin, asyncHandler(anularCodigo.pedirCodigo('egresos')));
+router.post('/egresos/:id/anular', soloAdmin, asyncHandler(anularCodigo.anular('egresos')));
 
 module.exports = router;

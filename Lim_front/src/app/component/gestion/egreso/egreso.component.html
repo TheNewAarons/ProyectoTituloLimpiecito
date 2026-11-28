@@ -127,10 +127,12 @@
                         </button>
                       </ng-container>
                       <ng-template #accionesLegacy>
+                        <!-- AUT-030: "Eliminar" en realidad anulaba (estado -1): ahora es Anular con código, solo Admin -->
                         <button
+                          *ngIf="esAdmin"
                           mat-raised-button
                           type="button"
-                          title="Eliminar Egreso"
+                          title="Anular Egreso"
                           class="btn btn-danger btn-round"
                           (click)="eliminarEgreso(egreso.id)"
                         >

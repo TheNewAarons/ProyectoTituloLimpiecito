@@ -7,6 +7,7 @@ import { IngresoFactura, ResumenFacturas } from '../../../model/factura-pago';
 import { EgresoService } from '../../../services/egreso/egreso.service';
 import { LoginService } from '../../../services/login/login.service';
 import { AlertasService } from '../../../services/alertas/alertas.service';
+import { anularConCodigo } from '../anular-con-codigo';
 
 // RF-FAC-01: ingresos de centros de costo (cc_ingresos) con su estado de pago. Mismo patrón que Egresos.
 @Component({
@@ -105,9 +106,14 @@ export class IngresoComponent implements OnInit {
     });
   }
 
+  // AUT-029 (RNF-SEC-02): anular es irreversible -> motivo y código por correo.
   anularIngreso(ingreso: IngresoFactura): void {
-    this.pedirMotivo('Anular ingreso', 'Ingresa el motivo de la anulación.', 'Si, Anular!').then(motivo => {
-      if (motivo) { this.cambiarEstado(ingreso, 'anular', { motivo }, 'Ingreso anulado correctamente.'); }
+    anularConCodigo({
+      tipo: 'ingresos', id: ingreso.id, titulo: 'Anular ingreso',
+      advertencia: 'La anulación no se puede deshacer.',
+      exito: 'Ingreso anulado correctamente.',
+      servicio: this.egresoService, alertas: this.alertaService,
+      alTerminar: () => { this.obtenerIngresos(); this.obtenerResumenFacturas(); }
     });
   }
 
