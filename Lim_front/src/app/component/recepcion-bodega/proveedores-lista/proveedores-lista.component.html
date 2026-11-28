@@ -116,6 +116,7 @@
                       <span [class]="p.activo ? 'badge badge-success' : 'badge badge-default'">{{ p.activo ? 'Activo' : 'Inactivo' }}</span>
                     </td>
                     <td class="td-actions text-right">
+                      <app-productos-proveedor [proveedor]="p"></app-productos-proveedor>
                       <button mat-raised-button type="button" matTooltip="Editar" class="btn btn-warning btn-round" (click)="editar(p)">
                         <i class="material-icons">edit</i>
                       </button>

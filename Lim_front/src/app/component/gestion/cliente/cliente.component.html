@@ -71,7 +71,7 @@
                         <td>{{ clienteActivo.encargado_contrato }}</td>
                         <td>{{ clienteActivo.numero_contacto }}</td>
                         <td>
-                          {{ clienteActivo.fecha_facturacion | date: 'dd/MM/yyyy ' }}
+                          {{ clienteActivo.fecha_facturacion | date: 'dd/MM/yyyy ':'UTC' }}
                         </td>
                         <td class="td-actions text-right">
                           <button mat-raised-button type="button" matTooltip="Gestion PEV" class="btn btn-info btn-round"
@@ -157,7 +157,7 @@
                         <td>{{ clienteInactivo.encargado_contrato }}</td>
                         <td>{{ clienteInactivo.numero_contacto }}</td>
                         <td>
-                          {{ clienteInactivo.fecha_facturacion | date: 'dd/MM/yyyy ' }}
+                          {{ clienteInactivo.fecha_facturacion | date: 'dd/MM/yyyy ':'UTC' }}
                         </td>
                         <td class="td-actions text-right">
                           <button
@@ -249,7 +249,9 @@
               #fecha_facturacion="ngModel"
               [(ngModel)]="cliente.fecha_facturacion"
               type="date"
+              appFechaRango="fecha_facturacion"
             />
+            <mat-error *ngIf="fecha_facturacion.errors?.fechaRango">{{ fecha_facturacion.errors.fechaRango }}</mat-error>
           </mat-form-field>
           <mat-form-field class="example-full-width">
             <input
@@ -259,7 +261,9 @@
               #fecha_inicio_contrato="ngModel"
               [(ngModel)]="cliente.fecha_inicio_contrato"
               type="date"
+              appFechaRango="fecha_inicio_contrato"
             />
+            <mat-error *ngIf="fecha_inicio_contrato.errors?.fechaRango">{{ fecha_inicio_contrato.errors.fechaRango }}</mat-error>
           </mat-form-field>
           <mat-form-field class="example-full-width">
             <input
@@ -269,7 +273,10 @@
               #fecha_termino_contrato="ngModel"
               [(ngModel)]="cliente.fecha_termino_contrato"
               type="date"
+              appFechaRango="fecha_termino_contrato"
+              [fechaDespuesDe]="cliente.fecha_inicio_contrato"
             />
+            <mat-error *ngIf="fecha_termino_contrato.errors?.fechaRango">{{ fecha_termino_contrato.errors.fechaRango }}</mat-error>
           </mat-form-field>
           <mat-form-field class="example-full-width">
             <input
@@ -370,7 +377,9 @@
               #fecha_facturacion1="ngModel"
               [(ngModel)]="clienteEdit.fecha_facturacion"
               type="date"
+              appFechaRango="fecha_facturacion"
             />
+            <mat-error *ngIf="fecha_facturacion1.errors?.fechaRango">{{ fecha_facturacion1.errors.fechaRango }}</mat-error>
           </mat-form-field>
           <mat-form-field class="example-full-width">
             <input
@@ -380,7 +389,9 @@
               #fecha_inicio_contrato1="ngModel"
               [(ngModel)]="clienteEdit.fecha_inicio_contrato"
               type="date"
+              appFechaRango="fecha_inicio_contrato"
             />
+            <mat-error *ngIf="fecha_inicio_contrato1.errors?.fechaRango">{{ fecha_inicio_contrato1.errors.fechaRango }}</mat-error>
           </mat-form-field>
           <mat-form-field class="example-full-width">
             <input
@@ -390,7 +401,10 @@
               #fecha_termino_contrato1="ngModel"
               [(ngModel)]="clienteEdit.fecha_termino_contrato"
               type="date"
+              appFechaRango="fecha_termino_contrato"
+              [fechaDespuesDe]="clienteEdit.fecha_inicio_contrato"
             />
+            <mat-error *ngIf="fecha_termino_contrato1.errors?.fechaRango">{{ fecha_termino_contrato1.errors.fechaRango }}</mat-error>
           </mat-form-field>
           <mat-form-field class="example-full-width">
             <input

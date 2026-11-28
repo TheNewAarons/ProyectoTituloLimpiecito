@@ -11,6 +11,8 @@ jest.mock('../../../modelos/apartado_listas_pev/actividad', () => ({
   findOne: jest.fn(async ({ where }) => mock.actividades.find((x) => x.cliente_id === where.cliente_id && x.nombre === where.nombre) || null)
 }));
 jest.mock('../../../services/caja/cierre', () => ({ reintentarTransaccion: jest.fn((fn) => fn()) }));
+// AUT-026: la regla de cronograma se prueba en asignacion-cronograma-regla.test.js; aquí siempre pasa.
+jest.mock('../../../services/pev/asignacion-cronograma-regla', () => ({ validarDesde: jest.fn(async () => ({})) }));
 jest.mock('../../../modelos/apartado_listas_pev/turno', () => ({ findById: porId('turnos') }));
 jest.mock('../../../modelos/apartado_listas_pev/area', () => ({ findAll: enIds('areas') }));
 jest.mock('../../../modelos/apartado_listas_pev/sector', () => ({ findAll: enIds('sectores') }));
@@ -162,5 +164,30 @@ describe('vista previa → cronograma', () => {
       { crearActividadEnTx: jest.fn(), crearAsignacionEnTx: jest.fn(async (t, e) => ({ id: 1000 + e.trabajador_id })) });
     expect(espia).not.toHaveBeenCalled();
     espia.mockRestore();
+  });
+});
+
+// AUT-026 (retroalimentación): "Desde" fuera de un cronograma vigente detiene la vista previa y la ejecución.
+describe('Desde anclado a un cronograma vigente', () => {
+  const regla = require('../../../services/pev/asignacion-cronograma-regla');
+  const AppError = require('../../../libs/app-error');
+  const fuera = () => regla.validarDesde.mockRejectedValueOnce(new AppError('FECHA_FUERA_DE_CRONOGRAMA', 'fuera', 400));
+
+  it('la vista previa valida cliente, turno y fecha, y propaga el 400', async () => {
+    fuera();
+    await expect(s.previsualizar(base([{ trabajador_id: 1, area_id: 1 }], { fecha_desde: '2050-03-10' })))
+      .rejects.toMatchObject({ code: 'FECHA_FUERA_DE_CRONOGRAMA', httpStatus: 400 });
+    expect(regla.validarDesde).toHaveBeenLastCalledWith(1, 10, '2050-03-10');
+  });
+
+  it('ejecutar no abre la transacción ni crea asignaciones', async () => {
+    const tx = require('../../../database/database').sequelize.transaction;
+    tx.mockClear();
+    fuera();
+    const crear = jest.fn();
+    await expect(s.ejecutar(base([{ trabajador_id: 1, area_id: 1 }]), { usuario: { id: 1 } }, { crearActividadEnTx: jest.fn(), crearAsignacionEnTx: crear }))
+      .rejects.toMatchObject({ code: 'FECHA_FUERA_DE_CRONOGRAMA' });
+    expect(tx).not.toHaveBeenCalled();
+    expect(crear).not.toHaveBeenCalled();
   });
 });

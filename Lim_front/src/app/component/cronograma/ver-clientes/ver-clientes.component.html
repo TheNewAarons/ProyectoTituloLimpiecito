@@ -39,7 +39,7 @@
                     <td>{{ cliente.encargado_contrato }}</td>
                     <td>{{ cliente.numero_contacto }}</td>
                     <td>
-                      {{ cliente.fecha_facturacion | date: 'dd/MM/yyyy ' }}
+                      {{ cliente.fecha_facturacion | date: 'dd/MM/yyyy ':'UTC' }}
                     </td>
                     <td class="td-actions text-right">
                       <button

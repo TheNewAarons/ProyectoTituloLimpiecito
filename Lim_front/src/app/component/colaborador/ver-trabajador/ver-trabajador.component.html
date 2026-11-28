@@ -57,7 +57,7 @@
                 <label class="col-md-3 col-2 col-form-label">Fecha Nacimiento</label>
                 <div class="col-md-9 col-9">
                   <mat-form-field class="example-full-width">
-                    <input matInput type="text" value="{{ trabajador?.fecha_nacimiento | date: 'dd/MM/yyyy' }}" disabled />
+                    <input matInput type="text" value="{{ trabajador?.fecha_nacimiento | date: 'dd/MM/yyyy':'UTC' }}" disabled />
                   </mat-form-field>
                 </div>
               </div>
@@ -73,7 +73,7 @@
                 <label class="col-md-3 col-2 col-form-label">Inicio Contrato</label>
                 <div class="col-md-9 col-9">
                   <mat-form-field class="example-full-width">
-                    <input matInput type="text" value="{{ trabajador?.fecha_inicio_contrato | date: 'dd/MM/yyyy' }}" disabled />
+                    <input matInput type="text" value="{{ trabajador?.fecha_inicio_contrato | date: 'dd/MM/yyyy':'UTC' }}" disabled />
                   </mat-form-field>
                 </div>
               </div>
@@ -81,7 +81,7 @@
                 <label class="col-md-3 col-2 col-form-label">Término Contrato</label>
                 <div class="col-md-9 col-9">
                   <mat-form-field class="example-full-width">
-                    <input matInput type="text" value="{{ trabajador?.fecha_termino_contrato | date: 'dd/MM/yyyy' }}" disabled />
+                    <input matInput type="text" value="{{ trabajador?.fecha_termino_contrato | date: 'dd/MM/yyyy':'UTC' }}" disabled />
                   </mat-form-field>
                 </div>
               </div>

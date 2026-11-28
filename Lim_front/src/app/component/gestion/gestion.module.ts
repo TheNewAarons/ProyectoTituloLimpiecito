@@ -24,6 +24,7 @@ import { GestionRoutes } from './gestion.routing';
 
 import { MaterialModule } from '../../app.module';
 import { HistorialModule } from '../historial/historial.module'; // RNF-SEC-02: botón Historial
+import { FechaRangoModule } from '../fecha-rango/fecha-rango';
 
 import { NgxCleaveDirectiveModule } from 'ngx-cleave-directive';
 
@@ -42,6 +43,7 @@ import { PaginacionModule } from '../paginacion/paginacion';
   imports: [
     CommonModule,
     PaginacionModule, // AUT-024: tablas paginadas
+    FechaRangoModule, // AUT-026: límites de fechas del cliente
     HistorialModule,
     RouterModule.forChild(GestionRoutes),
     NgbModule,

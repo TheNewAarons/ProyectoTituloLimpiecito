@@ -35,6 +35,10 @@ export class AsignacionMasivaComponent implements OnInit {
   actividadNombre = '';
   turnoId: number = null;
   fechaDesde = '';
+  // AUT-026: "Desde" se elige dentro de un cronograma vigente del cliente y turno (antes era una fecha libre).
+  cronogramas: { id: number, inicio: string, fin: string }[] = null;
+  cronogramaId: number = null;
+  hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
   areaTodos: number = null;
   filtro = '';
   filas: FilaTrabajador[] = [];
@@ -60,6 +64,8 @@ export class AsignacionMasivaComponent implements OnInit {
     this.actividadId = null;
     this.turnoId = null;
     this.areaTodos = null;
+    this.cronogramas = null;
+    this.cronogramaId = null;
     if (!this.clienteId) return;
     this.cargando = true;
     this.pev.opcionesCliente(this.clienteId).subscribe(
@@ -67,10 +73,40 @@ export class AsignacionMasivaComponent implements OnInit {
         this.cargando = false;
         this.opciones = r.data;
         this.filas = r.data.trabajadores.map((t) => ({ trabajador: t, seleccionado: false, area_id: null }));
-        if (r.data.turnos.length === 1) this.turnoId = r.data.turnos[0].id;
+        if (r.data.turnos.length === 1) { this.turnoId = r.data.turnos[0].id; this.elegirTurno(); }
       },
       (e: HttpErrorResponse) => { this.cargando = false; mostrarError(e, this.alertas, this.loginService); }
     );
+  }
+
+  // AUT-026: al elegir turno se cargan los cronogramas vigentes; si hay uno solo, queda elegido.
+  elegirTurno() {
+    this.plan = null;
+    this.cronogramas = null;
+    this.cronogramaId = null;
+    if (!this.clienteId || !this.turnoId) return;
+    this.pev.cronogramas(this.clienteId, this.turnoId).subscribe(
+      (r) => {
+        this.cronogramas = r.data || [];
+        if (this.cronogramas.length === 1) { this.cronogramaId = this.cronogramas[0].id; this.elegirCronograma(); }
+      },
+      (e: HttpErrorResponse) => { this.cronogramas = []; mostrarError(e, this.alertas, this.loginService); }
+    );
+  }
+
+  cronogramaElegido(): { id: number, inicio: string, fin: string } {
+    return (this.cronogramas || []).find((c) => c.id === this.cronogramaId) || null;
+  }
+
+  // "Desde" parte en el inicio del cronograma, o en hoy si ya empezó.
+  elegirCronograma() {
+    this.plan = null;
+    const c = this.cronogramaElegido();
+    this.fechaDesde = c ? (c.inicio > this.hoy ? c.inicio : this.hoy) : '';
+  }
+
+  textoCronograma(c: { inicio: string, fin: string }): string {
+    return this.textoCronogramas([c]);
   }
 
   visibles(): FilaTrabajador[] {
@@ -115,6 +151,9 @@ export class AsignacionMasivaComponent implements OnInit {
     if (this.modoActividad === 'existente' && !this.actividadId) return 'Elija una actividad';
     if (this.modoActividad === 'nueva' && !this.actividadNombre.trim()) return 'Escriba el nombre de la actividad nueva';
     if (!this.turnoId) return 'Elija un turno';
+    const c = this.cronogramaElegido();
+    if (!c) return this.cronogramas && this.cronogramas.length === 0 ? 'El cliente no tiene cronogramas vigentes para este turno' : 'Elija un cronograma';
+    if (!this.fechaDesde || this.fechaDesde < c.inicio || this.fechaDesde > c.fin) return '"Desde" debe estar dentro del cronograma elegido';
     const sel = this.seleccionados();
     if (sel.length === 0) return 'Seleccione al menos un trabajador';
     if (sel.length > AsignacionMasivaComponent.TOPE) return 'Máximo ' + AsignacionMasivaComponent.TOPE + ' trabajadores por operación';
