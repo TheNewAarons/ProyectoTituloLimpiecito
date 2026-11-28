@@ -7,6 +7,7 @@ import { RecepcionBodegaService } from '../../../services/recepcion-bodega/recep
 import { AlertasService } from '../../../services/alertas/alertas.service';
 import { LoginService } from '../../../services/login/login.service';
 import { OrdenResumen, FILTROS_ORDEN, ETIQUETA_ORDEN, BADGE_ORDEN } from '../../../model/recepcion-bodega';
+import { ResultadoGenerarOrdenes } from '../../../model/recepcion-bodega';
 import { mostrarErrorBodega } from '../../solicitudes-bodega/solicitudes-bodega.errores';
 
 // RF-BOD-04: órdenes de compra para confirmar recepción (por defecto, las que están por recibir)
@@ -76,14 +77,8 @@ export class OrdenesCompraListaComponent implements OnInit {
       (r) => {
         this.enviando = false;
         const d = r.data;
-        const partes: string[] = [];
-        if (d.omitidas.length) { partes.push(d.omitidas.length + ' proveedor(es) ya tenían un borrador.'); }
-        if (d.sin_proveedor.length) { partes.push(d.sin_proveedor.length + ' producto(s) sin proveedor activo asignado.'); }
         this.alertas.cerrarAlerta();
-        this.alertas.alertaExitoMsj(
-          d.creadas.length ? d.creadas.length + ' orden(es) creada(s) en borrador' : 'No se crearon órdenes nuevas',
-          partes.join(' ')
-        );
+        this.mostrarResultadoGenerar(d); // AUT-026: el ícono depende del resultado y se listan los productos sin proveedor
         this.estado = 'BORRADOR';
         this.filtrar();
       },
@@ -92,6 +87,46 @@ export class OrdenesCompraListaComponent implements OnInit {
         mostrarErrorBodega(error, this.alertas, this.loginService);
       }
     );
+  }
+
+  // Retroalimentación: antes siempre salía el ticket de éxito, aunque no se creara nada.
+  private mostrarResultadoGenerar(d: ResultadoGenerarOrdenes): void {
+    const esc = (s: string) => String(s).replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
+    const sin = d.sin_proveedor.map((p: any) => esc(p.producto || 'Producto #' + p.producto_id));
+    const partes: string[] = [];
+    if (d.omitidas.length) { partes.push(d.omitidas.length + ' proveedor(es) ya tenían un borrador: revíselo antes de generar otro.'); }
+    if (sin.length) {
+      partes.push('<b>' + sin.length + ' producto(s) sin proveedor</b> no se pudieron pedir:' +
+        '<ul class="text-left mt-2 mb-0">' + sin.map((n) => '<li>' + n + '</li>').join('') + '</ul>');
+    }
+    let titulo: string;
+    let icono: 'success' | 'warning' | 'info';
+    if (d.creadas.length) {
+      titulo = d.creadas.length + ' orden(es) creada(s) en borrador';
+      icono = sin.length ? 'warning' : 'success';
+    } else if (sin.length) {
+      titulo = 'No se pudo generar ninguna orden';
+      icono = 'warning';
+    } else if (d.omitidas.length) {
+      titulo = 'No se crearon órdenes nuevas';
+      icono = 'info';
+    } else {
+      titulo = 'No hay faltantes pendientes de compra';
+      icono = 'info';
+      partes.push('Las solicitudes de bodega no tienen productos por reponer.');
+    }
+    swal.fire({
+      title: titulo,
+      html: partes.join('<br>'),
+      icon: icono,
+      buttonsStyling: false,
+      showCancelButton: sin.length > 0,
+      confirmButtonText: 'Ok',
+      cancelButtonText: 'Asignar proveedores',
+      customClass: { confirmButton: 'btn btn-success', cancelButton: 'btn btn-info ml-2' }
+    }).then((r) => {
+      if (r.dismiss === swal.DismissReason.cancel) { this.router.navigate(['/bodega/proveedores']); }
+    });
   }
 
   enviar(o: OrdenResumen): void {

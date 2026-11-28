@@ -20,14 +20,35 @@
           </div>
           <div class="col-12 col-md-4" *ngIf="opciones">
             <label class="d-block" for="pev-turno">Turno</label>
-            <select id="pev-turno" class="form-control" [(ngModel)]="turnoId" (ngModelChange)="plan = null">
+            <select id="pev-turno" class="form-control" [(ngModel)]="turnoId" (ngModelChange)="elegirTurno()">
               <option [ngValue]="null">— Elija un turno —</option>
               <option *ngFor="let t of opciones.turnos" [ngValue]="t.id">{{ t.nombre }}</option>
             </select>
           </div>
-          <div class="col-12 col-md-4" *ngIf="opciones">
+          <!-- AUT-026: el cronograma define el rango de "Desde" -->
+          <div class="col-12 col-md-4" *ngIf="opciones && turnoId">
+            <label class="d-block" for="pev-cronograma">Cronograma</label>
+            <select id="pev-cronograma" class="form-control" [(ngModel)]="cronogramaId" (ngModelChange)="elegirCronograma()" [disabled]="!cronogramas || cronogramas.length === 0">
+              <option [ngValue]="null">{{ !cronogramas ? 'Cargando…' : cronogramas.length ? '— Elija un cronograma —' : 'Sin cronogramas vigentes' }}</option>
+              <option *ngFor="let c of cronogramas" [ngValue]="c.id">{{ textoCronograma(c) }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="row mt-3" *ngIf="opciones && turnoId">
+          <div class="col-12 col-md-4" *ngIf="cronogramaElegido() as c">
             <label class="d-block" for="pev-fecha">Desde</label>
-            <input id="pev-fecha" type="date" class="form-control" [(ngModel)]="fechaDesde" (ngModelChange)="plan = null">
+            <input id="pev-fecha" type="date" class="form-control" [(ngModel)]="fechaDesde" (ngModelChange)="plan = null"
+                   [min]="c.inicio > hoy ? c.inicio : hoy" [max]="c.fin">
+            <small class="text-muted">Dentro del cronograma: {{ textoCronograma(c) }}</small>
+          </div>
+          <div class="col-12" *ngIf="cronogramas && cronogramas.length === 0">
+            <div class="alert alert-warning py-2 mb-0 d-flex flex-wrap align-items-center">
+              <i class="material-icons mr-2">warning</i>
+              <span class="mr-3">Este cliente no tiene cronogramas vigentes para el turno elegido. Cree uno para poder asignar actividades.</span>
+              <a mat-raised-button class="btn btn-rose btn-sm ml-auto my-1" [routerLink]="['/cronograma/crear-cronograma', clienteId]">
+                <i class="material-icons">event</i> Crear cronograma
+              </a>
+            </div>
           </div>
         </div>
 

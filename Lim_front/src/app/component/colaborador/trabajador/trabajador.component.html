@@ -70,10 +70,10 @@
                         <td>{{ trabajador.nombre }}</td>
                         <td>{{ trabajador.telefono }}</td>
                         <td>
-                          {{ trabajador.fecha_inicio_contrato | date: 'dd/MM/yyyy' }}
+                          {{ trabajador.fecha_inicio_contrato | date: 'dd/MM/yyyy':'UTC' }}
                         </td>
                         <td>
-                          {{ trabajador.fecha_termino_contrato | date: 'dd/MM/yyyy' }}
+                          {{ trabajador.fecha_termino_contrato | date: 'dd/MM/yyyy':'UTC' }}
                         </td>
                         <td>{{ trabajador.rut | rut }}</td>
                         <td class="td-actions text-right">
@@ -155,7 +155,7 @@
                         <td>{{ trabajadorInactivo.nombre }}</td>
                         <td>{{ trabajadorInactivo.telefono }}</td>
                         <td>
-                          {{ trabajadorInactivo.fecha_termino_contrato | date: 'dd/MM/yyyy' }}
+                          {{ trabajadorInactivo.fecha_termino_contrato | date: 'dd/MM/yyyy':'UTC' }}
                         </td>
                         <td>{{ trabajadorInactivo.rut }}</td>
                         <td class="td-actions text-right">

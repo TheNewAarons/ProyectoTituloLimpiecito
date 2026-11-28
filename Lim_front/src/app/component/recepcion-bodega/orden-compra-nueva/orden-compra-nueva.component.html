@@ -68,7 +68,7 @@
                         <td class="text-right">
                           <mat-form-field class="example-full-width">
                             <input matInput type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1"
-                              placeholder="Sin precio" [name]="'costo' + i" [(ngModel)]="l.costo_unitario">
+                              placeholder="Precio unitario (opcional)" [name]="'costo' + i" [(ngModel)]="l.costo_unitario">
                           </mat-form-field>
                         </td>
                         <td class="text-right">{{ l.costo_unitario ? ((l.costo_unitario * l.cantidad) | currency:'CLP':'symbol':'1.0-0') : '—' }}</td>
@@ -88,6 +88,8 @@
                   Agregar Producto
                 </button>
                 <p class="text-right"><strong>Total: {{ total | currency:'CLP':'symbol':'1.0-0' }}</strong></p>
+                <!-- Retroalimentación: "Sin precio" se leía como un estado del producto -->
+                <p class="text-muted small"><i class="material-icons align-middle" style="font-size:16px;">info</i> El precio unitario es opcional: se completa con el último costo conocido del producto. Si no lo conoce, déjelo vacío (no suma al total) y podrá ingresar el costo real al recibir la mercadería.</p>
               </div>
             </div>
           </div>

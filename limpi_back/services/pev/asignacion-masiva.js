@@ -176,7 +176,10 @@ async function clasificar(e, t) {
 
 /** Vista previa: qué se crearía, qué se omite y qué impide confirmar. No escribe nada. */
 async function previsualizar(body) {
-  return clasificar(normalizar(body), null);
+  const e = normalizar(body);
+  // AUT-026 (retroalimentación): "Desde" debe caer en un cronograma vigente del cliente y turno.
+  await require('./asignacion-cronograma-regla').validarDesde(e.cliente_id, e.turno_id, e.fecha_desde);
+  return clasificar(e, null);
 }
 
 /**
@@ -190,6 +193,7 @@ async function ejecutar(body, contexto, deps) {
     throw new AppError('NO_DISPONIBLE', 'la asignación masiva aún no está conectada a la creación de asignaciones', 503);
   }
   const e = normalizar(body);
+  await require('./asignacion-cronograma-regla').validarDesde(e.cliente_id, e.turno_id, e.fecha_desde); // AUT-026
   // Mismo reintento que asignaciones.crear ante deadlock/lock timeout (la transacción entera se revierte).
   return reintentarTransaccion(() => db.sequelize.transaction({ isolationLevel: READ_COMMITTED }, async function (t) {
     const plan = await clasificar(e, t);

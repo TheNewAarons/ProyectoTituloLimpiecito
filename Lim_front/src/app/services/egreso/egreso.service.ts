@@ -67,6 +67,25 @@ export class EgresoService {
     );
   }
 
+  //RNF-SEC-02: ANULAR EN DOS PASOS (INGRESOS Y EGRESOS): MOTIVO -> CODIGO AL CORREO -> CONFIRMAR CON EL CODIGO
+  verificarAnulable(tipo: 'ingresos' | 'egresos', id: number): Observable<ApiOkResponse<{ anulable: boolean, code?: string, mensaje?: string }>> {
+    return this.http.get<ApiOkResponse<{ anulable: boolean, code?: string, mensaje?: string }>>(
+      this.url_backend_v1 + '/' + tipo + '/' + id + '/anulable', { headers: this.obtenerCabeceras() }
+    );
+  }
+
+  pedirCodigoAnular(tipo: 'ingresos' | 'egresos', id: number, motivo: string): Observable<ApiOkResponse<{ correo: string }>> {
+    return this.http.post<ApiOkResponse<{ correo: string }>>(
+      this.url_backend_v1 + '/' + tipo + '/' + id + '/anular/codigo', { motivo }, { headers: this.obtenerCabeceras() }
+    );
+  }
+
+  anularConCodigo(tipo: 'ingresos' | 'egresos', id: number, codigo: string): Observable<ApiOkResponse<object>> {
+    return this.http.post<ApiOkResponse<object>>(
+      this.url_backend_v1 + '/' + tipo + '/' + id + '/anular', { codigo }, { headers: this.obtenerCabeceras() }
+    );
+  }
+
   //REVERTIR EL PAGO DE UN EGRESO (SOLO ADMIN)
   revertirPagoEgreso(id: number, motivo: string): Observable<ApiOkResponse<Egreso>> {
     return this.http.patch<ApiOkResponse<Egreso>>(

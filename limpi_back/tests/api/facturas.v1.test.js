@@ -153,24 +153,19 @@ describe('API /api/v1 (facturas: ingresos/egresos/resumen)', () => {
     });
   });
 
-  describe('PATCH /egresos/:id/anular', () => {
-    it('sin motivo propaga MOTIVO_REQUERIDO (400) desde el servicio', async () => {
-      pagoService.anular.mockRejectedValue(new AppError('MOTIVO_REQUERIDO', 'la anulacion requiere motivo', 400));
-      const res = await request(app).patch('/api/v1/egresos/5/anular').set('x-access-token', TOKEN_ADMIN).send({});
-      expect(res.status).toBe(400);
-      expect(res.body).toMatchObject({ ok: false, error: { code: 'MOTIVO_REQUERIDO' } });
+  // AUT-029 (RNF-SEC-02): anular pide código por correo; la ruta PATCH sin código ya no anula (410).
+  describe('PATCH /egresos/:id/anular y /ingresos/:id/anular (reemplazadas)', () => {
+    it.each(['egresos', 'ingresos'])('%s: responde 410 RUTA_REEMPLAZADA y no anula aunque venga motivo', async (tipo) => {
+      const res = await request(app).patch('/api/v1/' + tipo + '/5/anular').set('x-access-token', TOKEN_ADMIN).send({ motivo: 'documento duplicado' });
+      expect(res.status).toBe(410);
+      expect(res.body).toMatchObject({ ok: false, error: { code: 'RUTA_REEMPLAZADA' } });
+      expect(pagoService.anular).not.toHaveBeenCalled();
     });
 
-    it('caso feliz responde {ok,data} con el registro ANULADA (conserva la fila)', async () => {
-      pagoService.anular.mockResolvedValue({ id: 5, estado_pago: 'ANULADA' });
-      const res = await request(app).patch('/api/v1/egresos/5/anular').set('x-access-token', TOKEN_ADMIN).send({ motivo: 'documento duplicado' });
-      expect(res.status).toBe(200);
-      expect(res.body.data).toMatchObject({ id: 5, estado_pago: 'ANULADA' });
-      expect(pagoService.anular).toHaveBeenCalledWith(
-        expect.objectContaining({ entidad: 'egresos' }),
-        5,
-        expect.objectContaining({ motivo: 'documento duplicado' })
-      );
+    it('la ruta nueva de confirmación sigue siendo solo Admin', async () => {
+      const res = await request(app).post('/api/v1/egresos/5/anular').send({ codigo: '123456' });
+      expect([401, 403]).toContain(res.status);
+      expect(pagoService.anular).not.toHaveBeenCalled();
     });
   });
 

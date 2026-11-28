@@ -28,6 +28,12 @@ export class PevMasivaService {
     return this.http.get<RespuestaPev<OpcionesCliente>>(this.url + '/opciones', this.opciones(new HttpParams().set('cliente_id', String(clienteId))));
   }
 
+  //CRONOGRAMAS VIGENTES DEL CLIENTE Y TURNO (AUT-026: "Desde" se elige dentro de uno de ellos)
+  cronogramas(clienteId: number, turnoId: number): Observable<RespuestaPev<{ id: number, inicio: string, fin: string }[]>> {
+    const params = new HttpParams().set('cliente_id', String(clienteId)).set('turno_id', String(turnoId));
+    return this.http.get<RespuestaPev<{ id: number, inicio: string, fin: string }[]>>(this.url + '/cronogramas', this.opciones(params));
+  }
+
   //VISTA PREVIA: NO GUARDA NADA
   vistaPrevia(cuerpo: object): Observable<RespuestaPev<PlanAsignacion>> {
     return this.http.post<RespuestaPev<PlanAsignacion>>(this.url + '/vista-previa', cuerpo, this.opciones());

@@ -40,7 +40,7 @@
                   <label id="label1">Facturación</label>
                 </div>
                 <div class="col-sm-12 col-md-6">
-                  <label>{{ cliente.fecha_facturacion | date: 'dd/MM/yyyy' }}</label>
+                  <label>{{ cliente.fecha_facturacion | date: 'dd/MM/yyyy':'UTC' }}</label>
                 </div>
 
                 <div class="col-xs-12 col-md-6">
@@ -48,7 +48,7 @@
                 </div>
                 <div class="col-xs-12 col-md-6">
                   <label id="label1">
-                    {{ cliente.fecha_inicio_contrato | date: 'dd/MM/yyyy' }}
+                    {{ cliente.fecha_inicio_contrato | date: 'dd/MM/yyyy':'UTC' }}
                   </label>
                 </div>
 
@@ -56,7 +56,7 @@
                   <label id="label1">Término Contrato</label>
                 </div>
                 <div class="col-xd-12 col-md-6">
-                  <label>{{ cliente.fecha_termino_contrato | date: 'dd/MM/yyyy' }}</label>
+                  <label>{{ cliente.fecha_termino_contrato | date: 'dd/MM/yyyy':'UTC' }}</label>
                 </div>
 
                 <div class="col-xs-12 col-md-6">

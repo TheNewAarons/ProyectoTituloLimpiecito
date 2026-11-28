@@ -104,3 +104,25 @@ describe('egreso: controlador eliminarEgreso', () => {
     expect(JSON.stringify(res.json.mock.calls)).not.toContain('secreto');
   });
 });
+
+// AUT-030: el motivo del usuario (anular con código) reemplaza el texto fijo en la auditoría.
+describe('eliminarEgresoDB con motivo', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    db.sequelize.transaction.mockImplementation((cb) => Promise.resolve().then(() => cb({ LOCK: { UPDATE: 'L' } })));
+    auditar.mockResolvedValue({});
+    Caja.findById.mockResolvedValue({ id: 2, estado: 1 });
+  });
+
+  it('usa el motivo recibido en la auditoría', async () => {
+    Egreso.findById.mockResolvedValue(egresoInst({ id: 5, tipo: 1, estado: 1, cajaId: 2 }));
+    await logica.eliminarEgresoDB(5, { usuario: { id: 9, contexto: 'usuarios' }, motivo: 'cargado dos veces [confirmado con código por correo]' });
+    expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ motivo: 'cargado dos veces [confirmado con código por correo]' }));
+  });
+
+  it('sin motivo conserva el texto legacy', async () => {
+    Egreso.findById.mockResolvedValue(egresoInst({ id: 5, tipo: 1, estado: 1, cajaId: 2 }));
+    await logica.eliminarEgresoDB(5, {});
+    expect(auditar).toHaveBeenCalledWith(expect.objectContaining({ motivo: 'ANULACION_EGRESO_LEGACY' }));
+  });
+});

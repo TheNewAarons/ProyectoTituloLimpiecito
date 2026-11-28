@@ -9,6 +9,7 @@ import { MaterialModule } from '../../app.module';
 import { LoadingModule } from 'src/app/loading/loading.module';
 
 import { RecepcionBodegaRoutes } from './recepcion-bodega.routing';
+import { ProductosProveedorModule } from './productos-proveedor/productos-proveedor';
 import { OrdenesCompraListaComponent } from './ordenes-compra-lista/ordenes-compra-lista.component';
 import { OrdenRecepcionComponent } from './orden-recepcion/orden-recepcion.component';
 import { MovimientosBodegaComponent } from './movimientos-bodega/movimientos-bodega.component';
@@ -27,6 +28,7 @@ import { HistorialModule } from '../historial/historial.module';
   imports: [
     CommonModule,
     PaginacionModule, // AUT-024: tablas paginadas
+    ProductosProveedorModule, // retroalimentación: asignar productos a un proveedor
     RouterModule.forChild(RecepcionBodegaRoutes),
     FormsModule,
     NgbModule,

@@ -8,6 +8,7 @@ const { asyncHandler } = require('../../../../middleware/errores');
 const controlador = require('./controlador');
 
 router.get('/opciones', asyncHandler(controlador.opciones));
+router.get('/cronogramas', asyncHandler(require('./cronogramas'))); // retroalimentación: "Desde" según cronograma
 router.post('/vista-previa', asyncHandler(controlador.previsualizar));
 router.post('/', asyncHandler(controlador.ejecutar));
 

@@ -11,6 +11,7 @@ import { LoginService } from '../../../services/login/login.service';
 declare const $: any;
 import swal from 'sweetalert2';
 import { AlertasService } from 'src/app/services/alertas/alertas.service';
+import { anularConCodigo } from '../anular-con-codigo';
 
 @Component({
   selector: 'app-egreso',
@@ -142,33 +143,14 @@ export class EgresoComponent implements OnInit {
   }
 
   //ANULAR UN EGRESO (FACTURA): REEMPLAZA ELIMINAR, NUNCA SE BORRA EL REGISTRO
+  // AUT-029 (RNF-SEC-02): anular es irreversible -> motivo y código por correo.
   anularEgreso(egreso: Egreso): void {
-    swal.fire({
-      title: 'Anular egreso',
-      text: 'Ingresa el motivo de la anulación.',
-      input: 'text',
-      inputPlaceholder: 'Motivo',
-      showCancelButton: true,
-      buttonsStyling: false,
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-default' },
-      confirmButtonText: 'Si, Anular!',
-      cancelButtonText: 'Cancelar',
-      inputValidator: (valor: string) => (!valor || valor.trim().length === 0) ? 'El motivo es obligatorio' : null
-    }).then(result => {
-      if (result.value) {
-        this.alertaService.loading();
-        this.egresoService.anularEgreso(egreso.id, result.value).subscribe(
-          () => {
-            this.alertaService.cerrarAlerta();
-            this.alertaService.alertaExitoMsj('Egreso anulado correctamente.');
-            this.obtenerEgresos();
-            this.obtenerResumenFacturas();
-          },
-          error => this.mostrarErrorBackend(error)
-        );
-      }
+    anularConCodigo({
+      tipo: 'egresos', id: egreso.id, titulo: 'Anular egreso',
+      advertencia: 'La anulación no se puede deshacer' + (egreso.estado_pago === 'PAGADA' ? ' y el monto saldrá de la caja.' : '.'),
+      exito: 'Egreso anulado correctamente.',
+      servicio: this.egresoService, alertas: this.alertaService,
+      alTerminar: () => { this.obtenerEgresos(); this.obtenerResumenFacturas(); }
     });
   }
 
@@ -257,30 +239,17 @@ export class EgresoComponent implements OnInit {
     });
     this.page = 1;
   }
-  //ELIMINAR EGRESO
+  //ANULAR EGRESO SIN DOCUMENTO (ANTES "ELIMINAR"): AUT-030, MISMO FLUJO CON MOTIVO Y CODIGO QUE LAS FACTURAS.
+  // El backend lo anula con estado -1 (sale de la caja) y avisa si la caja está cerrada o es pago de liquidación.
   eliminarEgreso(id: number): void {
-    swal.fire({
-      title: '¿Estas seguro?',
-      text: "Vas a eliminar el Egreso agregado",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: 'btn btn-success',
-      cancelButtonColor: 'btn btn-danger',
-      confirmButtonText: 'Si, ¡Eliminar!',
-      cancelButtonText: 'Cancelar',
-    }).then((result) => {
-      if (result.value) {
-        this.egresoService.eliminarEgreso(id).subscribe(
-          response =>{
-            this.obtenerEgresos();
-            this.alertaService.alertaExitoMsj('Egreso Eliminado Correctamente')
-          },
-          error => {
-            console.log(error);
-          }
-        )
-      }
-    })
+    const egreso = (this.egresos || []).find((e: Egreso) => e.id === id);
+    anularConCodigo({
+      tipo: 'egresos', id: id, titulo: 'Anular egreso',
+      advertencia: 'La anulación no se puede deshacer y el monto' + (egreso && egreso.monto ? ' ($' + Number(egreso.monto).toLocaleString('es-CL') + ')' : '') + ' saldrá de la caja.',
+      exito: 'Egreso anulado correctamente.',
+      servicio: this.egresoService, alertas: this.alertaService,
+      alTerminar: () => { this.obtenerEgresos(); if (this.esAdmin) { this.obtenerResumenFacturas(); } }
+    });
   }
   //OPCIONES PARA QUE FORMATEE VALOR EN INPUT
   cleaveOptions = {

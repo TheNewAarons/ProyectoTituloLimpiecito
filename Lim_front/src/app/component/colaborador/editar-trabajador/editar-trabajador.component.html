@@ -90,7 +90,8 @@
                 <div class="col-md-4">
                   <label class="col-md-12" style="text-align:center;"><b>FECHA NACIMIENTO</b></label>
                   <mat-form-field class="col-md-12" style="display:inline-block !important">
-                    <input matInput placeholder="Fecha Nacimiento" name="fecha_nacimiento" #fecha_nacimiento="ngModel" [(ngModel)]="trabajador.fecha_nacimiento" type="date" >
+                    <input matInput placeholder="Fecha Nacimiento" name="fecha_nacimiento" #fecha_nacimiento="ngModel" [(ngModel)]="trabajador.fecha_nacimiento" type="date" appFechaRango="fecha_nacimiento">
+                    <mat-error *ngIf="fecha_nacimiento.errors?.fechaRango">{{ fecha_nacimiento.errors.fechaRango }}</mat-error>
                   </mat-form-field>
                   
                 </div>
@@ -109,13 +110,15 @@
                 <div class="col-md-4">
                   <label class="col-md-12" style="text-align:center;"><b>INICIO CONTRATO</b></label>
                   <mat-form-field class="col-md-12" style="display:inline-block !important">
-                    <input matInput placeholder="Inicio Contrato" name="fecha_inicio_contrato" #fecha_inicio_contrato="ngModel" [(ngModel)]="trabajador.fecha_inicio_contrato" type="date">
+                    <input matInput placeholder="Inicio Contrato" name="fecha_inicio_contrato" #fecha_inicio_contrato="ngModel" [(ngModel)]="trabajador.fecha_inicio_contrato" type="date" appFechaRango="fecha_inicio_contrato">
+                    <mat-error *ngIf="fecha_inicio_contrato.errors?.fechaRango">{{ fecha_inicio_contrato.errors.fechaRango }}</mat-error>
                   </mat-form-field>
                 </div>
                 <div class="col-md-4">
                   <label class="col-md-12" style="text-align:center;"><b>TERMINO CONTRATO</b></label>
                   <mat-form-field class="col-md-12" style="display:inline-block !important">
-                    <input matInput placeholder="Cierre Contrato" name="fecha_termino_contrato" #fecha_termino_contrato="ngModel" [(ngModel)]="trabajador.fecha_termino_contrato" type="date">
+                    <input matInput placeholder="Cierre Contrato" name="fecha_termino_contrato" #fecha_termino_contrato="ngModel" [(ngModel)]="trabajador.fecha_termino_contrato" type="date" appFechaRango="fecha_termino_contrato" [fechaDespuesDe]="trabajador.fecha_inicio_contrato">
+                    <mat-error *ngIf="fecha_termino_contrato.errors?.fechaRango">{{ fecha_termino_contrato.errors.fechaRango }}</mat-error>
                   </mat-form-field>
                 </div>
                 <div class="col-md-4">
